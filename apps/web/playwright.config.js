@@ -1,5 +1,5 @@
-import { existsSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
+import { preinstalledChromium } from './e2e/support/chromium.js'
 
 /**
  * Port the suite starts the application on.
@@ -13,33 +13,14 @@ const port = Number(process.env.WEB_E2E_PORT ?? 3210)
 /** Origin every `page.goto('/…')` is resolved against. */
 const baseURL = `http://127.0.0.1:${port}`
 
-/**
- * Chromium shipped with the image rather than downloaded by Playwright.
- *
- * `PLAYWRIGHT_BROWSERS_PATH` already points the driver at this directory, so
- * normally nothing needs to be said. But if the preinstalled build's revision
- * does not match the one this Playwright expects, the driver looks for a
- * directory that is not there and fails; pointing `executablePath` straight at
- * the binary sidesteps the revision check entirely.
- *
- * @returns {string|undefined} An absolute path to a Chromium binary, or `undefined` to let Playwright resolve it.
- */
-function preinstalledChromium() {
-  if (process.env.CHROMIUM_EXECUTABLE_PATH) return process.env.CHROMIUM_EXECUTABLE_PATH
-
-  const candidates = [
-    '/opt/pw-browsers/chromium/chrome-linux/chrome',
-    '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  ]
-
-  return candidates.find((candidate) => existsSync(candidate))
-}
-
 const executablePath = preinstalledChromium()
 
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.spec.js',
+  // The not-found specs assert compiled-build behaviour and run under
+  // playwright.production.config.js against `next start`, not the dev server.
+  testIgnore: '**/not-found.spec.js',
   timeout: 45_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
