@@ -897,6 +897,69 @@ describe('DoorWorkspace: the camera', () => {
 
     expect(sent(1)).toEqual({ credential: pass, expectedEventId: EVENT.id })
   })
+
+  /**
+   * The viewfinder, and what is drawn in it.
+   *
+   * @returns {{frame: HTMLElement, brackets: number, line: HTMLElement|null}} The frame, its bracket count and the scan line if any.
+   */
+  function viewfinder() {
+    const frame = document.querySelector('[data-slot="door-viewfinder"]')
+
+    return {
+      frame,
+      brackets: frame.querySelectorAll('.door-bracket').length,
+      line: frame.querySelector('[data-slot="door-scanline"]'),
+    }
+  }
+
+  it('draws an empty viewfinder before the camera starts, with its brackets and no scan line', async () => {
+    const user = userEvent.setup()
+
+    camera(async () => ({ getTracks: () => [{ stop: vi.fn() }] }))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+
+    const { frame, brackets, line } = viewfinder()
+
+    expect(frame.tagName).toBe('FIGURE')
+    expect(frame.getAttribute('data-look')).toBe('off')
+    expect(brackets).toBe(4)
+    expect(line).toBeNull()
+    // The drawing is decoration: nothing in it but the preview is announced.
+    for (const drawn of frame.querySelectorAll(':scope > div')) {
+      expect(drawn.getAttribute('aria-hidden')).toBe('true')
+    }
+    expect(screen.getByText('The camera is off.')).toBeTruthy()
+  })
+
+  it('runs the scan line while it looks, and stops it and locks the brackets on a read', async () => {
+    const user = userEvent.setup()
+    const pass = `pass_${'y'.repeat(40)}`
+
+    framesArrive()
+    camera(async () => ({ getTracks: () => [{ stop: vi.fn() }] }))
+
+    let found
+    decodeFrame.mockImplementation(() => new Promise((done) => (found = done)))
+    apiFetch.mockResolvedValue(answer(200, { data: { ...ADMISSIBLE.data, method: 'QR_SCAN' } }))
+
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+    await user.click(screen.getByRole('button', { name: /start camera/iu }))
+    await screen.findByRole('button', { name: /stop camera/iu })
+
+    expect(viewfinder().frame.getAttribute('data-look')).toBe('scanning')
+    expect(viewfinder().line).not.toBeNull()
+    expect(viewfinder().line.getAttribute('class')).toBe('door-scanline')
+
+    await waitFor(() => expect(found).toBeTypeOf('function'))
+    await act(async () => found({ pass }))
+    await screen.findByRole('heading', { name: 'Check the ticket, then admit' })
+
+    expect(viewfinder().frame.getAttribute('data-look')).toBe('locked')
+    expect(viewfinder().line).toBeNull()
+  })
 })
 
 describe('DoorWorkspace: a group pass', () => {
@@ -2023,5 +2086,121 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
       expect(sent(2)).toEqual(sent(1))
       expect(sent(2).paymentCents).toBe(8000)
     })
+  })
+})
+
+describe('DoorWorkspace: the verdict, as a band', () => {
+  /**
+   * The band an answer's heading sits in.
+   *
+   * @param {string} name The heading's exact name.
+   * @returns {Promise<HTMLElement>} The band.
+   */
+  async function bandOf(name) {
+    const heading = await screen.findByRole('heading', { name, level: 2 })
+
+    return heading.closest('[data-slot="door-verdict"]')
+  }
+
+  it('draws a ticket still to check as the gold-edged plate, with the name in large type', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValueOnce(answer(200, ADMISSIBLE))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+
+    const band = await bandOf('Check the ticket, then admit')
+
+    expect(band.getAttribute('data-verdict')).toBe('check')
+    expect(band.className).toContain('door-verdict')
+    expect(band.className).toContain('outline-accent')
+    expect(within(band).getByText('Asha Door').className).toContain('text-h1')
+    // The actions are under the band, on the door's own ground, not in it.
+    expect(within(band).queryByRole('button')).toBeNull()
+  })
+
+  it('draws an admission as the green band with a tick', async () => {
+    const user = userEvent.setup()
+
+    apiFetch
+      .mockResolvedValueOnce(answer(200, ADMISSIBLE))
+      .mockResolvedValueOnce(answer(200, ADMITTED))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+    await user.click(await screen.findByRole('button', { name: 'Admit', exact: true }))
+
+    const band = await bandOf('Admitted')
+
+    expect(band.getAttribute('data-verdict')).toBe('admit')
+    expect(band.className).toContain('bg-door-admit text-door-admit-ink')
+    expect(band.querySelector('[data-icon="check-circle"]')).not.toBeNull()
+  })
+
+  it('draws a ticket already in as the orange band, with the time it got in', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValueOnce(
+      answer(200, {
+        data: {
+          ...ADMISSIBLE.data,
+          outcome: 'ALREADY_CHECKED_IN',
+          previewReference: null,
+          checkedInAt: '2026-10-01T13:10:00.000Z',
+        },
+      }),
+    )
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+
+    const band = await bandOf('Already admitted — do not admit again')
+
+    expect(band.getAttribute('data-verdict')).toBe('warn')
+    expect(band.className).toContain('bg-door-warn text-door-warn-ink')
+    expect(band.querySelector('[data-icon="alert-triangle"]')).not.toBeNull()
+    expect(within(band).getByText(/^In at /u)).toBeTruthy()
+  })
+
+  it('draws a refusal, and a ticket nobody could find, as the red band with a cross', async () => {
+    const user = userEvent.setup()
+
+    apiFetch
+      .mockResolvedValueOnce(
+        answer(200, {
+          data: {
+            ...ADMISSIBLE.data,
+            outcome: 'REFUSED',
+            refusal: 'REFUNDED',
+            previewReference: null,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(answer(404, { error: { code: 'NOT_FOUND', message: 'x' } }))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+
+    const refused = await bandOf('Do not admit')
+
+    expect(refused.getAttribute('data-verdict')).toBe('refuse')
+    expect(refused.className).toContain('bg-door-refuse text-door-refuse-ink')
+    expect(refused.querySelector('[data-icon="x-circle"]')).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Next ticket' }))
+    await lookUp(user)
+
+    expect((await bandOf('Not found')).getAttribute('data-verdict')).toBe('refuse')
+  })
+
+  it('says it is waiting for a ticket until there is an answer, then gives the column to it', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValueOnce(answer(200, ADMISSIBLE))
+    render(<DoorWorkspace events={[ENTRY]} />)
+
+    expect(screen.getByText('Waiting for a ticket')).toBeTruthy()
+
+    await lookUp(user)
+    await bandOf('Check the ticket, then admit')
+
+    expect(screen.queryByText('Waiting for a ticket')).toBeNull()
   })
 })
