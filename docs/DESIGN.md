@@ -328,6 +328,58 @@ per page. The toran, garba rings, scalloped hems, mirror band, mirror
 dividers and diamonds are gone; `festive-decor.jsx` holds only `BrandRule`,
 and its test fails if the band or the twinkling bulbs come back.
 
+### The platform's working pages
+
+Administration, moderation, finance, operations, privacy and retention are
+dense lists for people who come back every day. They share
+`components/admin-kit.jsx` beside the workspace kit:
+
+- **States are a colour, a glyph and a word** (`StatusWord`, over the
+  library's `StatusIcon`), never a colour or a pill alone. Tags that are not
+  states ("Hidden", "Complimentary", "Imported") stay quiet badges or plates.
+- **No eyebrows.** A page opens on its `PageHeader`: title, one or two
+  sentences, and its page-level action beside the title.
+- **Tables have columns sized for their content.** A wide list is
+  `table-fixed` from the width where every heading fits on its own, with
+  sentence-case headings and numbers right-aligned in tabular figures, and
+  below that each row is a ruled record with visible labels, so nothing
+  scrolls sideways on a phone (All events, the referral codes). A moment in
+  a column is the day over the time (`Instant`); an email wraps before its
+  `@` and dots (`EmailText`).
+- **Money is money.** Finance and operations print every amount with
+  `formatAmount`, so a zero is "$0.00", set in the muted ink; the shop's
+  `formatPrice` (which calls zero "Free") is for prices. Several figures are
+  one ruled statement (`FigureList`), not a grid of cards.
+- **An empty queue is one line** (`AllClear`): a success glyph and the
+  sentence that says why that is good news. The dashed empty box is for a
+  list somebody is about to fill, not for the resting state of a queue.
+- **Long plans are paged in the browser.** An import run shows 25 listings
+  at a time with "Previous listings" and "Next listings", and can be
+  narrowed to one kind of plan line; import and approval still act on the
+  whole plan.
+- **Gold is super-administrator authority.** The platform-role control on
+  People and roles carries the gold rule and a gold "Super administrators
+  only" mark, as the bar's marker does; a super administrator's role badge
+  is gold. Gold is always a fill with purple ink, never text on white.
+- **One authored moment per page, at most.** The imports page's moment is
+  the pending-approval panel: the count set large, the action's rule down
+  its side, the large primary button. Most working pages have none.
+
+### The API reference
+
+`/docs` is Swagger UI themed through `@fastify/swagger-ui`'s own options
+(`apps/api/src/docs-theme/`): `theme.css` with the brand's values as hex,
+Anek Latin and Mukta served beside it, the dark logo in a purple bar with the
+magenta rule, the D as favicon, and method plates (GET purple, POST magenta,
+PUT and PATCH orange with purple ink, DELETE red, each with its word).
+`theme.js` adds the viewport declaration the stock page lacks and follows
+the system's dark setting into Swagger's dark mode, which the stylesheet maps
+to the Showtime purples. Focus is always an outline; reduced motion stops
+Swagger's transitions; tags open folded. `info.description` is the written
+introduction (base URL, signing in, the error envelope, rate limits,
+simulated payments), and sample values are added only where a schema's
+pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`).
+
 ---
 
 ## 9. Per-surface modes
