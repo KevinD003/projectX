@@ -236,7 +236,10 @@ describe('the control’s mark', () => {
     const heading = screen.getByRole('heading', { level: 3 })
     const mark = within(heading).getByText('Super administrators only')
 
-    expect(control).toHaveClass('border-l-4', 'border-highlight')
+    // A hairline rule sets the control apart; the gold chip alone marks the
+    // authority, so no thick coloured bar runs down its side.
+    expect(control).toHaveClass('border-t', 'border-line-strong', 'pt-4')
+    expect(control.className).not.toMatch(/\bborder-l-|border-highlight/u)
     expect(heading).toHaveTextContent('Platform role Super administrators only')
     // Gold is a fill with purple ink on it, never gold text on white.
     expect(mark).toHaveClass('bg-highlight', 'text-highlight-ink')

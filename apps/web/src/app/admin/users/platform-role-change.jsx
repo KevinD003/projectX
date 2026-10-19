@@ -172,7 +172,7 @@ export function PlatformRoleChange({ account, onChanged }) {
   }
 
   return (
-    <div data-authority="super" className="border-l-4 border-highlight pl-4">
+    <div data-authority="super" className="border-t border-line-strong pt-4">
       <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
         Platform role{' '}
         <span className="inline-flex items-center gap-1 rounded-full bg-highlight px-2 py-0.5 text-micro font-bold text-highlight-ink">
