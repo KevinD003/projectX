@@ -88,27 +88,6 @@ const TOP_CITIES = 12
 const FIELD_LABEL = 'text-caption font-semibold text-ink-muted'
 
 /**
- * The three steps of booking here. The third says, in its own words, that
- * payment is simulated: it is the step where somebody would otherwise expect
- * to hand over a card.
- */
-const STEPS = Object.freeze([
-  {
-    title: 'Find it',
-    body: 'Browse by city or kind of night, or search for an event, a venue or an organiser. A price says whether the booking fee is in it.',
-  },
-  {
-    title: 'Reserve it',
-    body: 'Pick your tickets and we hold them while you check out, until the time on the notice. Tickets live in your account, so booking needs one.',
-  },
-  {
-    title: 'Pay (simulated)',
-    lead: 'Payments on this site are simulated. No card is charged and no money moves.',
-    body: 'Your tickets land in My tickets straight away.',
-  },
-])
-
-/**
  * A day as the agenda heads it, in its own zone: "Friday" and "23 Oct".
  *
  * @param {object} event The day's first event.
@@ -501,7 +480,7 @@ function Cities({ top, groups, total, zones }) {
                       className="inline-flex min-h-11 items-baseline gap-1 font-display text-h2 font-bold text-ink [font-stretch:80%] hover:text-accent-strong hover:underline hover:decoration-2 hover:underline-offset-6"
                     >
                       {city}
-                      <span className="font-sans text-caption font-bold text-accent-strong tabular-nums">
+                      <span className="font-sans text-label font-bold text-accent-strong tabular-nums">
                         {count}
                         <span className="sr-only">
                           {' '}
@@ -540,7 +519,7 @@ function Cities({ top, groups, total, zones }) {
                           >
                             {city}{' '}
                             {count !== null ? (
-                              <span className="text-caption text-ink-subtle tabular-nums">
+                              <span className="text-label text-ink-subtle tabular-nums">
                                 {count}{' '}
                                 <span className="sr-only">
                                   {count === 1 ? 'event listed' : 'events listed'}
@@ -650,37 +629,29 @@ export default async function HomePage() {
         </section>
       ) : null}
 
+      {/* Booking, said once in plain words rather than as a numbered row of
+          three steps: what happens, that payment is simulated, and what the
+          prices are in. */}
       <section aria-labelledby="how-heading" className="border-t border-line">
-        <div className="mx-auto max-w-content px-4 py-16 sm:px-6 lg:py-24">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-14">
-            <div>
-              <h2 id="how-heading" className="text-h2 text-ink">
-                How booking works
-              </h2>
-              <p className="mt-3 text-label text-ink-muted">
-                Tickets sold here are priced in US dollars, or Canadian dollars at a venue in
-                Canada. US sales tax is not calculated in this demo, so checkout shows it as $0.00.
-              </p>
-            </div>
-            <ol className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-0 md:divide-x md:divide-line">
-              {STEPS.map((step, index) => (
-                <li key={step.title} className="md:px-8 md:first:pl-0 md:last:pr-0">
-                  <p
-                    aria-hidden="true"
-                    className="font-display text-h1 leading-none font-extrabold text-accent-strong tabular-nums [font-stretch:75%]"
-                  >
-                    {index + 1}
-                  </p>
-                  <h3 className="mt-3 text-h3 text-ink">{step.title}</h3>
-                  <p className="mt-2 text-label leading-6 text-ink-muted">
-                    {step.lead ? (
-                      <strong className="font-bold text-ink">{step.lead} </strong>
-                    ) : null}
-                    {step.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
+        <div className="mx-auto grid max-w-content grid-cols-1 gap-4 px-4 py-12 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-14 lg:py-16">
+          <h2 id="how-heading" className="text-h2 text-ink">
+            How booking works
+          </h2>
+          <div className="max-w-3xl">
+            <p className="text-body text-ink-muted">
+              Search for an event, a venue or an organiser, pick your tickets, and we hold them
+              while you check out. Tickets live in your account, so booking needs one.{' '}
+              <strong className="font-bold text-ink">
+                Payments on this site are simulated. No card is charged and no money moves.
+              </strong>
+            </p>
+            <p className="mt-3 text-label text-ink-muted">
+              Tickets sold here are priced in US dollars, or Canadian dollars at a venue in Canada.
+              US sales tax is not calculated in this demo, so checkout shows it as $0.00.{' '}
+              <Link href="/limitations" className={TEXT_LINK}>
+                Read what else this demo leaves out
+              </Link>
+            </p>
           </div>
         </div>
       </section>
