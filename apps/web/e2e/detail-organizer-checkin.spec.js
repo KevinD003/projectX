@@ -421,6 +421,22 @@ test.describe('the pass, from the holder’s screen to the door’s camera', () 
     await expect(holder.getByRole('button', { name: 'Hide pass' })).toBeFocused()
     await expect(holder.getByText(/as a screenshot, can use it to get in once/iu)).toBeVisible()
 
+    // Once the reveal has run, nothing clips the pass, so the focus outline
+    // drawn outside "Hide pass" is whole: the reveal's clip-path is gone at
+    // rest rather than held at its last frame.
+    await expect
+      .poll(() =>
+        holder.getByRole('button', { name: 'Hide pass' }).evaluate((button) => {
+          const reveal = button.closest('.ticket-reveal')
+          if (!reveal) return 'no reveal'
+          if (reveal.getAnimations().some((animation) => animation.playState === 'running')) {
+            return 'still revealing'
+          }
+          return getComputedStyle(reveal).clipPath
+        }),
+      )
+      .toBe('none')
+
     const path = await drawing.locator('path').getAttribute('d')
     const size = Number((await drawing.getAttribute('viewBox')).split(' ')[2])
     const credential = decodeDrawing(path, size)

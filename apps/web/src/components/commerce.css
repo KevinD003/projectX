@@ -98,9 +98,14 @@
    * line outward, once, as the holder asks for it. Nothing moves: the clip
    * opens over a panel that is already in place, so the code is never
    * scaled, faded or shifted.
+   *
+   * The fill is `backwards`, not `both`: the clip holds before and during
+   * the reveal and is gone once it ends. A clip left in place at rest, even
+   * `inset(0 0 0 0)`, cuts off everything drawn outside the panel's box,
+   * and the focus outline on "Hide pass" sits 2px outside it.
    */
   .ticket-reveal {
-    animation: ticket-reveal 280ms var(--ease-out) both;
+    animation: ticket-reveal 280ms var(--ease-out) backwards;
   }
 
   /* The checkout's route line, drawn from one stop to the next. */

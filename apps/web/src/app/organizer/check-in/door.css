@@ -116,7 +116,11 @@
     animation: door-scan 1.8s linear infinite alternate;
   }
 
+  /*
+   * `backwards`: the clip holds only until the band is in, so nothing at
+   * rest is clipped, a focus outline on a control inside the band included.
+   */
   .door-verdict {
-    animation: door-verdict-in 200ms var(--ease-out) both;
+    animation: door-verdict-in 200ms var(--ease-out) backwards;
   }
 }

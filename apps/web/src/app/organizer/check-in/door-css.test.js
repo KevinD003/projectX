@@ -71,7 +71,7 @@ describe('the door stylesheet', () => {
     const safe = motionSafe()
 
     expect(safe).toMatch(
-      /\.door-verdict\s*\{\s*animation:\s*door-verdict-in 200ms var\(--ease-out\) both;/u,
+      /\.door-verdict\s*\{\s*animation:\s*door-verdict-in 200ms var\(--ease-out\) backwards;/u,
     )
     expect(safe).toMatch(/clip-path:\s*inset\(0 0 100% 0\)/u)
     expect(css).not.toMatch(/opacity\s*:\s*0\b/u)
