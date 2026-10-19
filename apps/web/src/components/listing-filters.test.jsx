@@ -61,6 +61,25 @@ describe('EventFilters', () => {
     expect(form).toHaveAttribute('method', 'get')
   })
 
+  it('stacks the search, the selects and Apply in one column on a phone, two from sm up', () => {
+    renderFilters()
+
+    const category = screen.getByLabelText('Category')
+    const row = category.closest('.grid')
+
+    // Search, category, state, city and Apply all sit in the same grid.
+    expect(row).toContainElement(screen.getByLabelText('Search'))
+    expect(row).toContainElement(screen.getByLabelText('State or province'))
+    expect(row).toContainElement(screen.getByLabelText('City'))
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Apply' }))
+    expect(row).toHaveClass('grid-cols-1', 'sm:grid-cols-2', 'md:grid-cols-4')
+    expect(row.className).not.toMatch(/(^|\s)grid-cols-2(\s|$)/u)
+    expect(screen.getByLabelText('Search').closest('.flex-col')).toHaveClass(
+      'sm:col-span-2',
+      'md:col-span-4',
+    )
+  })
+
   it('labels every control', () => {
     renderFilters()
 

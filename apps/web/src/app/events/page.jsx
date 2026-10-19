@@ -29,7 +29,7 @@ import { EmptyState } from '../../components/ui.jsx'
 
 import { listingRobots } from '../../lib/site-seo.js'
 
-import { loadCatalogueFacets, loadEventList } from '../../lib/api.js'
+import { OVERVIEW_LOOKBACK_MS, loadCatalogueFacets, loadEventList } from '../../lib/api.js'
 import { describeCategories } from '../../lib/catalog.js'
 import {
   buildEventsHref,
@@ -157,6 +157,28 @@ function resultSummary(pagination, filters, region = null) {
 }
 
 /**
+ * Where the listing starts reading when the visitor has not chosen dates.
+ *
+ * The public set keeps a night that has passed until its organiser closes
+ * it, and soonest-first those come first: a visitor opening "All events" on a
+ * Monday would page through last Friday's finished nights, each "Not on sale
+ * now", before reaching anything they could go to. So with no date filter the
+ * listing reads from a day before now, as the home page does
+ * (`loadCatalogueOverview`): far enough back to keep a night that is on right
+ * now, and no further. A chosen day or span ("Today", "This weekend", a date
+ * range) is the visitor's own window and is left as they set it.
+ *
+ * @param {object} filters The listing's filters.
+ * @param {Date} now The moment of the request.
+ * @returns {object} The filters, with `startsAfter` when no date was chosen.
+ */
+export function withListingWindow(filters, now) {
+  if (filters.when || filters.from || filters.to) return filters
+
+  return { ...filters, startsAfter: new Date(now.getTime() - OVERVIEW_LOOKBACK_MS).toISOString() }
+}
+
+/**
  * @typedef {object} EventsPageProps
  * @property {Promise<Record<string, string|string[]|undefined>>} searchParams The URL's query parameters.
  */
@@ -187,7 +209,11 @@ export default async function EventsPage({ searchParams }) {
   //
   // Both are asked for at once with the filters as the URL gave them; in the
   // rare case that changes them, the listing is asked for again.
-  const [facetResult, asParsed] = await Promise.all([loadCatalogueFacets(), loadEventList(parsed)])
+  const now = new Date()
+  const [facetResult, asParsed] = await Promise.all([
+    loadCatalogueFacets(),
+    loadEventList(withListingWindow(parsed, now)),
+  ])
   // When only the facets fell back to the sample catalogue, they are not the
   // catalogue the listing was read from, so they decide nothing: the URL's
   // state, city and language stand, and are added to the selects' options so
@@ -198,7 +224,7 @@ export default async function EventsPage({ searchParams }) {
     : (facetResult.facets ?? {})
   const filters = reconcileFilters(parsed, facets)
   const changed = ['region', 'city', 'language'].some((name) => filters[name] !== parsed[name])
-  const listing = changed ? await loadEventList(filters) : asParsed
+  const listing = changed ? await loadEventList(withListingWindow(filters, now)) : asParsed
 
   const { events, pagination, usedFallback } = listing
   const categories = describeCategories(facets.categories ?? [])
