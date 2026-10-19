@@ -1,0 +1,1097 @@
+/*
+ * The Desi Events API reference: a theme for Swagger UI at /docs.
+ *
+ * Read once at boot by `src/plugins/docs.js` and served by @fastify/swagger-ui
+ * from this host (`/docs/static/theme/theme.css`), so it passes the page's
+ * `style-src 'self'` and asks nothing of a third party. It changes how the
+ * stock bundle looks and nothing it does.
+ *
+ * The values are the web app's tokens (`packages/config/src/tailwind.css`),
+ * written as the sRGB hex each OKLCH token resolves to: a white page with
+ * Royal Purple ink, a purple bar carrying the D, Magenta for the action, and
+ * the four HTTP methods as flat plates. With the reader's system set to dark,
+ * `theme.js` puts Swagger UI into its own dark mode and the variables below
+ * switch to the door's "Showtime" register: deep purple grounds, light ink,
+ * gold for links and focus.
+ *
+ * Every rule is prefixed `:root body .swagger-ui`. That outranks the stock
+ * `.swagger-ui …` rules and ties the stock `html.dark-mode .swagger-ui …`
+ * ones, which this file then wins by loading after them.
+ */
+
+/* ------------------------------------------------------------------ fonts */
+
+@font-face {
+  font-family: 'Anek Latin Docs';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  font-stretch: 75% 125%;
+  src: url('./fonts/anek-latin-latin-wdth-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Mukta Docs';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('./fonts/mukta-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Mukta Docs';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('./fonts/mukta-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Mukta Docs';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('./fonts/mukta-latin-700-normal.woff2') format('woff2');
+}
+
+/* ----------------------------------------------------------------- tokens */
+
+:root {
+  --de-display: 'Anek Latin Docs', 'Arial Narrow', system-ui, sans-serif;
+  --de-sans: 'Mukta Docs', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --de-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --de-page: #ffffff;
+  --de-raised: #ffffff;
+  --de-subtle: #f6f4fb;
+  --de-sunken: #eeebf5;
+  --de-ink: #29094a;
+  --de-muted: #5a4e72;
+  --de-line: #e4e1ea;
+  --de-line-strong: #cfcbd9;
+  --de-link: #b60254;
+  --de-focus: #db3e98;
+
+  --de-bar: #32105e;
+  --de-bar-ink: #ffffff;
+  --de-rule: #b60254;
+
+  --de-action: #b60254;
+  --de-action-hover: #970042;
+  --de-action-ink: #ffffff;
+
+  --de-get: #32105e;
+  --de-get-ink: #ffffff;
+  --de-get-soft: #f6f4fb;
+  --de-post: #b60254;
+  --de-post-ink: #ffffff;
+  --de-post-soft: #fff5f7;
+  --de-put: #f47a1e;
+  --de-put-ink: #29094a;
+  --de-put-soft: #fff4ec;
+  --de-delete: #ba1f1c;
+  --de-delete-ink: #ffffff;
+  --de-delete-soft: #fdf0ef;
+
+  --de-code: #1c0836;
+  --de-code-ink: #f6f3fc;
+
+  --de-radius-plate: 4px;
+  --de-radius-control: 10px;
+  --de-ease: cubic-bezier(0.23, 1, 0.32, 1);
+
+  color-scheme: light;
+}
+
+/* Showtime: the reader's system is dark (`theme.js` adds the class). */
+html.dark-mode {
+  --de-page: #1c0836;
+  --de-raised: #2a124b;
+  --de-subtle: #261045;
+  --de-sunken: #110525;
+  --de-ink: #f6f3fc;
+  --de-muted: #d5cce8;
+  --de-line: #433361;
+  --de-line-strong: #5e4e7f;
+  --de-link: #efcd79;
+  --de-focus: #efcd79;
+
+  --de-bar: #110525;
+  --de-rule: #e6b642;
+
+  --de-action: #e6b642;
+  --de-action-hover: #efcd79;
+  --de-action-ink: #29094a;
+
+  --de-get: #d4c4f6;
+  --de-get-ink: #29094a;
+  --de-get-soft: #261045;
+  --de-post-soft: #2a124b;
+  --de-put-soft: #2a124b;
+  --de-delete: #ff8a80;
+  --de-delete-ink: #29094a;
+  --de-delete-soft: #2a124b;
+
+  --de-code: #110525;
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--de-page);
+}
+
+/* ------------------------------------------------------------- the frame */
+
+:root body .swagger-ui {
+  color: var(--de-ink);
+  background: var(--de-page);
+  font-family: var(--de-sans);
+  font-size: 1rem;
+}
+
+:root body .swagger-ui .wrapper {
+  max-width: 76rem;
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
+}
+
+:root body .swagger-ui,
+:root body .swagger-ui .opblock-tag,
+:root body .swagger-ui .opblock .opblock-summary-description,
+:root body .swagger-ui .opblock .opblock-section-header h4,
+:root body .swagger-ui .opblock-description-wrapper p,
+:root body .swagger-ui .opblock-external-docs-wrapper p,
+:root body .swagger-ui .opblock-title_normal p,
+:root body .swagger-ui .response-col_status,
+:root body .swagger-ui .response-col_links,
+:root body .swagger-ui table thead tr td,
+:root body .swagger-ui table thead tr th,
+:root body .swagger-ui .parameter__name,
+:root body .swagger-ui .parameter__type,
+:root body .swagger-ui .parameter__in,
+:root body .swagger-ui .tab li,
+:root body .swagger-ui label,
+:root body .swagger-ui .btn,
+:root body .swagger-ui .model-title,
+:root body .swagger-ui .model,
+:root body .swagger-ui section.models h4,
+:root body .swagger-ui .servers-title,
+:root body .swagger-ui .markdown p,
+:root body .swagger-ui .markdown li,
+:root body .swagger-ui .renderedMarkdown p,
+:root body .swagger-ui .renderedMarkdown li,
+:root body .swagger-ui .info li,
+:root body .swagger-ui .info p,
+:root body .swagger-ui .info table,
+:root body .swagger-ui .responses-inner h4,
+:root body .swagger-ui .responses-inner h5,
+:root body .swagger-ui .response-control-media-type__title,
+:root body .swagger-ui .response-control-examples__title {
+  font-family: var(--de-sans);
+  color: var(--de-ink);
+}
+
+:root body .swagger-ui .parameter__type,
+:root body .swagger-ui .parameter__in,
+:root body .swagger-ui .opblock .opblock-summary-description,
+:root body .swagger-ui .prop-format,
+:root body .swagger-ui .model .property.primitive,
+:root body .swagger-ui .response-col_links,
+:root body .swagger-ui .opblock-description-wrapper p {
+  color: var(--de-muted);
+}
+
+:root body .swagger-ui a,
+:root body .swagger-ui .info a,
+:root body .swagger-ui .markdown a,
+:root body .swagger-ui .renderedMarkdown a {
+  color: var(--de-link);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+/* Focus: always an outline, never removed, in the brand's focus colour. */
+:root body .swagger-ui :focus-visible,
+:root body .swagger-ui .opblock .opblock-summary-control:focus-visible,
+:root body .swagger-ui .opblock.opblock-get .opblock-summary-control:focus-visible,
+:root body .swagger-ui .opblock.opblock-post .opblock-summary-control:focus-visible,
+:root body .swagger-ui .opblock.opblock-put .opblock-summary-control:focus-visible,
+:root body .swagger-ui .opblock.opblock-patch .opblock-summary-control:focus-visible,
+:root body .swagger-ui .opblock.opblock-delete .opblock-summary-control:focus-visible,
+:root body .swagger-ui .opblock.opblock-deprecated .opblock-summary-control:focus-visible,
+:root body .swagger-ui .models-control:focus-visible,
+:root body .swagger-ui .model-box-control:focus-visible,
+:root body .swagger-ui .opblock-tag:focus-visible,
+:root body .swagger-ui button:focus-visible,
+:root body .swagger-ui a:focus-visible,
+:root body .swagger-ui input:focus-visible,
+:root body .swagger-ui select:focus-visible,
+:root body .swagger-ui textarea:focus-visible {
+  outline: 2px solid var(--de-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* A pointer press shows nothing; the keyboard always sees where it is. */
+:root body .swagger-ui .opblock-summary-control:focus:not(:focus-visible),
+:root body .swagger-ui .models-control:focus:not(:focus-visible),
+:root body .swagger-ui .model-box-control:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ---------------------------------------------------------------- the bar */
+
+:root body .swagger-ui .topbar {
+  background: var(--de-bar);
+  padding: 0.75rem 0;
+  border-bottom: 2px solid var(--de-rule);
+}
+
+:root body .swagger-ui .topbar .wrapper {
+  max-width: 76rem;
+}
+
+:root body .swagger-ui .topbar .topbar-wrapper {
+  min-height: 2.5rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Swagger UI's own light and dark switch, at the far end of the bar. */
+:root body .swagger-ui .topbar .dark-mode-toggle {
+  opacity: 1;
+}
+
+:root body .swagger-ui .topbar .dark-mode-toggle button {
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: var(--de-radius-control);
+}
+
+:root body .swagger-ui .topbar .dark-mode-toggle button svg {
+  fill: var(--de-bar-ink);
+}
+
+:root body .swagger-ui .topbar .topbar-wrapper a {
+  max-width: none;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+:root body .swagger-ui .topbar-wrapper img {
+  display: block;
+  height: 2.5rem;
+  width: auto;
+}
+
+/*
+ * The "Explore" box loads any document by URL. Here it can only ever be this
+ * API's own, so the box is noise; the raw document is linked under the title.
+ */
+:root body .swagger-ui .topbar .download-url-wrapper {
+  display: none;
+}
+
+/* ------------------------------------------------------- the introduction */
+
+:root body .swagger-ui .information-container.wrapper,
+:root body .swagger-ui .information-container .wrapper {
+  padding-top: 0;
+}
+
+:root body .swagger-ui .info {
+  margin: clamp(2rem, 5vw, 3.5rem) 0 2rem;
+}
+
+:root body .swagger-ui .info hgroup.main {
+  margin: 0 0 1.5rem;
+}
+
+:root body .swagger-ui .info .title {
+  font-family: var(--de-display);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--de-ink);
+  text-wrap: balance;
+}
+
+:root body .swagger-ui .info .title small {
+  border: 1px solid var(--de-line);
+  display: inline-block;
+  margin: 0 0 0 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--de-radius-plate);
+  background: var(--de-subtle);
+  vertical-align: middle;
+  top: -0.5rem;
+}
+
+:root body .swagger-ui .info .title small pre {
+  font-family: var(--de-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--de-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+:root body .swagger-ui .info .title small.version-stamp {
+  border-color: var(--de-bar);
+  background: var(--de-bar);
+}
+
+:root body .swagger-ui .info .title small.version-stamp pre {
+  color: var(--de-bar-ink);
+}
+
+html.dark-mode body .swagger-ui .info .title small.version-stamp {
+  border-color: var(--de-action);
+  background: var(--de-action);
+}
+
+html.dark-mode body .swagger-ui .info .title small.version-stamp pre {
+  color: var(--de-action-ink);
+}
+
+:root body .swagger-ui .info .base-url,
+:root body .swagger-ui .info hgroup.main a {
+  font-family: var(--de-mono);
+  font-size: 0.875rem;
+  color: var(--de-link);
+  overflow-wrap: anywhere;
+}
+
+/* The introduction is a reading column, not a full-width sprawl. */
+:root body .swagger-ui .info .description {
+  max-width: 44rem;
+}
+
+:root body .swagger-ui .info .description .markdown p,
+:root body .swagger-ui .info .description .markdown li,
+:root body .swagger-ui .info .description .renderedMarkdown p,
+:root body .swagger-ui .info .description .renderedMarkdown li {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+:root body .swagger-ui .info .description h3,
+:root body .swagger-ui .info .markdown h3,
+:root body .swagger-ui .info .renderedMarkdown h3 {
+  margin: 2rem 0 0.5rem;
+  font-family: var(--de-display);
+  font-stretch: 82%;
+  font-weight: 700;
+  font-size: 1.625rem;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  color: var(--de-ink);
+}
+
+:root body .swagger-ui .info .description ul {
+  padding-left: 1.25rem;
+}
+
+:root body .swagger-ui .markdown code,
+:root body .swagger-ui .renderedMarkdown code,
+:root body .swagger-ui .info code {
+  padding: 0.05em 0.35em;
+  border-radius: var(--de-radius-plate);
+  background: var(--de-subtle);
+  color: var(--de-ink);
+  font-family: var(--de-mono);
+  font-size: 0.875em;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+:root body .swagger-ui .markdown pre,
+:root body .swagger-ui .renderedMarkdown pre,
+:root body .swagger-ui .info pre:not(.version) {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1rem 1.25rem;
+  border-radius: var(--de-radius-plate);
+  background: var(--de-code);
+  color: var(--de-code-ink);
+}
+
+:root body .swagger-ui .markdown pre code,
+:root body .swagger-ui .renderedMarkdown pre code,
+:root body .swagger-ui .info pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 400;
+  overflow-wrap: normal;
+}
+
+/* ------------------------------------------------- servers and authorise */
+
+:root body .swagger-ui .scheme-container {
+  margin: 0 0 1.5rem;
+  padding: 1rem 0;
+  background: var(--de-subtle);
+  border-block: 1px solid var(--de-line);
+  box-shadow: none;
+}
+
+:root body .swagger-ui .scheme-container .schemes > .schemes-server-container > label,
+:root body .swagger-ui .servers-title {
+  color: var(--de-muted);
+  font-weight: 600;
+}
+
+:root body .swagger-ui .scheme-container .schemes {
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+:root body .swagger-ui .servers > label select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------- the controls */
+
+:root body .swagger-ui select,
+:root body .swagger-ui input[type='text'],
+:root body .swagger-ui input[type='password'],
+:root body .swagger-ui input[type='search'],
+:root body .swagger-ui input[type='email'],
+:root body .swagger-ui input[type='file'],
+:root body .swagger-ui textarea {
+  border: 1px solid var(--de-line-strong);
+  border-radius: var(--de-radius-control);
+  background-color: var(--de-raised);
+  color: var(--de-ink);
+  font-family: var(--de-sans);
+  box-shadow: none;
+}
+
+:root body .swagger-ui select {
+  min-height: 2.5rem;
+}
+
+:root body .swagger-ui .btn {
+  min-height: 2.5rem;
+  border: 1px solid var(--de-ink);
+  border-radius: var(--de-radius-control);
+  background: transparent;
+  color: var(--de-ink);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  box-shadow: none;
+  transition:
+    background-color 150ms var(--de-ease),
+    color 150ms var(--de-ease),
+    transform 120ms var(--de-ease);
+}
+
+:root body .swagger-ui .btn:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root body .swagger-ui .btn:hover {
+    background: var(--de-subtle);
+    box-shadow: none;
+  }
+}
+
+:root body .swagger-ui .btn.authorize,
+:root body .swagger-ui .scheme-container .btn.authorize {
+  border-color: var(--de-action);
+  color: var(--de-action);
+  background: transparent;
+}
+
+:root body .swagger-ui .btn.authorize svg,
+:root body .swagger-ui .scheme-container .btn.authorize svg {
+  fill: currentColor;
+}
+
+/* The copy button's glyph is drawn white, so it sits on the bar's purple. */
+:root body .swagger-ui .copy-to-clipboard {
+  border: 1px solid var(--de-line-strong);
+  border-radius: var(--de-radius-plate);
+  background: var(--de-bar);
+}
+
+:root body .swagger-ui .btn.execute,
+:root body .swagger-ui .btn.btn-primary,
+:root body .swagger-ui .dialog-ux .modal-ux .btn.modal-btn.auth.authorize {
+  border-color: var(--de-action);
+  background: var(--de-action);
+  color: var(--de-action-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root body .swagger-ui .btn.execute:hover,
+  :root body .swagger-ui .btn.btn-primary:hover {
+    border-color: var(--de-action-hover);
+    background: var(--de-action-hover);
+  }
+}
+
+:root body .swagger-ui .btn.cancel {
+  border-color: var(--de-delete);
+  color: var(--de-delete);
+}
+
+:root body .swagger-ui .filter .operation-filter-input {
+  min-height: 2.75rem;
+  margin: 0 0 1.5rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--de-line-strong);
+  border-radius: var(--de-radius-control);
+}
+
+:root body .swagger-ui .filter-container {
+  padding: 0;
+}
+
+:root body .swagger-ui .filter-container .filter {
+  width: 100%;
+}
+
+:root body .swagger-ui .filter .operation-filter-input {
+  width: 100%;
+}
+
+/* ----------------------------------------------------------------- tags */
+
+:root body .swagger-ui .opblock-tag-section {
+  border-bottom: 1px solid var(--de-line);
+}
+
+:root body .swagger-ui .opblock-tag {
+  margin: 0;
+  padding: 1rem 0;
+  border-bottom: 0;
+  font-family: var(--de-display);
+  font-stretch: 82%;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  transition: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root body .swagger-ui .opblock-tag:hover {
+    background: transparent;
+    color: var(--de-link);
+  }
+}
+
+/* A tag's name is the link that folds it: ink, like a heading. */
+:root body .swagger-ui .opblock-tag a,
+:root body .swagger-ui .opblock-tag a.nostyle {
+  color: inherit;
+  text-decoration: none;
+}
+
+:root body .swagger-ui .opblock-tag small {
+  flex: 1 1 auto;
+  padding: 0 0 0 1rem;
+  font-family: var(--de-sans);
+  font-stretch: 100%;
+  font-weight: 400;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--de-muted);
+}
+
+:root body .swagger-ui .opblock-tag small p {
+  margin: 0;
+  color: var(--de-muted);
+}
+
+:root body .swagger-ui .opblock-tag svg,
+:root body .swagger-ui .expand-operation svg,
+:root body .swagger-ui .opblock-control-arrow svg,
+:root body .swagger-ui .model-toggle::after {
+  fill: var(--de-ink);
+}
+
+/* ------------------------------------------------------------ operations */
+
+:root body .swagger-ui .opblock {
+  margin: 0 0 0.5rem;
+  border: 1px solid var(--de-line);
+  border-left-width: 4px;
+  border-radius: var(--de-radius-plate);
+  background: var(--de-raised);
+  box-shadow: none;
+}
+
+:root body .swagger-ui .opblock .opblock-summary {
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+  border-bottom: 0;
+}
+
+:root body .swagger-ui .opblock.is-open .opblock-summary {
+  border-bottom: 1px solid var(--de-line);
+}
+
+:root body .swagger-ui .opblock .opblock-summary-method {
+  min-width: 4.75rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--de-radius-plate);
+  font-family: var(--de-sans);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-shadow: none;
+  text-align: center;
+}
+
+:root body .swagger-ui .opblock .opblock-summary-path,
+:root body .swagger-ui .opblock .opblock-summary-path__deprecated,
+:root body .swagger-ui .opblock .opblock-summary-operation-id {
+  font-family: var(--de-mono);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--de-ink);
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+:root body .swagger-ui .opblock .opblock-summary-path a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:root body .swagger-ui .opblock .opblock-summary-description {
+  font-size: 0.9375rem;
+}
+
+:root body .swagger-ui .opblock .opblock-section-header {
+  background: var(--de-subtle);
+  box-shadow: none;
+}
+
+/* The highlighter writes its ground as an inline style; the theme's wins. */
+:root body .swagger-ui .opblock-body pre.microlight,
+:root body .swagger-ui .highlight-code > .microlight,
+:root body .swagger-ui .microlight {
+  border-radius: var(--de-radius-plate);
+  background: var(--de-code) !important;
+  color: var(--de-code-ink);
+  font-family: var(--de-mono);
+}
+
+:root body .swagger-ui .response-control-media-type__accept-message,
+html.dark-mode
+  body
+  .swagger-ui
+  .opblock
+  .response-control-media-type--accept-controller
+  .response-control-media-type__accept-message {
+  color: var(--de-muted);
+  font-size: 0.8125rem;
+}
+
+/* The method plates. Colour is never alone: the word is on every plate. */
+
+:root body .swagger-ui .opblock.opblock-get {
+  border-color: var(--de-line);
+  border-left-color: var(--de-get);
+  background: var(--de-get-soft);
+}
+
+:root body .swagger-ui .opblock.opblock-get .opblock-summary-method {
+  background: var(--de-get);
+  color: var(--de-get-ink);
+}
+
+:root body .swagger-ui .opblock.opblock-post {
+  border-color: var(--de-line);
+  border-left-color: var(--de-post);
+  background: var(--de-post-soft);
+}
+
+:root body .swagger-ui .opblock.opblock-post .opblock-summary-method {
+  background: var(--de-post);
+  color: var(--de-post-ink);
+}
+
+:root body .swagger-ui .opblock.opblock-put,
+:root body .swagger-ui .opblock.opblock-patch {
+  border-color: var(--de-line);
+  border-left-color: var(--de-put);
+  background: var(--de-put-soft);
+}
+
+:root body .swagger-ui .opblock.opblock-put .opblock-summary-method,
+:root body .swagger-ui .opblock.opblock-patch .opblock-summary-method {
+  background: var(--de-put);
+  color: var(--de-put-ink);
+}
+
+:root body .swagger-ui .opblock.opblock-delete {
+  border-color: var(--de-line);
+  border-left-color: var(--de-delete);
+  background: var(--de-delete-soft);
+}
+
+:root body .swagger-ui .opblock.opblock-delete .opblock-summary-method {
+  background: var(--de-delete);
+  color: var(--de-delete-ink);
+}
+
+/*
+ * Inside an operation: one quiet header band for every method (the plate
+ * already says which), the method's colour only on the active tab's rule.
+ */
+:root body .swagger-ui .opblock.opblock-get .opblock-section-header,
+:root body .swagger-ui .opblock.opblock-post .opblock-section-header,
+:root body .swagger-ui .opblock.opblock-put .opblock-section-header,
+:root body .swagger-ui .opblock.opblock-patch .opblock-section-header,
+:root body .swagger-ui .opblock.opblock-delete .opblock-section-header,
+:root body .swagger-ui .opblock.opblock-deprecated .opblock-section-header {
+  border-block: 1px solid var(--de-line);
+  background: var(--de-subtle);
+  box-shadow: none;
+}
+
+:root body .swagger-ui .opblock.opblock-get thead tr th,
+:root body .swagger-ui .opblock.opblock-get thead tr td,
+:root body .swagger-ui .opblock.opblock-post thead tr th,
+:root body .swagger-ui .opblock.opblock-post thead tr td,
+:root body .swagger-ui .opblock.opblock-put thead tr th,
+:root body .swagger-ui .opblock.opblock-put thead tr td,
+:root body .swagger-ui .opblock.opblock-patch thead tr th,
+:root body .swagger-ui .opblock.opblock-patch thead tr td,
+:root body .swagger-ui .opblock.opblock-delete thead tr th,
+:root body .swagger-ui .opblock.opblock-delete thead tr td {
+  border-color: var(--de-line-strong);
+}
+
+:root body .swagger-ui .opblock.opblock-get .opblock-summary,
+:root body .swagger-ui .opblock.opblock-post .opblock-summary,
+:root body .swagger-ui .opblock.opblock-put .opblock-summary,
+:root body .swagger-ui .opblock.opblock-patch .opblock-summary,
+:root body .swagger-ui .opblock.opblock-delete .opblock-summary {
+  border-color: var(--de-line);
+}
+
+:root
+  body
+  .swagger-ui
+  .opblock.opblock-get
+  .opblock-section-header
+  .tab-header
+  .tab-item
+  .opblock-title
+  span::after,
+:root body .swagger-ui .opblock.opblock-get .tab-header .tab-item.active h4 span::after {
+  background: var(--de-get);
+}
+
+:root
+  body
+  .swagger-ui
+  .opblock.opblock-post
+  .opblock-section-header
+  .tab-header
+  .tab-item
+  .opblock-title
+  span::after,
+:root body .swagger-ui .opblock.opblock-post .tab-header .tab-item.active h4 span::after {
+  background: var(--de-post);
+}
+
+:root
+  body
+  .swagger-ui
+  .opblock.opblock-put
+  .opblock-section-header
+  .tab-header
+  .tab-item
+  .opblock-title
+  span::after,
+:root body .swagger-ui .opblock.opblock-put .tab-header .tab-item.active h4 span::after {
+  background: var(--de-put);
+}
+
+:root
+  body
+  .swagger-ui
+  .opblock.opblock-patch
+  .opblock-section-header
+  .tab-header
+  .tab-item
+  .opblock-title
+  span::after,
+:root body .swagger-ui .opblock.opblock-patch .tab-header .tab-item.active h4 span::after {
+  background: var(--de-put);
+}
+
+:root
+  body
+  .swagger-ui
+  .opblock.opblock-delete
+  .opblock-section-header
+  .tab-header
+  .tab-item
+  .opblock-title
+  span::after,
+:root body .swagger-ui .opblock.opblock-delete .tab-header .tab-item.active h4 span::after {
+  background: var(--de-delete);
+}
+
+:root body .swagger-ui .opblock .opblock-body pre.microlight,
+:root body .swagger-ui .opblock .highlight-code pre.microlight {
+  background: var(--de-code) !important;
+  color: var(--de-code-ink);
+}
+
+:root body .swagger-ui .response-control-media-type--accept-controller select,
+:root
+  body
+  .swagger-ui
+  .opblock
+  .response-control-media-type--accept-controller
+  select.content-type {
+  border-color: var(--de-line-strong);
+}
+
+/* Who may call it: the padlock. */
+:root body .swagger-ui .authorization__btn svg,
+:root body .swagger-ui .authorization__btn .unlocked,
+:root body .swagger-ui .authorization__btn .locked {
+  fill: var(--de-muted);
+  opacity: 1;
+}
+
+/* --------------------------------------------------------- tables, models */
+
+:root body .swagger-ui table thead tr th,
+:root body .swagger-ui table thead tr td {
+  border-bottom: 1px solid var(--de-line-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+:root body .swagger-ui .response-col_status {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+:root body .swagger-ui .parameter__name.required::after {
+  color: var(--de-delete);
+}
+
+:root body .swagger-ui .parameter__name.required span {
+  color: var(--de-delete);
+}
+
+:root body .swagger-ui section.models {
+  border: 1px solid var(--de-line);
+  border-radius: var(--de-radius-plate);
+  background: var(--de-raised);
+}
+
+:root body .swagger-ui section.models h4 {
+  font-family: var(--de-display);
+  font-stretch: 82%;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+:root body .swagger-ui section.models .model-container {
+  border-radius: var(--de-radius-plate);
+  background: var(--de-subtle);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root body .swagger-ui section.models .model-container:hover {
+    background: var(--de-sunken);
+  }
+}
+
+:root body .swagger-ui .model-box {
+  background: transparent;
+}
+
+:root body .swagger-ui .model .property {
+  color: var(--de-ink);
+}
+
+/* --------------------------------------------------------------- dialogs */
+
+:root body .swagger-ui .dialog-ux .backdrop-ux {
+  background: rgb(17 5 37 / 0.6);
+}
+
+:root body .swagger-ui .dialog-ux .modal-ux {
+  border: 1px solid var(--de-line);
+  border-radius: 16px;
+  background: var(--de-raised);
+  box-shadow: 0 24px 48px -12px rgb(17 5 37 / 0.35);
+}
+
+:root body .swagger-ui .dialog-ux .modal-ux-header {
+  border-bottom-color: var(--de-line);
+}
+
+:root body .swagger-ui .dialog-ux .modal-ux-header h3 {
+  font-family: var(--de-display);
+  font-stretch: 82%;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--de-ink);
+}
+
+:root body .swagger-ui .dialog-ux .modal-ux-content h4,
+:root body .swagger-ui .dialog-ux .modal-ux-content p,
+:root body .swagger-ui .dialog-ux .modal-ux-content label {
+  color: var(--de-ink);
+  font-family: var(--de-sans);
+}
+
+/* ------------------------------------------------------------ dark extras */
+
+html.dark-mode body .swagger-ui .opblock .opblock-section-header h4,
+html.dark-mode body .swagger-ui .opblock .opblock-summary-path,
+html.dark-mode body .swagger-ui .opblock-tag,
+html.dark-mode body .swagger-ui .info .title {
+  color: var(--de-ink);
+}
+
+html.dark-mode body .swagger-ui .scheme-container {
+  background: var(--de-subtle);
+}
+
+/* ---------------------------------------------------------- narrow screens */
+
+@media (max-width: 40rem) {
+  :root body .swagger-ui .topbar-wrapper img {
+    height: 2.25rem;
+  }
+
+  :root body .swagger-ui .info .title small {
+    margin: 0.5rem 0.5rem 0 0;
+    top: 0;
+  }
+
+  /* A tag's description goes under its name rather than squeezing it. */
+  :root body .swagger-ui .opblock-tag {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+    font-size: 1.375rem;
+  }
+
+  :root body .swagger-ui .opblock-tag > a,
+  :root body .swagger-ui .opblock-tag > a.nostyle {
+    flex: 1 1 calc(100% - 3rem);
+  }
+
+  :root body .swagger-ui .opblock-tag small {
+    order: 3;
+    flex: 1 1 100%;
+    padding: 0;
+  }
+
+  /* The method plate and the path on one line, what it does under them. */
+  :root body .swagger-ui .opblock .opblock-summary {
+    flex-wrap: wrap;
+  }
+
+  :root body .swagger-ui .opblock .opblock-summary-control {
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+    row-gap: 0.25rem;
+  }
+
+  :root body .swagger-ui .opblock .opblock-summary-path,
+  :root body .swagger-ui .opblock .opblock-summary-path__deprecated {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    padding: 0 0 0 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  :root body .swagger-ui .opblock .opblock-summary-description {
+    flex: 1 1 100%;
+    padding: 0;
+    word-break: normal;
+  }
+
+  /* Wide tables and code scroll inside themselves, never the page. */
+  :root body .swagger-ui .table-container,
+  :root body .swagger-ui .responses-wrapper,
+  :root body .swagger-ui .opblock-body .opblock-section,
+  :root body .swagger-ui .model-box,
+  :root body .swagger-ui .highlight-code {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  :root body .swagger-ui .opblock-body pre.microlight,
+  :root body .swagger-ui .highlight-code > .microlight {
+    max-width: 100%;
+    overflow-x: auto;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    white-space: pre !important;
+  }
+
+  /* Every response here says "No links"; on a phone the column goes. */
+  :root body .swagger-ui .responses-table .response-col_links,
+  :root body .swagger-ui .responses-table .col_header.response-col_links {
+    display: none;
+  }
+
+  :root body .swagger-ui .responses-table .response-col_status {
+    width: 3.5rem;
+  }
+
+  :root body .swagger-ui .scheme-container .schemes {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  :root body .swagger-ui .auth-wrapper {
+    justify-content: flex-start;
+  }
+}
+
+/* ------------------------------------------------------------ less motion */
+
+@media (prefers-reduced-motion: reduce) {
+  :root body .swagger-ui *,
+  :root body .swagger-ui *::before,
+  :root body .swagger-ui *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  :root body .swagger-ui .btn:active {
+    transform: none;
+  }
+}
+
+/* ----------------------------------------------------------- forced colours */
+
+@media (forced-colors: active) {
+  :root body .swagger-ui .opblock .opblock-summary-method {
+    border: 1px solid CanvasText;
+  }
+}
