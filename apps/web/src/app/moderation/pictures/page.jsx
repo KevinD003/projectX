@@ -18,9 +18,10 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { ModerationMediaReview } from '../../../components/moderation-media-review.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
 import { PANEL, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { statusReading } from '../../../lib/event-status.js'
 import { getMediaQueue } from '../../../lib/organizer-api.js'
@@ -78,9 +79,9 @@ function QueueItem({ item }) {
           </h2>
           <p className="mt-1 text-sm text-ink-muted">{item.event.organizationName}</p>
         </div>
-        <Badge variant={reading.tone} srLabel="Event:">
+        <StatusWord tone={reading.tone} srLabel="Event:">
           {reading.label}
-        </Badge>
+        </StatusWord>
       </div>
       <p className="text-sm text-ink">
         {item.uploadedByOrganiser
@@ -154,10 +155,7 @@ export default async function PicturesWaitingPage({ searchParams } = {}) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Pictures waiting for a decision</h1>
+      <h1 className="text-h2 font-semibold text-ink">Pictures waiting for a decision</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>
 
       <nav aria-label="Filter by decision" className="mt-6">

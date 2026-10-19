@@ -57,6 +57,19 @@ export const STACKED_WIDE = Object.freeze({
   label: 'font-medium text-ink-muted md:hidden',
 })
 
+/**
+ * The panel a stacked table sits in once it is a table: from `sm` (or `md`,
+ * for the wide one) a ruled, framed panel with a tinted header row, the way
+ * the workspace's other tables are set; below it nothing, because each row
+ * is already its own card.
+ */
+export const STACKED_FRAME =
+  'sm:overflow-hidden sm:rounded-card sm:border sm:border-line sm:bg-surface-raised sm:shadow-card sm:[&_thead]:bg-surface-subtle sm:[&_tbody_tr:last-child>*]:border-b-0'
+
+/** {@link STACKED_FRAME} for the wide table, from `md`. */
+export const STACKED_FRAME_WIDE =
+  'md:overflow-hidden md:rounded-card md:border md:border-line md:bg-surface-raised md:shadow-card md:[&_thead]:bg-surface-subtle md:[&_tbody_tr:last-child>*]:border-b-0'
+
 /** The list page's path. */
 export const REFERRAL_CODES_PATH = '/admin/referral-codes'
 

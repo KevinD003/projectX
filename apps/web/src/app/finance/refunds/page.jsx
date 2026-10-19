@@ -54,7 +54,7 @@ import { ModeBanner, ScrollableTable } from '../../../components/money-figure.js
 import { AsOf, Breadcrumbs, Empty } from '../../../components/page-state.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
 import { getFinanceSummary } from '../../../lib/organizer-api.js'
-import { formatPrice } from '../../../lib/pricing.js'
+import { formatAmount } from '../../../lib/pricing.js'
 import { membershipsWith, readSession } from '../../../lib/session.js'
 import {
   LIST_PAGE_SIZE,
@@ -451,7 +451,7 @@ export default async function RefundListPage({ searchParams }) {
                         </Link>
                       </th>
                       <td className={`${TD} text-right tabular-nums`}>
-                        {formatPrice(refund.amountCents, refund.currency)}
+                        {formatAmount(refund.amountCents, refund.currency)}
                       </td>
                       <td className={TD}>
                         <span

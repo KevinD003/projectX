@@ -14,9 +14,10 @@
 
 import Link from 'next/link'
 
+import { FilterLinks, StatusWord } from '../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
-import { PANEL, PosterThumb, TEXT_LINK } from '../../../components/workspace-kit.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
+import { PageHeader, PosterThumb, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { getModerationQueue } from '../../../lib/organizer-api.js'
 import { statusReading } from '../../../lib/event-status.js'
 import { formatEventDate } from '../../../lib/format.js'
@@ -64,41 +65,20 @@ export default async function ModerationQueuePage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Review queue</h1>
-      <p className="mt-2 text-ink-muted">
-        Oldest submission first. Somebody who submitted on Monday should not still be waiting
-        because a Thursday listing looked more interesting.
-      </p>
+      <PageHeader
+        title="Review queue"
+        description="Oldest submission first. Somebody who submitted on Monday should not still be waiting because a Thursday listing looked more interesting."
+      />
 
-      <nav aria-label="Filter by state" className="mt-6">
-        <ul className="flex flex-wrap gap-2">
-          {FILTERS.map((filter) => {
-            const current = (status ?? null) === filter.value
-            const href = filter.value
-              ? `/moderation/events?status=${filter.value}`
-              : '/moderation/events'
-
-            return (
-              <li key={filter.label}>
-                <Link
-                  href={href}
-                  aria-current={current ? 'page' : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
-                    current
-                      ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
-                      : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
-                  }`}
-                >
-                  {filter.label}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
+      <FilterLinks
+        label="Filter by state"
+        className="mt-6"
+        items={FILTERS.map((filter) => ({
+          label: filter.label,
+          href: filter.value ? `/moderation/events?status=${filter.value}` : '/moderation/events',
+          current: (status ?? null) === filter.value,
+        }))}
+      />
 
       {failure ? (
         <ReadRefusal error={failure} what="The review queue" action="see the review queue" />
@@ -114,33 +94,44 @@ export default async function ModerationQueuePage({ searchParams }) {
       ) : null}
 
       {events.length > 0 ? (
-        <ol className="mt-6 space-y-3">
-          {events.map((event) => {
+        <ol
+          aria-label="Events, oldest submission first"
+          className="mt-6 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface-raised shadow-card"
+        >
+          {events.map((event, index) => {
             const reading = statusReading(event.status)
 
             return (
               <li
                 key={event.id}
-                className={`flex overflow-hidden transition-shadow duration-(--duration-base) ease-standard focus-within:outline-2 focus-within:outline-focus focus-within:outline-offset-2 hover:shadow-card-hover ${PANEL}`}
+                className="flex items-stretch gap-4 py-3 pr-4 pl-3 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-focus sm:pl-4"
               >
-                <PosterThumb event={event} className="hidden w-28 sm:block" />
-                <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-3 p-4 sm:p-5">
+                {/* Its place in the queue: oldest first, so the first is the
+                    one that has waited longest. */}
+                <span
+                  aria-hidden="true"
+                  className="w-6 shrink-0 pt-0.5 text-right text-sm text-ink-subtle tabular-nums"
+                >
+                  {index + 1}
+                </span>
+                <PosterThumb event={event} className="hidden w-20 rounded-plate sm:block" />
+                <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-x-4 gap-y-2">
                   <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-ink">
+                    <h2 className="text-title font-semibold text-ink">
                       <Link href={`/moderation/events/${event.id}`} className={TEXT_LINK}>
                         {event.title}
                       </Link>
                     </h2>
-                    <p className="mt-1 text-sm text-ink-muted">
+                    <p className="mt-0.5 text-sm text-ink-muted">
                       {event.organizationName ?? 'Unnamed organisation'} ·{' '}
                       {formatEventDate(event.startsAt, event.timezone)}
                       {event.city ? ` · ${event.city}` : ''}
                     </p>
                   </div>
 
-                  <Badge variant={reading.tone} size="lg" srLabel="State:">
+                  <StatusWord tone={reading.tone} srLabel="State:">
                     {reading.label}
-                  </Badge>
+                  </StatusWord>
                 </div>
               </li>
             )

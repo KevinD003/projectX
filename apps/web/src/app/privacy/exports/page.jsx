@@ -179,10 +179,7 @@ export default async function ExportRegisterPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Export register</h1>
+        <h1 className="text-h2 font-semibold text-ink">Export register</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           Which exports this organisation has produced, and whether any of them is known to contain
           a person. It records that an export happened — never what was in it — and there is nothing

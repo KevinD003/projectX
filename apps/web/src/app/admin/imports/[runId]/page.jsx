@@ -25,9 +25,10 @@
 import Link from 'next/link'
 import { IMPORT_LIMITS } from '@desi-event/schemas/imports'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../../components/read-refusal.jsx'
-import { Badge } from '../../../../components/ui.jsx'
-import { TEXT_LINK } from '../../../../components/workspace-kit.jsx'
+import { Icon } from '../../../../components/ui.jsx'
+import { PageHeader, TEXT_LINK } from '../../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../../lib/capabilities.js'
 import { getImportRun } from '../../../../lib/imports-api.js'
 import { readSession } from '../../../../lib/session.js'
@@ -95,10 +96,11 @@ export default async function ImportRunPage({ params }) {
   const { runId } = await params
   const session = await readSession()
 
-  const eyebrow = (
-    <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-      Workspace · Platform administration ·{' '}
-      <Link href={IMPORTS_PATH} className={TEXT_LINK}>
+  // The way back to the list, where an eyebrow used to carry it.
+  const back = (
+    <p className="mb-3 text-sm">
+      <Link href={IMPORTS_PATH} className={`${TEXT_LINK} inline-flex min-h-6 items-center gap-1`}>
+        <Icon name="arrow-left" className="h-4 w-4" />
         Imports
       </Link>
     </p>
@@ -107,8 +109,8 @@ export default async function ImportRunPage({ params }) {
   if (!sessionCan(session, 'event:import')) {
     return (
       <div>
-        {eyebrow}
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Import</h1>
+        {back}
+        <PageHeader title="Import" />
         <RefusalNotice tone="neutral" title="Not for this account" detail={NOT_FOR_THIS_ACCOUNT} />
       </div>
     )
@@ -126,8 +128,8 @@ export default async function ImportRunPage({ params }) {
   if (failure || !run) {
     return (
       <div>
-        {eyebrow}
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Import</h1>
+        {back}
+        <PageHeader title="Import" />
         <ReadRefusal
           error={failure}
           what="This import"
@@ -143,12 +145,12 @@ export default async function ImportRunPage({ params }) {
 
   return (
     <div>
-      {eyebrow}
-      <h1 className="mt-2 text-h2 font-semibold break-all text-ink">{run.fileName}</h1>
+      {back}
+      <PageHeader title={run.fileName} titleClassName="break-all" />
       <p className="mt-2 flex flex-wrap items-center gap-3 text-sm text-ink-muted">
-        <Badge variant={status.tone} srLabel="Status:">
+        <StatusWord tone={status.tone} srLabel="Status:">
           {status.label}
-        </Badge>
+        </StatusWord>
         <span>
           {`${run.eventCount} ${run.eventCount === 1 ? 'listing' : 'listings'}, planned ${formatInstant(run.createdAt)}`}
           {run.createdByName ? ` by ${run.createdByName}` : ''}
