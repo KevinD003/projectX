@@ -369,6 +369,33 @@ describe('buying', () => {
     expect(request.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/)
   })
 
+  it('moves focus to the held notice after Reserve, and to Booked after Pay, never to the page', async () => {
+    const user = renderBasket({
+      reserve: vi.fn().mockResolvedValue(HOLDS),
+      placeOrder: vi.fn().mockResolvedValue(ORDER),
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Add one Garden Seating' }))
+    await user.click(screen.getByRole('button', { name: 'Reserve tickets' }))
+
+    const pay = await screen.findByRole('button', { name: /^Pay .* \(simulated\)$/u })
+    const held = document.querySelector('[data-slot="held-notice"]')
+
+    // Reserve turned into Pay; the notice saying what is held, and until
+    // when, has focus.
+    expect(held).toHaveAttribute('tabindex', '-1')
+    expect(held).toHaveFocus()
+    expect(held).toHaveTextContent('Tickets held')
+
+    await user.click(pay)
+
+    const booked = await screen.findByRole('heading', { name: 'Booked' })
+
+    expect(booked).toHaveAttribute('id', 'booked-heading')
+    expect(booked).toHaveAttribute('tabindex', '-1')
+    expect(booked).toHaveFocus()
+  })
+
   it('says the booking was simulated, and where the tickets are', async () => {
     const user = renderBasket({
       reserve: vi.fn().mockResolvedValue(HOLDS),

@@ -585,6 +585,8 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
 
     await expect(heldNotice).toContainText(`Held for you until ${until}.`)
     await expect(heldNotice).toContainText('Give each ticket a name below if you like, then pay.')
+    // Reserve has become Pay: focus is on the held notice, not the page.
+    await expect(buyer.locator('[data-slot="held-notice"]')).toBeFocused()
     // That payments are simulated is said once on the screen, at the head of
     // the summary beside the money, not again in the held notice.
     await expect(heldNotice).not.toContainText(/simulated|no money/u)
@@ -686,6 +688,8 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
       .filter({ has: buyer.getByRole('heading', { name: 'Booked' }) })
 
     await expect(booked).toContainText(`Order ${reference} · 1 ticket · ${allIn}`)
+    // Pay has gone with the basket: focus is on "Booked", not the page.
+    await expect(buyer.getByRole('heading', { name: 'Booked', exact: true })).toBeFocused()
     await expect(booked).toContainText(
       'The payment was simulated: no card was asked for and no money moved.',
     )

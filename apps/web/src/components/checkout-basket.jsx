@@ -212,6 +212,10 @@ export function CheckoutBasket({
   const unsettledRef = useRef(null)
   const noticeRef = useRef(null)
   const summaryHeadingRef = useRef(null)
+  // The held notice, and whether it should take focus once it is drawn:
+  // only straight after the buyer pressed Reserve.
+  const heldNotice = useRef(null)
+  const focusHeld = useRef(false)
   const focusAfterRender = useFocusAfterRender()
 
   // Where the buyer is, for the route line in the page's band.
@@ -303,6 +307,13 @@ export function CheckoutBasket({
   // anything was quoted for it (the basket's ticket price came to nothing): the
   // choice goes back to card, and the buyer is told and taken to the summary.
   // A quote that refuses it is dealt with where it is asked for.
+  useEffect(() => {
+    if (status !== 'held' || !focusHeld.current) return
+
+    focusHeld.current = false
+    heldNotice.current?.focus()
+  }, [status])
+
   useEffect(() => {
     if (paymentMethod !== AT_VENUE || venueOffered || quoting) return
 
@@ -517,6 +528,9 @@ export function CheckoutBasket({
 
       setHolds(taken)
       attemptKey.current = newAttemptKey()
+      // The Reserve button becomes Pay; focus goes to the notice that says
+      // the tickets are held and until when, not to the page.
+      focusHeld.current = true
       setStatus('held')
       await refreshQuote({
         code: promoCode,
@@ -717,6 +731,7 @@ export function CheckoutBasket({
   if (status === 'paid' && isBooked(order)) {
     return (
       <BookedOrder
+        focusOnArrival
         order={order}
         event={event}
         named={Object.values(names).some((name) => String(name).trim())}
@@ -777,10 +792,12 @@ export function CheckoutBasket({
         ))}
 
         {holding ? (
-          <Alert variant="success" title="Tickets held" className="mt-6">
-            {until ? `Held for you until ${until}.` : 'Held for you for a limited time.'} Give each
-            ticket a name below if you like, then pay.
-          </Alert>
+          <div ref={heldNotice} tabIndex={-1} data-slot="held-notice" className="mt-6">
+            <Alert variant="success" title="Tickets held">
+              {until ? `Held for you until ${until}.` : 'Held for you for a limited time.'} Give
+              each ticket a name below if you like, then pay.
+            </Alert>
+          </div>
         ) : null}
 
         {holding && buyer ? (
