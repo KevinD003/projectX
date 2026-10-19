@@ -56,6 +56,7 @@ import { admits } from '../../lib/areas.js'
 import { getAnalytics } from '../../lib/organizer-api.js'
 import { formatAmount } from '../../lib/pricing.js'
 import { readSession, sessionCan } from '../../lib/session.js'
+import { tierStatusLabel } from '../../lib/tier-status.js'
 import { CHART_CAPTION } from '../../lib/traffic-chart.js'
 import {
   DEFAULT_ANALYTICS_PERIOD,
@@ -190,6 +191,9 @@ function Breakdown({ caption, unit, rows, money }) {
   )
 }
 
+/** The disclosure under the visit figures that says how each is counted. */
+export const COUNTED_SUMMARY = 'How these are counted'
+
 /**
  * The visits: how fresh they are, the six figures, the chart and its table,
  * where they came from and, for an organisation, each event's.
@@ -206,6 +210,42 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
   const fresh = freshness(traffic)
   const totals = traffic.totals
   const percent = traffic.conversion.visitorToOrderPercent
+  const figures = [
+    {
+      label: 'Page views',
+      value: totals.views,
+      method: 'Each time the page was opened. Opening it again within half an hour counts once.',
+    },
+    {
+      label: 'Visitors',
+      value: totals.visitors,
+      method: `Counted once a day for each event, without cookies and without keeping anybody’s address. Somebody who comes back on another day is counted again.${
+        eventView ? '' : ' This total adds up each event’s daily visitors.'
+      }`,
+    },
+    {
+      label: 'Event card clicks',
+      value: totals.cardClicks,
+      method: 'Clicks on the event’s card on the home page, the events list and search results.',
+    },
+    {
+      label: 'Ticket and seat clicks',
+      value: ticketAndSeatClicks(totals),
+      method: 'Presses of “Choose tickets” and “Choose seats” on the event page.',
+    },
+    {
+      label: own ? 'Visits to your website' : 'Visits to the organiser’s website',
+      value: totals.websiteRedirects,
+      method: `People sent to ${
+        own ? 'your own website' : 'the organiser’s own website'
+      } by the event page’s link. Counted only while the team at The Desi Events has that link turned on.`,
+    },
+    {
+      label: 'Visitors to paid orders',
+      value: percent === null ? 'No visitors counted' : `${percent}%`,
+      method: `${ORDERS_PAID_ON_DAYS_LABEL} divided by visitors over the same days. ${REFUNDED_ORDERS_NOTE} An order can come from somebody whose visit was not counted, so this is a guide rather than an exact rate.`,
+    },
+  ]
 
   return (
     <>
@@ -231,42 +271,26 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
           <p className="mt-1 text-sm text-ink-muted">{fresh.sentence} Days are UTC days.</p>
         )}
 
+        {/* The figures alone, so the row reads at a glance; how each one is
+            counted is said once, below them, for whoever asks. */}
         <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <CountFigure
-            label="Page views"
-            value={totals.views}
-            hint="Each time the page was opened. Opening it again within half an hour counts once."
-          />
-          <CountFigure
-            label="Visitors"
-            value={totals.visitors}
-            hint={`Counted once a day for each event, without cookies and without keeping anybody’s address. Somebody who comes back on another day is counted again.${
-              eventView ? '' : ' This total adds up each event’s daily visitors.'
-            }`}
-          />
-          <CountFigure
-            label="Event card clicks"
-            value={totals.cardClicks}
-            hint="Clicks on the event’s card on the home page, the events list and search results."
-          />
-          <CountFigure
-            label="Ticket and seat clicks"
-            value={ticketAndSeatClicks(totals)}
-            hint="Presses of “Choose tickets” and “Choose seats” on the event page."
-          />
-          <CountFigure
-            label={own ? 'Visits to your website' : 'Visits to the organiser’s website'}
-            value={totals.websiteRedirects}
-            hint={`People sent to ${
-              own ? 'your own website' : 'the organiser’s own website'
-            } by the event page’s link. Counted only while the team at The Desi Events has that link turned on.`}
-          />
-          <CountFigure
-            label="Visitors to paid orders"
-            value={percent === null ? 'No visitors counted' : `${percent}%`}
-            hint={`${ORDERS_PAID_ON_DAYS_LABEL} divided by visitors over the same days. ${REFUNDED_ORDERS_NOTE} An order can come from somebody whose visit was not counted, so this is a guide rather than an exact rate.`}
-          />
+          {figures.map((figure) => (
+            <CountFigure key={figure.label} label={figure.label} value={figure.value} />
+          ))}
         </dl>
+        <details className="mt-3">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-sm text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus">
+            {COUNTED_SUMMARY}
+          </summary>
+          <dl className="mt-2 grid max-w-3xl gap-3 text-sm">
+            {figures.map((figure) => (
+              <div key={figure.label}>
+                <dt className="font-semibold text-ink">{figure.label}</dt>
+                <dd className="text-ink-muted">{figure.method}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
 
         {eventView ? (
           <p className="mt-4 text-sm text-ink">
@@ -280,7 +304,9 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
           Per day
         </h2>
         <TrafficChart id="visits-chart" caption={CHART_CAPTION} days={traffic.byDay} />
-        <TrafficByDay days={traffic.byDay} open={traffic.byDay.length <= 31} />
+        {/* The chart says it; the table is there for whoever wants the
+            numbers, folded so eighteen rows do not run the page on. */}
+        <TrafficByDay days={traffic.byDay} open={false} />
         <p className="mt-2 text-sm text-ink-muted">
           {ORDERS_PAID_ON_DAYS_LABEL} counts the orders paid in each UTC day. {REFUNDED_ORDERS_NOTE}
         </p>
@@ -745,7 +771,7 @@ export default async function AnalyticsPage({ searchParams }) {
                         <td className={NUM}>{type.quantityRemaining}</td>
                         <td className={TD}>
                           {/* The word, not only a colour. */}
-                          {type.oversold ? 'Oversold — investigate' : type.status}
+                          {type.oversold ? 'Oversold: look into it' : tierStatusLabel(type.status)}
                         </td>
                       </tr>
                     ))}

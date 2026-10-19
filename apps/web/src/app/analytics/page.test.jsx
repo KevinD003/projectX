@@ -217,22 +217,76 @@ describe('the organisation view', () => {
     await renderPage(OWNER)
 
     const section = screen.getByRole('region', { name: 'Visits to your event pages' })
-    const terms = within(section)
+    const [figures, methods] = section.querySelectorAll('dl')
+    const terms = within(figures)
       .getAllByRole('term')
       .map((term) => term.textContent)
-
-    expect(terms).toEqual([
+    const LABELS = [
       'Page views',
       'Visitors',
       'Event card clicks',
       'Ticket and seat clicks',
       'Visits to your website',
       'Visitors to paid orders',
-    ])
+    ]
+
+    expect(terms).toEqual(LABELS)
+    // The tiles carry the figures alone; how each is counted is said once,
+    // in a disclosure under them, in the same order.
+    expect(figures.textContent).not.toMatch(/half an hour|without cookies|guide rather than/u)
+    expect(methods.closest('details').querySelector('summary').textContent).toBe(
+      'How these are counted',
+    )
+    expect(methods.closest('details')).not.toHaveAttribute('open')
+    expect([...methods.querySelectorAll('dt')].map((term) => term.textContent)).toEqual(LABELS)
+    expect(methods.querySelector('dd').textContent).toBe(
+      'Each time the page was opened. Opening it again within half an hour counts once.',
+    )
     expect(within(section).getByText('1,204')).toBeTruthy()
     expect(within(section).getByText('42')).toBeTruthy()
     expect(within(section).getByText('1.1%')).toBeTruthy()
     expect(within(section).getByText(/These figures run to 14:20 UTC on Oct 3\./u)).toBeTruthy()
+  })
+
+  it('says each tier’s status in words in the inventory, never as the API spells it', async () => {
+    getAnalytics.mockResolvedValue(
+      analytics({
+        inventory: {
+          generalAdmission: [
+            {
+              ticketTypeId: 'tt_on_sale',
+              name: 'Early bird',
+              quantitySold: 10,
+              quantityTotal: 100,
+              quantityRemaining: 90,
+              oversold: false,
+              status: 'ON_SALE',
+            },
+            {
+              ticketTypeId: 'tt_draft',
+              name: 'VIP table',
+              quantitySold: 0,
+              quantityTotal: 8,
+              quantityRemaining: 8,
+              oversold: false,
+              status: 'DRAFT',
+            },
+          ],
+          reserved: { bySection: [], byPriceZone: [], statuses: [] },
+        },
+      }),
+    )
+    await renderPage(OWNER)
+
+    const section = screen.getByRole('region', { name: 'Inventory' })
+    const rows = within(section).getAllByRole('row').slice(1)
+
+    expect(within(rows[0]).getByRole('rowheader')).toHaveTextContent('Early bird')
+    expect(within(rows[0]).getAllByRole('cell').at(-1)).toHaveTextContent(/^On sale$/u)
+    expect(within(rows[1]).getAllByRole('cell').at(-1)).toHaveTextContent(
+      /^Not on sale \(draft\)$/u,
+    )
+    expect(section.textContent).not.toMatch(/ON_SALE|DRAFT/u)
   })
 
   it('draws the chart with its table, the sources, the placements and the events', async () => {
@@ -242,6 +296,10 @@ describe('the organisation view', () => {
     expect(screen.getByRole('img', { name: 'Page views and visitors per day (UTC)' })).toBeTruthy()
     expect(screen.getByRole('table', { name: 'Visits per day (UTC)' })).toBeTruthy()
     expect(screen.getByText('Visits per day, as a table', { selector: 'summary' })).toBeTruthy()
+    // Folded under the chart, whatever the period: the chart already says it.
+    expect(
+      screen.getByText('Visits per day, as a table', { selector: 'summary' }).closest('details'),
+    ).not.toHaveAttribute('open')
     expect(screen.getByRole('table', { name: 'Where page views came from' })).toBeTruthy()
     expect(screen.getByRole('table', { name: 'Where the event card was clicked' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Your events' })).toBeTruthy()
@@ -495,7 +553,10 @@ describe('who may see which organisation', () => {
       within(section).getByText(/^Website link: On since .*Turned on by Anil Administrator\./u),
     ).toBeTruthy()
     expect(within(section).queryByText(/Your event page/u)).toBeNull()
-    expect(within(section).getByText('Visits to the organiser’s website')).toBeTruthy()
+    // Named once among the figures, and once again where it says how it is counted.
+    expect(
+      within(section.querySelector('dl')).getByText('Visits to the organiser’s website'),
+    ).toBeTruthy()
   })
 
   it('tells a platform administrator with no organisation where every event’s visits are', async () => {

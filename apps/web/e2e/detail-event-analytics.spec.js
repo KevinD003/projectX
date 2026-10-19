@@ -507,7 +507,9 @@ test.describe.serial('visits to an event’s page', () => {
       new RegExp(`the most on ${DAY_FORMAT.format(new Date())}`, 'u'),
     )
 
-    // Today's row of the table beside it.
+    // Today's row of the table under it, folded until it is asked for.
+    await gamma.getByText('Visits per day, as a table', { exact: true }).click()
+
     const todayRow = gamma
       .getByRole('table', { name: 'Visits per day (UTC)' })
       .getByRole('row')
