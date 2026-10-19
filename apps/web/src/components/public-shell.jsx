@@ -15,6 +15,10 @@
  * its own shell, which keeps exactly one `banner`, one `main` and one
  * `contentinfo` on every page whichever shell it is in.
  *
+ * The footer is the full plate on a page that persuades and the compact one
+ * on a page somebody is using: their tickets and account, signing in, a step
+ * of buying (`public-footer.jsx`, `lib/footer-variant.js`).
+ *
  * `main` keeps the skip link's target: the id it jumps to, and
  * `tabIndex={-1}` so following the link moves focus there rather than only
  * scrolling.
@@ -23,6 +27,7 @@
  */
 
 import { PageTransition } from './page-transition.jsx'
+import { PublicFooter } from './public-footer.jsx'
 import { SiteFooter } from './site-footer.jsx'
 import { SiteHeader } from './site-header.jsx'
 
@@ -44,7 +49,7 @@ export function PublicShell({ children }) {
       <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col">
         <PageTransition kind="public">{children}</PageTransition>
       </main>
-      <SiteFooter />
+      <PublicFooter full={<SiteFooter />} compact={<SiteFooter compact />} />
     </>
   )
 }

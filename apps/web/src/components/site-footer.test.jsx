@@ -233,3 +233,38 @@ describe('SiteFooter', () => {
     }
   })
 })
+
+describe('SiteFooter, compact', () => {
+  it('keeps the logo, how to reach the team, the payment line and the limits, and nothing else', () => {
+    const { container } = render(<SiteFooter compact />)
+    const footer = screen.getByRole('contentinfo')
+
+    expect(footer).toHaveAttribute('data-footer', 'compact')
+    expect(screen.getByRole('link', { name: 'The Desi Events' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('list', { name: 'Contact' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Contact page' })).toHaveAttribute('href', '/contact')
+    expect(screen.getByRole('link', { name: 'What this site does not do' })).toHaveAttribute(
+      'href',
+      '/limitations',
+    )
+    expect(container.textContent).toContain(
+      'Payments on this site are simulated. No card is charged and no money moves.',
+    )
+    // No slogan, no catalogue, no organisers' note, no cities.
+    expect(container.textContent).not.toContain('Every moment, one place.')
+    expect(screen.queryByRole('navigation')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'For organisers' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Discover' })).toBeNull()
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Contact',
+    ])
+  })
+
+  it('makes every link a 44px target', () => {
+    render(<SiteFooter compact />)
+
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.className).toMatch(/\bmin-h-11\b/u)
+    }
+  })
+})

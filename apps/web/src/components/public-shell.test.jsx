@@ -11,9 +11,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // The header reads the session on the server; here it is a plain banner.
 vi.mock('./site-header.jsx', () => ({ SiteHeader: () => <header>header</header> }))
 
+const navigation = vi.hoisted(() => ({ pathname: '/' }))
+
+vi.mock('next/navigation', () => ({ usePathname: () => navigation.pathname }))
+
 const { PublicShell } = await import('./public-shell.jsx')
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  navigation.pathname = '/'
+})
 
 describe('PublicShell', () => {
   it('draws one banner, one main and one contentinfo, in that order', () => {
@@ -51,5 +58,32 @@ describe('PublicShell', () => {
       'data-page-content',
       'public',
     )
+  })
+
+  it.each([
+    ['/', 'full'],
+    ['/events/navratri-night-one-edison', 'full'],
+    ['/account', 'compact'],
+    ['/tickets/cticket0000000000000001', 'compact'],
+    ['/sign-in', 'compact'],
+    ['/events/navratri-night-one-edison/checkout', 'compact'],
+  ])('ends %s with the %s footer, and only one', (pathname, variant) => {
+    navigation.pathname = pathname
+    render(
+      <PublicShell>
+        <h1>Page</h1>
+      </PublicShell>,
+    )
+
+    const footer = screen.getByRole('contentinfo')
+
+    expect(screen.getAllByRole('contentinfo')).toHaveLength(1)
+    if (variant === 'compact') {
+      expect(footer).toHaveAttribute('data-footer', 'compact')
+      expect(footer.textContent).not.toContain('Every moment, one place.')
+    } else {
+      expect(footer).not.toHaveAttribute('data-footer')
+      expect(footer.textContent).toContain('Every moment, one place.')
+    }
   })
 })
