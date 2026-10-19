@@ -19,6 +19,7 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
 import { Badge, EmptyState } from '../../../components/ui.jsx'
 import { PANEL, TEXT_LINK } from '../../../components/workspace-kit.jsx'
@@ -163,12 +164,12 @@ function WebsiteLinkRow({ link }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={reading.tone} srLabel="Event:">
+          <StatusWord tone={reading.tone} srLabel="Event:">
             {reading.label}
-          </Badge>
-          <Badge variant={summary.tone} size="lg" srLabel="Website link:">
+          </StatusWord>
+          <StatusWord tone={summary.tone} srLabel="Website link:">
             {summary.label}
-          </Badge>
+          </StatusWord>
           {redirect?.pending ? <Badge variant="warning">Waiting for a decision</Badge> : null}
         </div>
       </div>

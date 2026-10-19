@@ -18,9 +18,10 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { ModerationMediaReview } from '../../../components/moderation-media-review.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
 import { PANEL, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { statusReading } from '../../../lib/event-status.js'
 import { getMediaQueue } from '../../../lib/organizer-api.js'
@@ -78,9 +79,9 @@ function QueueItem({ item }) {
           </h2>
           <p className="mt-1 text-sm text-ink-muted">{item.event.organizationName}</p>
         </div>
-        <Badge variant={reading.tone} srLabel="Event:">
+        <StatusWord tone={reading.tone} srLabel="Event:">
           {reading.label}
-        </Badge>
+        </StatusWord>
       </div>
       <p className="text-sm text-ink">
         {item.uploadedByOrganiser

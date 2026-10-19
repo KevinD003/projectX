@@ -14,8 +14,9 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
 import { PANEL, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { verificationReading } from '../../../lib/organization-vocabulary.js'
 import {
@@ -246,9 +247,9 @@ export default async function VerificationQueuePage({ searchParams }) {
                       {` · ${organization.eventCount} event${organization.eventCount === 1 ? '' : 's'}`}
                     </p>
                   </div>
-                  <Badge variant={reading.tone} size="lg" srLabel="State:">
+                  <StatusWord tone={reading.tone} srLabel="State:">
                     {reading.label}
-                  </Badge>
+                  </StatusWord>
                 </div>
                 {note ? (
                   <p className="mt-3 text-sm break-words text-ink">

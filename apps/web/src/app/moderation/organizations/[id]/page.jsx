@@ -16,8 +16,8 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../../components/read-refusal.jsx'
-import { Badge } from '../../../../components/ui.jsx'
 import { VerificationDecision } from '../../../../components/verification-decision.jsx'
 import { PANEL, TEXT_LINK } from '../../../../components/workspace-kit.jsx'
 import { verificationReading } from '../../../../lib/organization-vocabulary.js'
@@ -105,9 +105,9 @@ export default async function ReviewOrganizationPage({ params }) {
       </p>
       <h1 className="mt-4 text-h2 font-semibold break-words text-ink">{organization.name}</h1>
       <p className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge variant={reading.tone} size="lg" srLabel="State:">
+        <StatusWord tone={reading.tone} srLabel="State:">
           {reading.label}
-        </Badge>
+        </StatusWord>
         <span className="text-sm text-ink-muted">
           {verification.eligible
             ? 'It may publish events and be paid.'

@@ -22,8 +22,8 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../../components/read-refusal.jsx'
-import { Badge } from '../../../../components/ui.jsx'
 import { PANEL, TEXT_LINK } from '../../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../../lib/capabilities.js'
 import { formatAmount } from '../../../../lib/pricing.js'
@@ -244,9 +244,9 @@ export default async function ReferralCodePage({ params, searchParams }) {
           </Fact>
           <Fact term="Label">{code.label ?? <span className="text-ink-muted">None</span>}</Fact>
           <Fact term="Status">
-            <Badge variant={status.tone} srLabel="Status:">
+            <StatusWord tone={status.tone} srLabel="Status:">
               {status.label}
-            </Badge>
+            </StatusWord>
           </Fact>
           <Fact term="Works for">
             {code.scope === 'ALL_EVENTS' ? (

@@ -14,6 +14,9 @@
  *   works without JavaScript and can be bookmarked.
  * - `Instant`: a moment on two short lines, the day over the time, so a date
  *   in a table column never wraps into four ragged lines.
+ * - `AllClear`: an empty queue said in one quiet line with a success glyph,
+ *   rather than a dashed box the height of a card. An empty queue is the
+ *   resting state of a working page, not an event.
  * - `EmailText`: an email address that wraps before its `@` and its dots, the
  *   places a person would break it, rather than mid-word.
  *
@@ -217,5 +220,30 @@ export function EmailText({ address, fallback = 'Not shown' }) {
         </span>
       ))}
     </span>
+  )
+}
+
+/**
+ * @typedef {object} AllClearProps
+ * @property {string} title What is true, such as "Nothing unresolved".
+ * @property {string} [description] The sentence that says why that is good news.
+ * @property {string} [className] Placement.
+ */
+
+/**
+ * An empty queue, in one line.
+ *
+ * @param {AllClearProps} props Component props.
+ * @returns {JSX.Element} The line.
+ */
+export function AllClear({ title, description, className = 'mt-3' }) {
+  return (
+    <div data-slot="all-clear" className={`flex items-start gap-2.5 ${className}`}>
+      <StatusIcon tone="success" className="mt-0.5 shrink-0 text-status-success" />
+      <p className="text-sm text-ink-muted">
+        <span className="font-semibold text-ink">{title}.</span>
+        {description ? ` ${description}` : null}
+      </p>
+    </div>
   )
 }

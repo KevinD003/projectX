@@ -26,6 +26,7 @@ import Link from 'next/link'
 
 import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../../components/read-refusal.jsx'
 import { Alert, Badge, Card, CardBody } from '../../../../components/ui.jsx'
 import { ModerationDecision } from '../../../../components/moderation-decision.jsx'
@@ -71,9 +72,9 @@ function Readiness({ ready, title, blockers }) {
   return (
     <li className="rounded-card border border-line bg-surface-raised shadow-card p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={ready ? 'success' : 'warning'} srLabel="Status:">
+        <StatusWord tone={ready ? 'success' : 'warning'} srLabel="Status:">
           {ready ? 'Ready' : 'Not ready'}
-        </Badge>
+        </StatusWord>
         <span className="font-medium text-ink">{title}</span>
       </div>
       {blockers.length > 0 ? (
@@ -191,9 +192,9 @@ export default async function ReviewEventPage({ params }) {
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <h1 className="text-h2 font-semibold text-ink">{event.title}</h1>
-        <Badge variant={reading.tone} srLabel="State:">
+        <StatusWord tone={reading.tone} srLabel="State:">
           {reading.label}
-        </Badge>
+        </StatusWord>
       </div>
 
       {/* The Desi Events team's own page for this event: editing it once it is
@@ -446,12 +447,12 @@ export default async function ReviewEventPage({ params }) {
                   {/* A platform fact, not an opinion about the listing. An
                       unverified organisation cannot publish at all, so this is
                       the first thing worth knowing. */}
-                  <Badge
-                    variant={readiness.organizerVerified ? 'success' : 'warning'}
+                  <StatusWord
+                    tone={readiness.organizerVerified ? 'success' : 'warning'}
                     srLabel="Verification:"
                   >
                     {readiness.organizerVerified ? 'Verified' : 'Not verified'}
-                  </Badge>
+                  </StatusWord>
                 </p>
                 {event.organization?.description ? (
                   <p className="mt-2 text-sm text-ink-muted">{event.organization.description}</p>

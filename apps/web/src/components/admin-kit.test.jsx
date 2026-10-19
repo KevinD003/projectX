@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import {
+  AllClear,
   EmailText,
   FilterLinks,
   Instant,
@@ -122,5 +123,24 @@ describe('EmailText', () => {
     render(<EmailText address="" fallback="Not recorded" />)
 
     expect(screen.getByText('Not recorded')).toHaveClass('text-ink-muted')
+  })
+})
+
+describe('AllClear', () => {
+  it('says an empty queue in one line, the title first, beside a success glyph', () => {
+    const { container } = render(
+      <AllClear
+        title="Nothing unresolved"
+        description="Every payment agrees with what the provider says about it."
+      />,
+    )
+
+    const line = container.querySelector('[data-slot="all-clear"]')
+
+    expect(line).toHaveTextContent(
+      'Nothing unresolved. Every payment agrees with what the provider says about it.',
+    )
+    expect(line.querySelector('[data-tone="success"]')).not.toBeNull()
+    expect(within(line).getByText('Nothing unresolved.')).toHaveClass('font-semibold')
   })
 })
