@@ -358,12 +358,13 @@ dense lists for people who come back every day. They share
   narrowed to one kind of plan line; import and approval still act on the
   whole plan.
 - **Gold is super-administrator authority.** The platform-role control on
-  People and roles carries the gold rule and a gold "Super administrators
-  only" mark, as the bar's marker does; a super administrator's role badge
+  People and roles sits under a hairline rule and carries a gold "Super
+  administrators only" mark, as the bar's marker does; a super administrator's role badge
   is gold. Gold is always a fill with purple ink, never text on white.
 - **One authored moment per page, at most.** The imports page's moment is
-  the pending-approval panel: the count set large, the action's rule down
-  its side, the large primary button. Most working pages have none.
+  the pending-approval panel: the count set large under its heading, and
+  the large primary button. No thick coloured bar runs down a callout's
+  side; a heading, a count or a chip says what matters. Most working pages have none.
 
 ### The API reference
 
@@ -378,7 +379,17 @@ to the Showtime purples. Focus is always an outline; reduced motion stops
 Swagger's transitions; tags open folded. `info.description` is the written
 introduction (base URL, signing in, the error envelope, rate limits,
 simulated payments), and sample values are added only where a schema's
-pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`).
+pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`)
+or where a schema names its own with `.meta({ examples })`, as the health
+payload does for its uptime, version and log level.
+
+`theme.js` also names the three controls Swagger UI draws without one: the
+logo image in the bar (`alt="The Desi Events API"`), the light and dark switch
+(`aria-label="Dark mode"`, with `aria-pressed`), and the server picker
+(`aria-label="Server"`). One axe finding stays, and it is upstream:
+`nested-interactive` on `.opblock-summary-control`, where Swagger UI puts the
+copy and lock buttons inside the operation's own summary button. Fixing it
+means changing Swagger UI's markup, which this repository does not fork.
 
 ---
 

@@ -140,12 +140,18 @@
                     },
                     "uptimeSeconds": {
                       "type": "number",
-                      "minimum": 0
+                      "minimum": 0,
+                      "examples": [
+                        3600
+                      ]
                     },
                     "version": {
                       "type": "string",
                       "minLength": 1,
-                      "maxLength": 32
+                      "maxLength": 32,
+                      "examples": [
+                        "0.1.0"
+                      ]
                     },
                     "logLevel": {
                       "type": "string",
@@ -156,6 +162,9 @@
                         "info",
                         "debug",
                         "trace"
+                      ],
+                      "examples": [
+                        "info"
                       ]
                     },
                     "timestamp": {
