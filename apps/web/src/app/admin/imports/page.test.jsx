@@ -170,6 +170,13 @@ describe('approving every pending imported event', () => {
     expect(
       within(panel).getByRole('button', { name: 'Approve and publish all 12 events' }),
     ).toBeInTheDocument()
+    // The one thing waiting on the team comes first, marked with the action's
+    // rule, and the upload form after it.
+    const upload = screen.getByRole('region', { name: 'Plan an import' })
+
+    expect(panel).toHaveAttribute('data-waiting', 'true')
+    expect(panel).toHaveClass('border-l-4', 'border-l-action-primary')
+    expect(panel.compareDocumentPosition(upload) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('says why an importer who may not review cannot, and reads nothing for it', async () => {

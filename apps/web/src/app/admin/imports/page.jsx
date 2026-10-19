@@ -22,9 +22,10 @@
 import Link from 'next/link'
 import { IMPORT_LIMITS } from '@desi-event/schemas/imports'
 
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
-import { PANEL, TABLE_FRAME, TEXT_LINK } from '../../../components/workspace-kit.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
+import { PANEL, PageHeader, TABLE_FRAME, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
 import { getImportRuns, getPendingImports } from '../../../lib/imports-api.js'
 import { readSession } from '../../../lib/session.js'
@@ -85,11 +86,7 @@ export default async function ImportsPage({ searchParams }) {
   const page = readPage(query.page)
   const session = await readSession()
 
-  const heading = (
-    <>
-      <h1 className="text-h2 font-semibold text-ink">Imports</h1>
-    </>
-  )
+  const heading = <PageHeader title="Imports" />
 
   if (!sessionCan(session, 'event:import')) {
     return (
@@ -131,15 +128,14 @@ export default async function ImportsPage({ searchParams }) {
       {heading}
       <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>
 
-      <section aria-labelledby="upload-heading" className={`mt-6 p-4 sm:p-6 ${PANEL}`}>
-        <h2 id="upload-heading" className="text-lg font-semibold text-ink">
-          Plan an import
-        </h2>
-        <ImportUploadForm maxBytes={IMPORT_LIMITS.datasetBytes} />
-      </section>
-
-      <section aria-labelledby="pending-heading" className={`mt-6 p-4 sm:p-6 ${PANEL}`}>
-        <h2 id="pending-heading" className="text-lg font-semibold text-ink">
+      <section
+        aria-labelledby="pending-heading"
+        data-waiting={pending?.total > 0 ? 'true' : undefined}
+        className={`mt-8 p-5 sm:p-6 ${PANEL} ${
+          pending?.total > 0 ? 'border-l-4 border-l-action-primary' : ''
+        }`}
+      >
+        <h2 id="pending-heading" className="text-h3 font-semibold text-ink">
           Approve and publish all pending imported events
         </h2>
         {!canApprove ? (
@@ -158,8 +154,15 @@ export default async function ImportsPage({ searchParams }) {
         {pending ? <ApprovePendingPanel pending={pending} /> : null}
       </section>
 
+      <section aria-labelledby="upload-heading" className={`mt-6 p-5 sm:p-6 ${PANEL}`}>
+        <h2 id="upload-heading" className="text-h3 font-semibold text-ink">
+          Plan an import
+        </h2>
+        <ImportUploadForm maxBytes={IMPORT_LIMITS.datasetBytes} />
+      </section>
+
       <section aria-labelledby="runs-heading" className="mt-10">
-        <h2 id="runs-heading" className="text-lg font-semibold text-ink">
+        <h2 id="runs-heading" className="text-h3 font-semibold text-ink">
           Imports planned
         </h2>
 
@@ -192,7 +195,7 @@ export default async function ImportsPage({ searchParams }) {
             <table className="w-full min-w-[56rem] border-collapse text-left text-sm">
               <caption className="sr-only">Imports, newest first</caption>
               <thead>
-                <tr className="border-b border-line-strong text-ink-muted">
+                <tr className="border-b border-line-strong text-xs text-ink-muted">
                   <th scope="col" className="pr-4 font-semibold">
                     File
                   </th>
@@ -222,9 +225,9 @@ export default async function ImportsPage({ searchParams }) {
                         </Link>
                       </td>
                       <td className="pr-4">
-                        <Badge variant={status.tone} srLabel="Status:">
+                        <StatusWord tone={status.tone} srLabel="Status:">
                           {status.label}
-                        </Badge>
+                        </StatusWord>
                       </td>
                       <td className="pr-4 text-ink tabular-nums">{run.eventCount}</td>
                       <td className="pr-4 text-ink-muted">
