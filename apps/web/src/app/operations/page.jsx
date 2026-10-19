@@ -38,7 +38,7 @@ import { ReadRefusal } from '../../components/read-refusal.jsx'
 import { StepUpForRead } from '../../components/step-up-for-read.jsx'
 import { EmptyState } from '../../components/ui.jsx'
 import { CountTile, CountTiles } from '../../components/workspace-kit.jsx'
-import { formatPrice } from '../../lib/pricing.js'
+import { formatAmount } from '../../lib/pricing.js'
 import { describeApiRefusal } from '../../lib/refusal.js'
 import {
   getNotificationQueue,
@@ -342,7 +342,7 @@ export default async function OperationsPage() {
                         href={`/finance/refunds/${refund.id}`}
                         className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                       >
-                        {formatPrice(refund.amountCents, refund.currency)}
+                        {formatAmount(refund.amountCents, refund.currency)}
                       </Link>
                       {refund.orderReference ? (
                         <span className="ml-2 font-mono text-sm text-ink-muted">

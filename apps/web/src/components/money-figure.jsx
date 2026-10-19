@@ -13,7 +13,10 @@
  *
  * `Figure` renders an amount with its own currency's formatting and marks the
  * number up as a number: a screen reader reading "$12,000.00" out of a table
- * cell with no label is reading a string.
+ * cell with no label is reading a string. A zero is money too: it reads
+ * "$0.00", never the shop window's "Free" (`formatAmount`, not `formatPrice`),
+ * because "Tax payable: Free" in a ledger reads as a claim about tax rather
+ * than a sum. `FigureList` sets several figures as one ruled statement.
  *
  * `AgingBadge` turns the band the server computed into a colour and a word.
  * The band is computed server-side on purpose — the queue screen and the detail
@@ -23,7 +26,8 @@
  * @module components/money-figure
  */
 
-import { formatPrice } from '../lib/pricing.js'
+import { formatAmount } from '../lib/pricing.js'
+import { StatusIcon } from './ui.jsx'
 import { PANEL, TABLE_FRAME } from './workspace-kit.jsx'
 
 /**
@@ -44,19 +48,17 @@ export function ModeBanner({ mode, notice }) {
   return (
     <p
       role="status"
-      className={`mt-6 flex items-start gap-3 rounded-card border p-4 text-sm ${
+      className={`mt-6 flex items-start gap-3 rounded-card border px-4 py-3 text-sm ${
         demonstration
-          ? 'border-accent-line bg-accent-soft text-ink'
+          ? 'border-line-strong bg-status-mock-soft text-ink'
           : 'border-status-info/25 bg-status-info-soft text-ink'
       }`}
     >
-      {/* A diamond, the site's mark for "read this first". Decoration: the
-          words beside it say what it means. */}
-      <span
-        aria-hidden="true"
-        className={`mt-1.5 size-2.5 shrink-0 rotate-45 rounded-[2px] ${
-          demonstration ? 'bg-accent' : 'bg-status-info'
-        }`}
+      {/* The dashed ring is the mark of a simulated state, the "i" of a
+          sandbox; decoration, because the words beside it say which. */}
+      <StatusIcon
+        tone={demonstration ? 'mock' : 'info'}
+        className={`mt-px shrink-0 ${demonstration ? 'text-status-mock' : 'text-status-info'}`}
       />
       <span>
         <span className="font-semibold">
@@ -74,17 +76,26 @@ export function ModeBanner({ mode, notice }) {
  * @property {number} cents The amount, in minor units.
  * @property {string} [currency] ISO 4217 code. Defaults to US dollars, the catalogue's currency.
  * @property {string} [hint] A sentence under the number.
+ * @property {boolean} [plain] Drawn as one cell of a {@link FigureList} rather than as its own panel.
  */
 
 /**
  * One labelled amount.
  *
+ * A zero is set in the muted ink: still read, still "$0.00", but it does not
+ * compete with the figures that hold something.
+ *
  * @param {FigureProps} props Component props.
  * @returns {JSX.Element} The figure.
  */
-export function Figure({ label, cents, currency = 'USD', hint }) {
+export function Figure({ label, cents, currency = 'USD', hint, plain = false }) {
+  const tone = cents === 0 ? 'text-ink-muted' : 'text-ink'
+
   return (
-    <div className={`p-4 sm:p-5 ${PANEL}`}>
+    <div
+      data-slot="figure"
+      className={plain ? 'min-w-0 bg-surface-raised p-4 sm:p-5' : `p-4 sm:p-5 ${PANEL}`}
+    >
       <dt className="text-sm font-medium text-ink-muted">{label}</dt>
       {/*
         The hint lives inside the `dd`, not beside it. A `div` wrapping a
@@ -94,12 +105,42 @@ export function Figure({ label, cents, currency = 'USD', hint }) {
         1.3.1. Found by the sweep on this component's first run.
       */}
       <dd className="mt-1">
-        <span className="block font-display text-h2 font-semibold break-words text-ink tabular-nums">
-          {formatPrice(cents, currency)}
+        <span
+          className={
+            plain
+              ? `block text-h3 font-semibold break-words tabular-nums ${tone}`
+              : `block font-display text-h2 font-semibold break-words tabular-nums ${tone}`
+          }
+        >
+          {formatAmount(cents, currency)}
         </span>
         {hint ? <span className="mt-1 block text-xs text-ink-muted">{hint}</span> : null}
       </dd>
     </div>
+  )
+}
+
+/**
+ * Several {@link Figure}s as one statement: a single ruled panel, one cell per
+ * figure, rather than a grid of separate cards. The rules are the panel's own
+ * colour showing through a one-pixel gap, so they line up however the cells
+ * wrap.
+ *
+ * Pass `plain` to each `Figure` inside.
+ *
+ * @param {object} props Component props.
+ * @param {string} [props.className] Extra classes, e.g. a top margin.
+ * @param {ReactNode} props.children The figures.
+ * @returns {JSX.Element} The list.
+ */
+export function FigureList({ className = 'mt-3', children }) {
+  return (
+    <dl
+      data-slot="figure-list"
+      className={`grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line lg:grid-cols-3 ${className}`}
+    >
+      {children}
+    </dl>
   )
 }
 
