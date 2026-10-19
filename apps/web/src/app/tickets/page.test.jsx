@@ -168,6 +168,33 @@ describe('MyTicketsPage', () => {
     expect(passes[0].getAttribute('href')).toBe('/tickets/tkt00000000000000000001#entry-pass')
   })
 
+  it('fits a phone: two columns of facts, the date and the order left to the stub and the ticket page', async () => {
+    await renderWallet([walletTicket({ attendeeName: 'Riddhi Shah', admits: true })])
+
+    const item = within(screen.getByRole('region', { name: 'Coming up' })).getByRole('listitem')
+    const list = item.querySelector('dl')
+    const row = (term) =>
+      [...list.querySelectorAll('dt')].find((dt) => dt.textContent === term).parentElement
+
+    expect(list).toHaveClass('grid-cols-2', 'lg:grid-cols-3')
+    expect(list.className).not.toMatch(/(^|\s)grid-cols-1(\s|$)/u)
+    // Still there for a screen reader (the stub's printed date is hidden from
+    // one), only not drawn below sm.
+    expect(row('When')).toHaveClass('max-sm:sr-only')
+    expect(row('Order')).toHaveClass('max-sm:sr-only')
+    for (const term of ['Where', 'Ticket', 'Attendee', 'Reference']) {
+      expect(row(term).className, term).not.toMatch(/sr-only/u)
+    }
+    // The pass link keeps its full name and drops only its icon below sm.
+    const pass = item.querySelector('a[href$="#entry-pass"]')
+
+    expect(pass.textContent).toBe(
+      'Show my entry pass for Navratri Night One: Garba Under the Lights',
+    )
+
+    expect(pass.querySelector('svg')).toHaveClass('max-sm:hidden')
+  })
+
   it('names each ticket by its event and says its state in words', async () => {
     await renderWallet([walletTicket()])
 
