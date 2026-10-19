@@ -381,6 +381,21 @@ describe('loadCatalogueOverview', () => {
     await loadEventList({ page: 2 }, { client: stubClient({ list }) })
 
     expect(list.mock.calls[0][0]).not.toHaveProperty('startsAfter')
+    expect(list.mock.calls[0][0]).not.toHaveProperty('startsBefore')
+  })
+
+  it('passes a window bounded on both sides through as the API spells it', async () => {
+    const list = vi.fn().mockResolvedValue(liveListing)
+
+    await loadEventList(
+      { startsAfter: '2026-10-18T21:00:00.000Z', startsBefore: '2026-10-19T21:00:00.000Z' },
+      { client: stubClient({ list }) },
+    )
+
+    expect(list.mock.calls[0][0]).toMatchObject({
+      startsAfter: '2026-10-18T21:00:00.000Z',
+      startsBefore: '2026-10-19T21:00:00.000Z',
+    })
   })
 })
 

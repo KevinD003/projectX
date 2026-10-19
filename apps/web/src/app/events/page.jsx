@@ -30,6 +30,7 @@ import { EmptyState } from '../../components/ui.jsx'
 import { listingRobots } from '../../lib/site-seo.js'
 
 import { OVERVIEW_LOOKBACK_MS, loadCatalogueFacets, loadEventList } from '../../lib/api.js'
+import { notYetOver } from '../../lib/home-sections.js'
 import { describeCategories } from '../../lib/catalog.js'
 import {
   buildEventsHref,
@@ -156,26 +157,66 @@ function resultSummary(pagination, filters, region = null) {
   return `${pagination.total} ${kind}${noun}${placePhrase(filters, region)}${whenPhrase(filters)}${language}${onSale}${matching}`
 }
 
+/** How many of the nights already under way the listing reads, at most. */
+const ON_NOW_READ = 48
+
 /**
- * Where the listing starts reading when the visitor has not chosen dates.
+ * Whether the visitor chose the days themselves: a named span ("Today",
+ * "This weekend") or a date range.
+ *
+ * @param {object} filters The listing's filters.
+ * @returns {boolean} True when they did.
+ */
+function hasChosenDates(filters) {
+  return Boolean(filters.when || filters.from || filters.to)
+}
+
+/**
+ * The listing's own read: what is still to start.
  *
  * The public set keeps a night that has passed until its organiser closes
- * it, and soonest-first those come first: a visitor opening "All events" on a
- * Monday would page through last Friday's finished nights, each "Not on sale
- * now", before reaching anything they could go to. So with no date filter the
- * listing reads from a day before now, as the home page does
- * (`loadCatalogueOverview`): far enough back to keep a night that is on right
- * now, and no further. A chosen day or span ("Today", "This weekend", a date
- * range) is the visitor's own window and is left as they set it.
+ * it, and soonest-first those came first: a visitor opening "All events" on
+ * a Monday paged through last Friday's finished nights, each "Not on sale
+ * now", before reaching anything they could go to. So with no date chosen
+ * the listing starts at the moment of the request. A chosen day or span is
+ * the visitor's own window and is left as they set it.
  *
  * @param {object} filters The listing's filters.
  * @param {Date} now The moment of the request.
  * @returns {object} The filters, with `startsAfter` when no date was chosen.
  */
-export function withListingWindow(filters, now) {
-  if (filters.when || filters.from || filters.to) return filters
+export function listingWindow(filters, now) {
+  if (hasChosenDates(filters)) return filters
 
-  return { ...filters, startsAfter: new Date(now.getTime() - OVERVIEW_LOOKBACK_MS).toISOString() }
+  return { ...filters, startsAfter: now.toISOString() }
+}
+
+/**
+ * The nights under way right now: started in the last day
+ * (`OVERVIEW_LOOKBACK_MS`, the home page's reach) and not yet over
+ * (`notYetOver`). The listing shows them first on its first page and counts
+ * them in its total, so a night that is on now is never lost by starting
+ * the listing at now. Nothing when dates were chosen, and nothing from the
+ * sample catalogue, which has no "now" to read from.
+ *
+ * @param {object} filters The listing's filters.
+ * @param {Date} now The moment of the request.
+ * @returns {Promise<object[]>} The summaries, soonest first.
+ */
+export async function loadOnNow(filters, now) {
+  if (hasChosenDates(filters)) return []
+
+  const result = await loadEventList({
+    ...filters,
+    page: 1,
+    perPage: ON_NOW_READ,
+    startsAfter: new Date(now.getTime() - OVERVIEW_LOOKBACK_MS).toISOString(),
+    startsBefore: now.toISOString(),
+  })
+
+  if (result?.usedFallback || !Array.isArray(result?.events)) return []
+
+  return notYetOver(result.events, now.getTime())
 }
 
 /**
@@ -210,9 +251,10 @@ export default async function EventsPage({ searchParams }) {
   // Both are asked for at once with the filters as the URL gave them; in the
   // rare case that changes them, the listing is asked for again.
   const now = new Date()
-  const [facetResult, asParsed] = await Promise.all([
+  const [facetResult, asParsed, onNowAsParsed] = await Promise.all([
     loadCatalogueFacets(),
-    loadEventList(withListingWindow(parsed, now)),
+    loadEventList(listingWindow(parsed, now)),
+    loadOnNow(parsed, now),
   ])
   // When only the facets fell back to the sample catalogue, they are not the
   // catalogue the listing was read from, so they decide nothing: the URL's
@@ -224,9 +266,15 @@ export default async function EventsPage({ searchParams }) {
     : (facetResult.facets ?? {})
   const filters = reconcileFilters(parsed, facets)
   const changed = ['region', 'city', 'language'].some((name) => filters[name] !== parsed[name])
-  const listing = changed ? await loadEventList(withListingWindow(filters, now)) : asParsed
+  const [listing, onNow] = changed
+    ? await Promise.all([loadEventList(listingWindow(filters, now)), loadOnNow(filters, now)])
+    : [asParsed, onNowAsParsed]
 
-  const { events, pagination, usedFallback } = listing
+  const { pagination: upcoming, usedFallback } = listing
+  // The nights on now lead the first page and count in the total; the pages
+  // themselves are the upcoming listing's.
+  const events = upcoming.page === 1 ? [...onNow, ...listing.events] : listing.events
+  const pagination = { ...upcoming, total: upcoming.total + onNow.length }
   const categories = describeCategories(facets.categories ?? [])
   const regions = Array.isArray(facets.regions) ? facets.regions : []
   const region = regions.find((entry) => regionValue(entry) === filters.region) ?? null

@@ -201,6 +201,7 @@ export async function loadEventList(filters = {}, options = {}) {
           // its organiser opened sales.
           ...eventListQuery(filters),
           ...(filters.startsAfter ? { startsAfter: filters.startsAfter } : {}),
+          ...(filters.startsBefore ? { startsBefore: filters.startsBefore } : {}),
         },
         callOptions(),
       )
