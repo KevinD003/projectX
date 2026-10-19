@@ -37,18 +37,10 @@ import { apiFetch } from '../lib/api-fetch.js'
 import { fieldIssues, refusalSentence } from '../lib/refusal.js'
 import { formatAmount, formatPrice } from '../lib/pricing.js'
 import { blankTierForm, sessionLabel, toTierForm } from '../lib/tier-form.js'
+import { TIER_STATUS } from '../lib/tier-status.js'
 
 /** What a tier's line adds when its quantity is an allowance an import set. */
 export const ALLOWANCE_NOTE = '(an allowance the import set: buyers see no count of what is left)'
-
-/** How each tier status reads. */
-const TIER_STATUS = Object.freeze({
-  DRAFT: ['Not on sale (draft)', 'neutral'],
-  ON_SALE: ['On sale', 'success'],
-  PAUSED: ['Paused', 'warning'],
-  SOLD_OUT: ['Sold out', 'info'],
-  CLOSED: ['Sales closed', 'neutral'],
-})
 
 /**
  * A moment in a zone, as a person reads it.

@@ -2273,6 +2273,9 @@ const PHASE_4_SURFACES = Object.freeze([
       await expect(
         page.getByRole('img', { name: 'Page views and visitors per day (UTC)', exact: true }),
       ).toBeVisible()
+      // The per-day table is folded under the chart; opened, it is measured too.
+      await expect(page.getByRole('table', { name: 'Visits per day (UTC)' })).toBeHidden()
+      await page.getByText('Visits per day, as a table', { exact: true }).click()
       await expect(page.getByRole('table', { name: 'Visits per day (UTC)' })).toBeVisible()
       await expect(
         page.getByRole('table', { name: 'Where page views came from', exact: true }),
