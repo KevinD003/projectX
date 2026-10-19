@@ -285,3 +285,105 @@
   animation-duration: 150ms;
   animation-timing-function: var(--ease-out);
 }
+
+/*
+ * The shared poster (components/event-art.jsx, `transitionName`): a poster on
+ * the listing becomes the event page's hero, moving and scaling as one object
+ * over 300ms (`--duration-page`) on the morphing curve. Reduced motion stops
+ * it with every other view transition.
+ */
+::view-transition-group(.poster-morph) {
+  animation-duration: var(--duration-page);
+  animation-timing-function: var(--ease-in-out);
+}
+
+/*
+ * The house poster at small sizes (components/poster.jsx). The poster is its
+ * own size container: below 11rem across it drops the line under the title
+ * and the snipe, and below 7rem the title too, leaving the category's mark on
+ * the plate. A thumbnail is a swatch, not a poster too small to read.
+ */
+.poster-mark {
+  display: none;
+}
+
+@container (max-width: 11rem) {
+  .poster-small-print {
+    display: none;
+  }
+}
+
+@container (max-width: 7rem) {
+  .poster-lettering {
+    display: none;
+  }
+
+  .poster-mark {
+    display: flex;
+  }
+}
+
+/*
+ * Plate registration (components/poster.jsx, `registration`).
+ *
+ * The event page's poster and the home page's feature print themselves once
+ * as they arrive, the way a screen-printed flyer lands colour by colour: a
+ * magenta and a gold impression of the title, and the foil impression of the
+ * shape, start 6px out of register and slide into it over 450ms on the
+ * theme's exit curve, then the title's impressions drop out behind the key
+ * plate. The key plate (the title a reader reads) never moves or fades. At
+ * rest, and always under reduced motion, the impressions are hidden, so
+ * nothing is ever left misregistered.
+ */
+.poster-impression {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-registration] .poster-impression {
+    animation: poster-impression 450ms var(--ease-out) both;
+  }
+
+  [data-registration] [data-impression='magenta'] {
+    --impression-x: -6px;
+    --impression-y: 4px;
+  }
+
+  [data-registration] [data-impression='gold'] {
+    --impression-x: 6px;
+    --impression-y: -4px;
+    animation-delay: 60ms;
+  }
+
+  [data-registration] [data-plate='ghost'] {
+    animation: poster-ghost 450ms var(--ease-out) both;
+  }
+}
+
+@keyframes poster-impression {
+  0% {
+    opacity: 1;
+    transform: translate(var(--impression-x, 0), var(--impression-y, 0));
+  }
+
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* In the drawing's own units: 1.5 of its 100 is about 6px on a 400px poster. */
+@keyframes poster-ghost {
+  from {
+    transform: translate(1.5px, -1.5px);
+  }
+
+  to {
+    transform: none;
+  }
+}

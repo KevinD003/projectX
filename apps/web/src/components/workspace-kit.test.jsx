@@ -119,7 +119,7 @@ describe('PosterThumb', () => {
     const thumb = container.querySelector('[data-slot="poster-thumb"]')
 
     expect(thumb.getAttribute('aria-hidden')).toBe('true')
-    expect(thumb.querySelector('svg[data-slot="poster"]')).not.toBeNull()
+    expect(thumb.querySelector('[data-slot="poster"]')).not.toBeNull()
     // Hidden, so it is not announced as an image before the card's heading.
     expect(screen.queryByRole('img')).toBeNull()
   })
@@ -145,7 +145,7 @@ describe('PosterThumb', () => {
 
     const thumb = container.querySelector('[data-slot="poster-thumb"]')
 
-    expect(thumb.querySelector('svg[data-slot="poster"]')).toBeNull()
+    expect(thumb.querySelector('[data-slot="poster"]')).toBeNull()
     expect(thumb.querySelector('img')).toHaveAttribute('alt', '')
     expect(screen.queryByRole('img')).toBeNull()
   })

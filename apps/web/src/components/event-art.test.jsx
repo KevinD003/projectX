@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { EventArt } from './event-art.jsx'
+import { EventArt, posterTransitionName } from './event-art.jsx'
 
 const COVER = {
   id: 'cmedia0000000000000000001',
@@ -40,8 +40,10 @@ describe('EventArt', () => {
     const { container } = render(<EventArt event={{ ...EVENT, coverImage: null }} />)
 
     expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('svg[data-slot="poster"]')).not.toBeNull()
-    expect(screen.getByRole('img', { name: /for Garba Night$/u })).toBeInTheDocument()
+    expect(container.querySelector('[data-slot="poster"] > svg')).not.toBeNull()
+    expect(
+      screen.getByRole('img', { name: 'Garba & Dandiya poster for Garba Night' }),
+    ).toBeInTheDocument()
   })
 
   it.each([
@@ -52,10 +54,10 @@ describe('EventArt', () => {
     const { container } = render(<EventArt event={{ ...EVENT, coverImage: { ...COVER, url } }} />)
 
     expect(container.querySelector('img')).toBeNull()
-    expect(container.querySelector('svg[data-slot="poster"]')).not.toBeNull()
+    expect(container.querySelector('[data-slot="poster"] > svg')).not.toBeNull()
   })
 
-  it('uses the hero frame for the event page', () => {
+  it('uses the hero frame for the event page, sized for the column it sits in', () => {
     const { container } = render(
       <EventArt
         event={{ ...EVENT, coverImage: COVER }}
@@ -66,8 +68,41 @@ describe('EventArt', () => {
     )
     const frame = container.querySelector('[data-slot="event-art"]')
 
-    expect(frame.className).toContain('lg:aspect-[16/7]')
-    expect(frame.className).toContain('lg:h-full')
-    expect(container.querySelector('img')).toHaveAttribute('sizes', '100vw')
+    expect(frame).toHaveClass('aspect-[5/4]', 'lg:aspect-[4/5]', 'lg:h-full')
+    expect(container.querySelector('img')).toHaveAttribute(
+      'sizes',
+      '(min-width: 1024px) 34rem, 100vw',
+    )
+  })
+
+  it('frames a wall poster at 4:5, for a four-up wall', () => {
+    const { container } = render(
+      <EventArt event={{ ...EVENT, coverImage: COVER }} variant="poster" />,
+    )
+
+    expect(container.querySelector('[data-slot="event-art"]')).toHaveClass('aspect-[4/5]')
+    expect(container.querySelector('img')).toHaveAttribute(
+      'sizes',
+      '(min-width: 1280px) 20rem, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw',
+    )
+  })
+
+  it('prints a poster’s plates into register only when asked, and never a photograph', () => {
+    const { container, rerender } = render(<EventArt event={EVENT} variant="hero" registration />)
+
+    expect(container.querySelector('[data-slot="poster"]')).toHaveAttribute('data-registration', '')
+
+    rerender(<EventArt event={{ ...EVENT, coverImage: COVER }} variant="hero" registration />)
+    expect(container.querySelector('[data-registration]')).toBeNull()
+  })
+
+  it('names the picture for the shared morph only when asked', () => {
+    expect(posterTransitionName(EVENT)).toBe('poster-garba-night')
+    expect(posterTransitionName({ slug: 'raas/../x y' })).toBe('poster-raas----x-y')
+
+    const { container } = render(<EventArt event={EVENT} transitionName />)
+
+    // The transition wraps the picture without adding a box of its own.
+    expect(container.firstElementChild).toHaveAttribute('data-slot', 'poster')
   })
 })
