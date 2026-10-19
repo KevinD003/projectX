@@ -22,6 +22,7 @@ import { Icon } from '@desi-event/ui/icons'
 import { TEXT_LINK } from './link-classes.js'
 import { SOCIAL_HOSTS, SOCIAL_NETWORK_LABELS, SOCIAL_NETWORKS } from '../lib/event-content.js'
 import { LINK_REL, isSafeHref } from '../lib/rich-text.js'
+import { zoneWords } from '../lib/format.js'
 import { zoneAbbreviation } from '../lib/zoned-time.js'
 
 /** The heading every section here uses. */
@@ -109,7 +110,7 @@ export function EventLineUp({ performers = [], artists = [] }) {
  * @param {string} time A 24-hour `HH:mm`.
  * @returns {string} The 12-hour reading, or the time as given when it is malformed.
  */
-function twelveHour(time) {
+export function twelveHour(time) {
   const match = /^(\d{2}):(\d{2})$/u.exec(String(time ?? ''))
 
   if (!match) return String(time ?? '')
@@ -133,6 +134,7 @@ export function EventRunningOrder({ items = [], timezone, startsAt = null }) {
   if (!Array.isArray(items) || items.length === 0) return null
 
   const zone = zoneAbbreviation(timezone, startsAt ? new Date(startsAt) : new Date())
+  const words = zoneWords(timezone, startsAt ?? new Date())
 
   return (
     <Section id="running-order-heading" title="Running order">
@@ -151,8 +153,10 @@ export function EventRunningOrder({ items = [], timezone, startsAt = null }) {
         ))}
       </ol>
       <p className="mt-4 text-sm text-ink-muted">
-        Local time at the venue ({timezone}). Where the event runs over several nights, the same
-        order applies to each.
+        {words
+          ? `Times are ${words}, the local time at the venue.`
+          : 'Times are local to the venue.'}{' '}
+        Where the event runs over several nights, the same order applies to each.
       </p>
     </Section>
   )

@@ -20,7 +20,7 @@
 
 import Link from 'next/link'
 
-import { formatTimeZoneLabel, toDateTimeAttribute } from '../lib/format.js'
+import { formatTimeZoneLabel, toDateTimeAttribute, zoneWords } from '../lib/format.js'
 import { trafficAttributes } from '../lib/traffic-client.js'
 import {
   formatNightTime,
@@ -97,9 +97,7 @@ export function SessionList({
   now = new Date(),
   traffic = null,
 }) {
-  const zone = sessions[0]
-    ? formatTimeZoneLabel({ startsAt: sessions[0].startsAt, timezone: sessions[0].timezone })
-    : null
+  const zone = sessions[0] ? zoneWords(sessions[0].timezone, sessions[0].startsAt) : null
   // Nights in more than one zone: no one sentence is true of every time, so
   // each time says its own zone instead.
   const zoned = new Set(sessions.map((session) => session.timezone).filter(Boolean)).size > 1
@@ -113,8 +111,9 @@ export function SessionList({
         </p>
       ) : (
         <p className="text-sm text-ink-muted">
-          All times are {zone ? `${zone} — ` : ''}the local time at the venue
-          {sessions[0]?.timezone ? ` (${sessions[0].timezone})` : ''}, not your own.
+          {zone
+            ? `All times are ${zone}, the local time at the venue, not yours.`
+            : 'All times are the local time at the venue, not yours.'}
         </p>
       )}
       <ol aria-label="Nights" className="mt-4 space-y-4">

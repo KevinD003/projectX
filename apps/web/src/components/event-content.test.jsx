@@ -69,6 +69,13 @@ describe('the running order', () => {
     expect(items[1]).toHaveTextContent('7:30 PM EDT')
     expect(items[1]).toHaveTextContent('Please stand.')
     expect(items[1].querySelector('time')).toHaveAttribute('dateTime', '19:30')
+    // The note names the zone in words, never the database's name.
+    expect(
+      within(section).getByText(
+        'Times are Eastern Time (EDT), the local time at the venue. Where the event runs over several nights, the same order applies to each.',
+      ),
+    ).toBeInTheDocument()
+    expect(section.textContent).not.toMatch(/America\/New_York|—/u)
   })
 
   it('renders nothing for an empty order', () => {

@@ -20,7 +20,7 @@
 import { Icon } from '@desi-event/ui/icons'
 
 import { loadEventBySlug, loadSeatMap } from '../../../../../lib/api.js'
-import { formatEventLocation, formatTimeZoneLabel } from '../../../../../lib/format.js'
+import { formatEventLocation, formatTimeZoneLabel, zoneWords } from '../../../../../lib/format.js'
 import { signInHref } from '../../../../../lib/next-path.js'
 import { readSession } from '../../../../../lib/session.js'
 import { loadTeamSeatMap, mayBookTeamTiers } from '../../../../../lib/team-booking.js'
@@ -88,6 +88,7 @@ export default async function SeatPage({ params }) {
     timezone: map.timezone,
   }
   const zone = formatTimeZoneLabel({ startsAt: map.startsAt, timezone: map.timezone })
+  const zoneName = zoneWords(map.timezone, map.startsAt)
   const locality = event.venue
     ? [event.venue.name, [event.venue.city, event.venue.region].filter(Boolean).join(', ')]
         .filter(Boolean)
@@ -138,7 +139,9 @@ export default async function SeatPage({ params }) {
             </li>
           </ul>
           <p className="mt-3 text-caption text-ink-inverse-muted">
-            All times are the local time at the venue ({map.timezone}).
+            {zoneName
+              ? `All times are ${zoneName}, the local time at the venue.`
+              : 'All times are the local time at the venue.'}
           </p>
           <CheckoutRoute eventHref={`/events/${event.slug}`} choose="Seats" />
         </div>
