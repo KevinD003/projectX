@@ -4,7 +4,7 @@
  * ## Simulated, said once and plainly
  *
  * No payment on this site moves money. That is said near the top in a full
- * sentence, and again in each paid order's own status ("Paid — simulated"),
+ * sentence, and again in each paid order's own status ("Paid (simulated)"),
  * because a notice is skimmed and a status is read. Neither says a payment
  * "succeeded".
  *
@@ -29,9 +29,10 @@
 
 import Link from 'next/link'
 
+import { LEDGER_ROW, LedgerDate } from '../../../components/ledger-date.jsx'
 import { Empty } from '../../../components/page-state.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { PosterThumb, TEXT_LINK } from '../../../components/workspace-kit.jsx'
+import { TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { getMyOrders } from '../../../lib/account-api.js'
 import { formatAmount } from '../../../lib/pricing.js'
 import {
@@ -62,47 +63,45 @@ const PAGER =
   'inline-flex min-h-11 items-center justify-center rounded-control border border-action-secondary-line bg-action-secondary px-4 text-sm font-semibold text-action-secondary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-secondary-hover focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2'
 
 /**
- * One fact on an order card, omitted when there is nothing to say.
+ * One fact on an order row, omitted when there is nothing to say.
  *
  * @param {object} props Component props.
  * @param {string} props.term What it is.
  * @param {ReactNode} props.children The value.
- * @returns {JSX.Element|null} The row, or nothing.
+ * @returns {JSX.Element|null} The pair, or nothing.
  */
 function Detail({ term, children }) {
   if (children === '' || children === null || children === undefined) return null
 
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-medium text-ink-subtle">{term}</dt>
-      <dd className="mt-0.5 font-medium break-words text-ink">{children}</dd>
+      <dt className="text-caption text-ink-muted">{term}</dt>
+      <dd className="mt-0.5 font-semibold break-words text-ink tabular-nums">{children}</dd>
     </div>
   )
 }
 
 /**
- * One order.
+ * One order, as a row of the ledger.
  *
  * The event is the heading and the link, because that is what somebody is
  * looking for; the reference is beside it for anybody who has one to match.
+ * No picture: the same poster repeated down a history says nothing the title
+ * does not.
  *
  * @param {object} props Component props.
  * @param {object} props.order One order from `GET /v1/orders`.
- * @returns {JSX.Element} The card.
+ * @returns {JSX.Element} The row.
  */
 function OrderCard({ order }) {
   const count = ticketCount(order)
 
   return (
-    <li className="flex flex-col overflow-hidden rounded-card border border-line bg-surface-raised shadow-card transition-shadow duration-(--duration-base) ease-standard focus-within:outline-2 focus-within:outline-focus focus-within:outline-offset-2 hover:shadow-card-hover sm:flex-row">
-      {/* An order without an event to draw from has no poster rather than a
-          made-up one. */}
-      {order.event?.slug ? (
-        <PosterThumb event={order.event} className="h-24 sm:h-auto sm:w-36" />
-      ) : null}
-      <div className="min-w-0 flex-1 p-4 sm:p-5">
+    <li className={LEDGER_ROW}>
+      <LedgerDate startsAt={order.event?.startsAt} timeZone={order.event?.timezone} />
+      <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <h2 className="text-lg font-semibold text-ink">
+          <h2 className="font-display text-h3 font-bold text-ink">
             <Link href={orderHref(order.reference)} className={TEXT_LINK}>
               {orderTitle(order)}
             </Link>
@@ -110,7 +109,7 @@ function OrderCard({ order }) {
           <StatusChip meaning={orderStatusFor(order)} />
         </div>
 
-        <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.6fr)_minmax(0,1fr)]">
           <Detail term="When">{eventWhenText(order.event)}</Detail>
           <Detail term="Reference">
             <span className="font-mono">{order.reference}</span>
@@ -237,16 +236,13 @@ export default async function OrdersPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Your account
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Your orders</h1>
+      <h1 className="text-h2 font-semibold text-ink">Your orders</h1>
       <p className="mt-2 text-ink-muted">
         Orders placed while signed in to this account. Open one to see what it was for, what it cost
         and the tickets it gave you.
       </p>
 
-      <p className="mt-4 rounded-card border border-status-mock/25 bg-status-mock-soft p-4 text-sm text-ink">
+      <p className="mt-6 max-w-prose rounded-control bg-surface-subtle p-4 text-sm text-ink">
         <strong className="font-semibold">Payments on this site are simulated.</strong> No card was
         charged and no money moved for any order here, whatever its status says.
       </p>
@@ -284,7 +280,7 @@ export default async function OrdersPage({ searchParams }) {
       {!failure && orders.length > 0 ? (
         <>
           <Range shown={orders.length} pagination={counters} />
-          <ul className="mt-4 grid gap-3">
+          <ul className="mt-2 border-t border-line-strong">
             {orders.map((order) => (
               <OrderCard key={order.reference} order={order} />
             ))}

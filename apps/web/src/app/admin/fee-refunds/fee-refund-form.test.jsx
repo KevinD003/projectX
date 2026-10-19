@@ -141,7 +141,7 @@ describe('finding the order', () => {
       '/admin/events/cevent0000000000000000001',
     )
     expect(screen.getByText('At the venue')).toBeInTheDocument()
-    expect(screen.getByText('Paid — simulated')).toBeInTheDocument()
+    expect(screen.getByText('Paid (simulated)')).toBeInTheDocument()
     expect(screen.getByText('Booking fee charged').nextSibling).toHaveTextContent('$7.00')
     expect(screen.getByText('Waived with a referral code').nextSibling).toHaveTextContent('$0.00')
     expect(screen.getByText('Already refunded').nextSibling).toHaveTextContent('$0.00')

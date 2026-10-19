@@ -61,6 +61,35 @@ describe('page transitions', () => {
     expect(workspace).toMatch(/animation-timing-function:\s*var\(--ease-out\)/u)
   })
 
+  it('slide a step through checkout 12px on one axis, forward one way and back the other', () => {
+    const slide = (name) => {
+      const at = css.indexOf(`@keyframes ${name}`)
+
+      expect(at, `no keyframes ${name}`).toBeGreaterThan(-1)
+      return css.slice(at, css.indexOf('}\n}', at))
+    }
+
+    expect(ruleFor(css, '::view-transition-old(.page-forward)')).toMatch(
+      /animation:\s*180ms var\(--ease-out\) both page-slide-to-start/u,
+    )
+    expect(ruleFor(css, '::view-transition-new(.page-forward)')).toMatch(
+      /animation:\s*250ms var\(--ease-out\) both page-slide-from-end/u,
+    )
+    expect(ruleFor(css, '::view-transition-old(.page-back)')).toMatch(
+      /animation:\s*180ms var\(--ease-out\) both page-slide-to-end/u,
+    )
+    expect(ruleFor(css, '::view-transition-new(.page-back)')).toMatch(
+      /animation:\s*250ms var\(--ease-out\) both page-slide-from-start/u,
+    )
+    expect(ruleFor(css, '::view-transition-group(.page-forward)')).toMatch(
+      /animation-duration:\s*250ms/u,
+    )
+    expect(slide('page-slide-to-start')).toMatch(/opacity:\s*0;\s*translate:\s*-12px 0;/u)
+    expect(slide('page-slide-from-end')).toMatch(/opacity:\s*0;\s*translate:\s*12px 0;/u)
+    expect(slide('page-slide-to-end')).toMatch(/opacity:\s*0;\s*translate:\s*12px 0;/u)
+    expect(slide('page-slide-from-start')).toMatch(/opacity:\s*0;\s*translate:\s*-12px 0;/u)
+  })
+
   it('stay under the theme’s ceiling for interface feedback', () => {
     const durations = [...css.matchAll(/::view-transition[^{]*\{[^}]*?(\d+)ms/gu)].map((match) =>
       Number(match[1]),

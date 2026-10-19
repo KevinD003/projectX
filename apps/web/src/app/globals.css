@@ -285,3 +285,59 @@
   animation-duration: 150ms;
   animation-timing-function: var(--ease-out);
 }
+
+/*
+ * Direction, for a step forward or back through checkout (a link carrying the
+ * `nav-forward` or `nav-back` transition type): the old page fades out 12px
+ * towards where it came from, the new one slides in 12px from where it is
+ * going. Short, on one axis, and stopped by reduced motion with the rest.
+ */
+::view-transition-group(.page-forward),
+::view-transition-group(.page-back) {
+  animation-duration: 250ms;
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-old(.page-forward) {
+  animation: 180ms var(--ease-out) both page-slide-to-start;
+}
+
+::view-transition-new(.page-forward) {
+  animation: 250ms var(--ease-out) both page-slide-from-end;
+}
+
+::view-transition-old(.page-back) {
+  animation: 180ms var(--ease-out) both page-slide-to-end;
+}
+
+::view-transition-new(.page-back) {
+  animation: 250ms var(--ease-out) both page-slide-from-start;
+}
+
+@keyframes page-slide-to-start {
+  to {
+    opacity: 0;
+    translate: -12px 0;
+  }
+}
+
+@keyframes page-slide-from-end {
+  from {
+    opacity: 0;
+    translate: 12px 0;
+  }
+}
+
+@keyframes page-slide-to-end {
+  to {
+    opacity: 0;
+    translate: 12px 0;
+  }
+}
+
+@keyframes page-slide-from-start {
+  from {
+    opacity: 0;
+    translate: -12px 0;
+  }
+}

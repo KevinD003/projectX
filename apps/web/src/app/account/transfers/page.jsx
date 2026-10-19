@@ -57,9 +57,10 @@
 
 import Link from 'next/link'
 
+import { LEDGER_ROW, LedgerDate } from '../../../components/ledger-date.jsx'
 import { Empty } from '../../../components/page-state.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { PosterThumb, TEXT_LINK } from '../../../components/workspace-kit.jsx'
+import { TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { getMyTickets } from '../../../lib/organizer-api.js'
 import { readSession } from '../../../lib/session.js'
 import { groupTickets } from '../../../lib/wallet.js'
@@ -127,7 +128,7 @@ function Detail({ term, children }) {
 
   return (
     <div className="flex flex-wrap gap-x-2">
-      <dt className="text-ink-subtle">{term}</dt>
+      <dt className="text-ink-muted">{term}</dt>
       <dd className="font-medium text-ink">{children}</dd>
     </div>
   )
@@ -146,7 +147,7 @@ function Detail({ term, children }) {
 function Section({ id, title, description, children }) {
   return (
     <section aria-labelledby={id} className="mt-10">
-      <h2 id={id} className="text-xl font-semibold text-ink">
+      <h2 id={id} className="font-display text-h3 font-bold text-ink">
         {title}
       </h2>
       {description ? <p className="mt-1 text-sm text-ink-muted">{description}</p> : null}
@@ -174,11 +175,11 @@ function OfferCard({ ticket, now }) {
   const lapsed = Date.parse(offer.expiresAt ?? '') < now.getTime()
 
   return (
-    <li className="flex flex-col overflow-hidden rounded-card border border-line bg-surface-raised shadow-card sm:flex-row">
-      <PosterThumb event={ticket.event} className="h-24 sm:h-auto sm:w-36" />
-      <div className="min-w-0 flex-1 p-4 sm:p-5">
+    <li className={LEDGER_ROW}>
+      <LedgerDate startsAt={ticket.event?.startsAt} timeZone={zoneOf(ticket)} />
+      <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <h3 className="text-lg font-semibold text-ink">{ticket.event.title}</h3>
+          <h3 className="font-display text-h3 font-bold text-ink">{ticket.event.title}</h3>
           <StatusChip meaning={ticketStatusMeaning(ticket.status)} />
         </div>
 
@@ -216,11 +217,11 @@ function OfferCard({ ticket, now }) {
  */
 function TicketCard({ ticket }) {
   return (
-    <li className="flex flex-col overflow-hidden rounded-card border border-line bg-surface-raised shadow-card transition-shadow duration-(--duration-base) ease-standard focus-within:outline-2 focus-within:outline-focus focus-within:outline-offset-2 hover:shadow-card-hover sm:flex-row">
-      <PosterThumb event={ticket.event} className="h-24 sm:h-auto sm:w-36" />
-      <div className="min-w-0 flex-1 p-4 sm:p-5">
+    <li className={LEDGER_ROW}>
+      <LedgerDate startsAt={ticket.event?.startsAt} timeZone={zoneOf(ticket)} />
+      <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <h3 className="text-lg font-semibold text-ink">
+          <h3 className="font-display text-h3 font-bold text-ink">
             <Link href={`/tickets/${encodeURIComponent(ticket.id)}`} className={TEXT_LINK}>
               {ticket.event.title}
             </Link>
@@ -282,11 +283,8 @@ export default async function TransfersPage() {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Your account
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Transfers</h1>
-      <p className="mt-2 text-ink-muted">
+      <h1 className="text-h2 font-semibold text-ink">Transfers</h1>
+      <p className="mt-2 max-w-prose text-ink-muted">
         Tickets you are offering to somebody, tickets you have handed on, and tickets somebody
         handed to you. To offer a ticket, open it from{' '}
         <Link href="/tickets" className={LINK}>
@@ -326,7 +324,7 @@ export default async function TransfersPage() {
           title="Offers you have made"
           description="Waiting for the person you offered them to. Each one can be withdrawn from the ticket’s page."
         >
-          <ul className="mt-4 grid gap-3">
+          <ul className="mt-4 border-t border-line-strong">
             {offers.map((ticket) => (
               <OfferCard key={ticket.id} ticket={ticket} now={now} />
             ))}
@@ -336,7 +334,7 @@ export default async function TransfersPage() {
 
       {!failure ? (
         <Section id="transfers-accept" title="Accept a ticket">
-          <p className="mt-2 text-sm text-ink">
+          <p className="mt-2 max-w-prose text-sm text-ink">
             {deliveryMode ? `${HOW_AN_OFFER_ARRIVES[deliveryMode]} ` : null}
             If you have one,{' '}
             <Link href="/tickets/accept" className={LINK}>
@@ -349,7 +347,7 @@ export default async function TransfersPage() {
 
       {given ? (
         <Section id="transfers-given" title={given.label} description={given.description}>
-          <ul className="mt-4 grid gap-3">
+          <ul className="mt-4 border-t border-line-strong">
             {given.tickets.map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))}
@@ -363,7 +361,7 @@ export default async function TransfersPage() {
           title={handedOn.label}
           description={HANDED_ON_DESCRIPTION}
         >
-          <ul className="mt-4 grid gap-3">
+          <ul className="mt-4 border-t border-line-strong">
             {handedOn.tickets.map((ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))}
@@ -373,7 +371,7 @@ export default async function TransfersPage() {
 
       {!failure ? (
         <Section id="transfers-seats" title="Reserved seats">
-          <p className="mt-2 text-sm text-ink">
+          <p className="mt-2 max-w-prose text-sm text-ink">
             A reserved seat goes with its ticket: whoever accepts it holds the same seat.
           </p>
         </Section>

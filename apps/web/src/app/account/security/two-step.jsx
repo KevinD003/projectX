@@ -350,7 +350,7 @@ export function TwoStep({ required, factors }) {
           </h3>
           <p className="text-ink">
             Each one works once, instead of a code from your app, if you lose your phone. They will
-            not be shown again — the service keeps only a fingerprint of each.
+            not be shown again: the service keeps only a fingerprint of each.
           </p>
           <ul className="grid grid-cols-2 gap-2 font-mono text-sm text-ink sm:grid-cols-3">
             {recoveryCodes.map((recovery) => (

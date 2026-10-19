@@ -419,7 +419,7 @@ test.describe('the pass, from the holder’s screen to the door’s camera', () 
 
     await expect(drawing).toBeVisible()
     await expect(holder.getByRole('button', { name: 'Hide pass' })).toBeFocused()
-    await expect(holder.getByText(/as a screenshot — can use it to get in once/iu)).toBeVisible()
+    await expect(holder.getByText(/as a screenshot, can use it to get in once/iu)).toBeVisible()
 
     const path = await drawing.locator('path').getAttribute('d')
     const size = Number((await drawing.getAttribute('viewBox')).split(' ')[2])

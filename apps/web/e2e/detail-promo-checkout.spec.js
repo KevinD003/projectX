@@ -181,9 +181,9 @@ test.describe.serial('a night’s tickets, a promo code and a guest’s name', (
     const who = buyer.getByRole('group', { name: 'Who is going?' })
 
     await expect(who.getByRole('textbox')).toHaveCount(2)
-    await who.getByLabel(new RegExp(`^Ticket 1 of 2 — ${TIER}, Night 2 · `, 'u')).fill(GUEST)
+    await who.getByLabel(new RegExp(`^Ticket 1 of 2: ${TIER}, Night 2 · `, 'u')).fill(GUEST)
     await expect(
-      who.getByLabel(new RegExp(`^Ticket 2 of 2 — ${TIER}, Night 2 · `, 'u')),
+      who.getByLabel(new RegExp(`^Ticket 2 of 2: ${TIER}, Night 2 · `, 'u')),
     ).toHaveValue('')
 
     const code = summary.getByLabel('Promo code')
