@@ -171,7 +171,7 @@ const POSTING_REFUSAL =
 
 /** What the team page says beside its invite form. */
 const POSTING_SENTENCE =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
 
 /** What a member of the organisation is told on its event's review page. */
 const CONFLICT_NOTICE =

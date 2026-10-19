@@ -989,10 +989,13 @@ function StructureControls({ layout, change }) {
                       Add a seat to row {row.label}
                     </Button>
 
+                    {/* A quiet removal: one per row would otherwise stack
+                        solid red buttons down the whole editor. */}
                     <Button
                       type="button"
                       size="sm"
-                      variant="danger"
+                      variant="ghost"
+                      className="text-status-danger hover:bg-status-danger-soft hover:text-status-danger"
                       onClick={() =>
                         change((draft) => {
                           draft.sections[sIndex].rows.splice(rIndex, 1)
@@ -1012,8 +1015,8 @@ function StructureControls({ layout, change }) {
               <Button
                 type="button"
                 size="sm"
-                variant="danger"
-                className="mt-4"
+                variant="ghost"
+                className="mt-4 text-status-danger hover:bg-status-danger-soft hover:text-status-danger"
                 onClick={() =>
                   change((draft) => {
                     draft.sections.splice(sIndex, 1)

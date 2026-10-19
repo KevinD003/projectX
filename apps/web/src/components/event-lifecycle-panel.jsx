@@ -101,8 +101,8 @@ const OFFERED = Object.freeze({
  */
 function ChecklistItem({ ready, title, blockers }) {
   return (
-    <li className="rounded-card border border-line bg-surface-raised shadow-card p-4">
-      <div className="flex flex-wrap items-center gap-2">
+    <li className="py-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {/* The word, not the colour. A tick alone is a shape a screen reader
             does not read and a colourblind person cannot tell from a cross. */}
         <Badge variant={ready ? 'success' : 'warning'} srLabel="Status:">
@@ -112,7 +112,7 @@ function ChecklistItem({ ready, title, blockers }) {
       </div>
 
       {blockers.length > 0 ? (
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted">
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted sm:ml-24">
           {blockers.map((blocker) => (
             <li key={blocker}>{blocker}</li>
           ))}
@@ -439,7 +439,7 @@ export function EventLifecyclePanel({
               Preview the public page
             </a>{' '}
             <span className="text-ink-muted">
-              — opens what a visitor sees. Before publication only your team can load it.
+              opens what a visitor sees. Before publication only your team can load it.
             </span>
           </p>
         </CardBody>
@@ -469,7 +469,9 @@ export function EventLifecyclePanel({
 
       <div>
         <h3 className="text-lg font-semibold text-ink">Before it can go public</h3>
-        <ul className="mt-3 space-y-3">
+        {/* One ruled checklist, not four cards: each line is a state word
+            and what it is about, with anything outstanding under it. */}
+        <ul data-slot="readiness" className="mt-3 divide-y divide-line border-y border-line">
           <ChecklistItem
             ready={readiness.organizerVerified}
             title="Your organisation is verified"

@@ -384,7 +384,7 @@ describe('adding a ticket type', () => {
     await user.click(screen.getByLabelText(/^Complimentary/))
 
     expect(screen.getByLabelText(/^Face value/, { selector: '#tier-price' })).toBeDisabled()
-    expect(screen.getByLabelText(/^Hidden — only your team can book it/)).toBeChecked()
+    expect(screen.getByLabelText(/^Hidden: only your team can book it/)).toBeChecked()
     expect(screen.getByLabelText(/^Shown on the event page/)).toBeDisabled()
   })
 

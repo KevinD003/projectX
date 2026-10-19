@@ -2417,16 +2417,16 @@ test.describe.serial('the Phase 2 screens, swept', () => {
       // slot and one question (`seedEventContent`), so the line-up and guest
       // steps are measured with their repeating rows drawn, not empty.
       for (const [step, heading, drawn] of [
-        [/^Step 3\s*Sessions$/u, 'Sessions', null],
-        [/^Step 4\s*Tickets$/u, 'Tickets', null],
-        [/^Step 5\s*Policies and access$/u, 'Policies and access', null],
-        [/^Step 6\s*Media$/u, 'Media', null],
+        [/^Step 3 Sessions$/u, 'Sessions', null],
+        [/^Step 4 Tickets$/u, 'Tickets', null],
+        [/^Step 5 Policies and access$/u, 'Policies and access', null],
+        [/^Step 6 Media$/u, 'Media', null],
         [
-          /^Step 7\s*Line-up and running order$/u,
+          /^Step 7 Line-up and running order$/u,
           'Line-up and running order',
           draftContent.performers[0].name,
         ],
-        [/^Step 8\s*Guest information$/u, 'Guest information', draftContent.faq[0].question],
+        [/^Step 8 Guest information$/u, 'Guest information', draftContent.faq[0].question],
       ]) {
         const button = steps.getByRole('button', { name: step })
 
@@ -2478,7 +2478,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
       const schedule = page
         .getByRole('navigation', { name: 'Editor steps' })
-        .getByRole('button', { name: /^Step 2\s*When and where$/u })
+        .getByRole('button', { name: /^Step 2 When and where$/u })
 
       await schedule.click()
       await expect(schedule).toHaveAttribute('aria-current', 'step')
@@ -2509,7 +2509,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
       const review = page
         .getByRole('navigation', { name: 'Editor steps' })
-        .getByRole('button', { name: /^Step 9\s*Review$/u })
+        .getByRole('button', { name: /^Step 9 Review$/u })
 
       await review.click()
       await expect(review).toHaveAttribute('aria-current', 'step')
@@ -2809,7 +2809,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
         const media = page
           .getByRole('navigation', { name: 'Editor steps' })
-          .getByRole('button', { name: /^Step 6\s*Media$/u })
+          .getByRole('button', { name: /^Step 6 Media$/u })
 
         await media.click()
         await expect(media).toHaveAttribute('aria-current', 'step')
@@ -4441,7 +4441,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
           const step = page
             .getByRole('navigation', { name: 'Editor steps' })
-            .getByRole('button', { name: /^Step 4\s*Tickets$/u })
+            .getByRole('button', { name: /^Step 4 Tickets$/u })
 
           await step.click()
           await expect(step).toHaveAttribute('aria-current', 'step')

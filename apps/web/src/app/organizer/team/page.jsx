@@ -77,6 +77,7 @@
 import Link from 'next/link'
 import { withoutAddresses } from '@desi-event/schemas'
 
+import { EmailAddress } from '../../../components/email-address.jsx'
 import { ScrollableTable } from '../../../components/money-figure.jsx'
 import { AsOf, Empty, Forbidden } from '../../../components/page-state.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
@@ -101,7 +102,7 @@ export const metadata = { title: 'Team and roles', robots: { index: false, follo
 
 /** What the page says beside the invite form about roles that post events. */
 export const POSTING_ROLES_SENTENCE =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
 
 /** What the Ownership section says about who can take it. */
 export const HEIR_SENTENCE = 'Ownership can go only to somebody who already creates events here.'
@@ -123,7 +124,7 @@ export const PLATFORM_HELD_TEAM_SENTENCE =
 
 /** What a platform administrator with no organisation and no imported events is told. */
 export const NO_PLATFORM_HELD_SENTENCE =
-  'You belong to no organisation, and no event has been imported, so The Desi Events — which holds imported events — has no door team to run. Organisers run their own teams.'
+  'You belong to no organisation, and no event has been imported, so The Desi Events, which holds imported events, has no door team to run. Organisers run their own teams.'
 
 /** Statuses whose door is closed for good: never offered to a new door scope. */
 const CLOSED_EVENT_STATUSES = new Set(['COMPLETED', 'CANCELLED', 'REJECTED', 'ARCHIVED', 'DELETED'])
@@ -202,7 +203,7 @@ function DoorScope({ role, scopedEventIds, titles }) {
   }
 
   if (scopedEventIds.length === 0) {
-    return <span className="text-status-warning">Admits nobody: no event named</span>
+    return <span className="text-ink-muted">Admits nobody: no event named</span>
   }
 
   if (!titles) {
@@ -241,7 +242,7 @@ function InvitationEvents({ role, events }) {
   if (!isEventScoped(role)) return <span className="text-ink-muted">Does not work a door</span>
 
   if (events.length === 0) {
-    return <span className="text-status-warning">Admits nobody: no event named</span>
+    return <span className="text-ink-muted">Admits nobody: no event named</span>
   }
 
   return <span>Admits to: {events.map((event) => event.title).join(', ')}</span>
@@ -435,10 +436,7 @@ export default async function TeamPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Events and venues
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Team and roles</h1>
+      <h1 className="text-h2 text-ink">Team and roles</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">
         Who is in {selected.organizationName ?? 'this organisation'}, in which role, and which doors
         they may admit people through. What you can change is decided by your own role here, and the
@@ -552,12 +550,14 @@ export default async function TeamPage({ searchParams }) {
 
                       return (
                         <tr key={member.id}>
-                          <th scope="row" className={`${TD} font-medium`}>
+                          <th scope="row" className={`${TD} min-w-[8rem] text-left font-medium`}>
                             {name}
                             {member.self ? <span className="text-ink-muted"> (you)</span> : null}
                           </th>
                           {full ? (
-                            <td className={`${TD} break-all`}>{member.email ?? '—'}</td>
+                            <td className={`${TD} min-w-[14rem]`}>
+                              <EmailAddress address={member.email} />
+                            </td>
                           ) : null}
                           <td className={TD}>{roleLabel(member.role)}</td>
                           <td className={`${TD} text-ink-muted`}>
@@ -691,7 +691,9 @@ export default async function TeamPage({ searchParams }) {
                       return (
                         <tr key={invitation.id}>
                           {full ? (
-                            <td className={`${TD} break-all`}>{invitation.email ?? '—'}</td>
+                            <td className={`${TD} min-w-[14rem]`}>
+                              <EmailAddress address={invitation.email} />
+                            </td>
                           ) : null}
                           <td className={TD}>{roleLabel(invitation.role)}</td>
                           <td className={TD}>
