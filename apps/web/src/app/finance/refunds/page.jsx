@@ -441,7 +441,7 @@ export default async function RefundListPage({ searchParams }) {
 
                   return (
                     <tr key={refund.id}>
-                      <th scope="row" className={`${TD} font-normal`}>
+                      <th scope="row" className={`${TD} text-left font-normal`}>
                         <Link
                           href={`/finance/refunds/${encodeURIComponent(refund.id)}`}
                           className={`${LINK} font-medium`}

@@ -111,6 +111,16 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /*
+   * A header cell starts where its column's text starts. A browser centres
+   * a `<th>` by default, which floats a row's label in the middle of a wide
+   * column and leaves a column header off its own numbers. A numeric column
+   * still asks for `text-right` by class, which wins over this base rule.
+   */
+  th {
+    text-align: start;
+  }
+
   p {
     text-wrap: pretty;
   }

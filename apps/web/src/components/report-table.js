@@ -26,8 +26,12 @@ export const TH_NUM = `${TH} text-right`
 /** An ordinary cell. */
 export const TD = 'border-b border-line px-3 py-2 text-ink'
 
-/** A row header: a cell's padding and rule, at body weight. */
-export const ROW_TH = `${TD} font-normal`
+/**
+ * A row header: a cell's padding and rule, at body weight, set flush left.
+ * A browser centres a `<th>` unless told otherwise, and a centred label
+ * floats in the middle of a wide column.
+ */
+export const ROW_TH = `${TD} text-left font-normal`
 
 /** A cell holding a count or an amount. */
 export const NUM = `${TD} text-right tabular-nums`

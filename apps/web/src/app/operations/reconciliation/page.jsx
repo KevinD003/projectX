@@ -451,7 +451,7 @@ export default async function ReconciliationListPage({ searchParams }) {
 
                   return (
                     <tr key={task.id}>
-                      <th scope="row" className={`${TD} font-normal`}>
+                      <th scope="row" className={`${TD} text-left font-normal`}>
                         <Link
                           href={`${PATH}/${encodeURIComponent(task.id)}`}
                           className={`${LINK} font-medium`}
