@@ -27,7 +27,7 @@
  * Paying at the venue and referral codes work as in the ticket basket (SPEC3
  * §6.5, §12.1): the same choice, the same box, the same urgent alerts when Pay
  * meets a changed booking fee, a switched-off or full venue payment, or a
- * referral code that stopped applying, and the same confirmation, "Booked —
+ * referral code that stopped applying, and the same confirmation, "Booked,
  * pay at the door", for a booking to pay at the venue.
  *
  * @module components/seat-checkout
@@ -72,6 +72,7 @@ import {
 } from '../lib/seat-map.js'
 import { AttendeeNames, attendeesFrom, hasNameProblems } from './attendee-names.jsx'
 import { BookedOrder } from './booked-order.jsx'
+import { checkoutStepFor, useReportCheckoutStep } from './checkout-route.jsx'
 import { useFocusAfterRender } from './focus-after-render.jsx'
 import { PRIMARY_LINK } from './link-classes.js'
 import { OrderSummary, totalsFromEstimate, totalsFromQuote } from './order-summary.jsx'
@@ -88,6 +89,7 @@ import { UnsettledPayment } from './unsettled-payment.jsx'
  * @property {object} initialMap The night's seat map, as the page read it.
  * @property {{name: string, email: string}|null} [buyer] The signed-in buyer, or null.
  * @property {string} [signInHref] Where a signed-out visitor signs in, returning here.
+ * @property {ReactNode} [notice] The simulated-payment notice, drawn at the head of the selection until the order is booked.
  * @property {Function} [holdSeats] Override for the seat hold; supplied by tests.
  * @property {Function} [loadSeatMap] Override for reading the map again; supplied by tests.
  * @property {Function} [release] Override for releasing a hold; supplied by tests.
@@ -136,6 +138,7 @@ export function SeatCheckout({
   initialMap,
   buyer = null,
   signInHref = '/sign-in',
+  notice: paymentNotice = null,
   holdSeats = holdSeatsThroughApi,
   loadSeatMap = loadSeatMapThroughApi,
   release = releaseThroughApi,
@@ -170,6 +173,9 @@ export function SeatCheckout({
   const noticeRef = useRef(null)
   const summaryHeadingRef = useRef(null)
   const focusAfterRender = useFocusAfterRender()
+
+  // Where the buyer is, for the route line in the page's band.
+  useReportCheckoutStep(checkoutStepFor(status))
 
   /**
    * Start a new purchase attempt: a fresh idempotency key, because the last
@@ -666,11 +672,8 @@ export function SeatCheckout({
   const payable = Boolean(quote) && !quoting && !namesRefused
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start lg:gap-8">
-      <section
-        aria-labelledby="choose-seats"
-        className="min-w-0 rounded-card bg-surface-raised p-5 shadow-card sm:p-8"
-      >
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start lg:gap-12">
+      <section aria-labelledby="choose-seats" className="min-w-0">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="choose-seats" className="text-h2 font-semibold text-ink">
             Choose your seats
@@ -682,7 +685,7 @@ export function SeatCheckout({
             Skip to your selection
           </a>
         </div>
-        <p className="mt-1 max-w-prose text-sm text-ink-muted">
+        <p className="mt-2 max-w-prose text-ink-muted">
           {perOrderSentence(map.tiers ?? [], limit)} Choosing a wheelchair space also chooses its
           companion seat, and the other way round.
         </p>
@@ -702,14 +705,15 @@ export function SeatCheckout({
         id="your-selection"
         aria-labelledby="selection-heading"
         tabIndex={-1}
-        className="overflow-hidden rounded-card bg-surface-raised shadow-card focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus lg:sticky lg:top-28"
+        className="overflow-hidden rounded-card border border-line-strong bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus lg:sticky lg:top-[calc(var(--chrome-top)+1.5rem)]"
       >
-        <div className="px-5 pt-6 pb-5 sm:px-8">
+        <div className="px-5 pt-6 pb-5 sm:px-7">
+          {paymentNotice ? <div className="mb-6">{paymentNotice}</div> : null}
           <h2
             id="selection-heading"
             ref={summaryHeadingRef}
             tabIndex={-1}
-            className="rounded-sm text-h3 font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
+            className="rounded-sm font-display text-h3 font-bold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
           >
             Your selection
           </h2>
@@ -758,8 +762,8 @@ export function SeatCheckout({
 
           {holding ? (
             <Alert variant="success" title="Seats held" className="mt-5">
-              {until ? `Held for you until ${until}.` : 'Held for you for a limited time.'} Payment
-              on this site is simulated: you will not be asked for a card, and no money moves.
+              {until ? `Held for you until ${until}.` : 'Held for you for a limited time.'} Give
+              each seat a name below if you like, then pay.
             </Alert>
           ) : null}
 
@@ -910,7 +914,7 @@ export function SeatCheckout({
                 <Link href={signInHref} className={PRIMARY_LINK}>
                   Sign in to reserve
                 </Link>
-                <p className="text-xs text-ink-muted">
+                <p className="text-caption text-ink-muted">
                   Tickets are kept in your account; receipts are not emailed. So reserving needs an
                   account: signing in brings you back to this map.
                 </p>
@@ -919,7 +923,7 @@ export function SeatCheckout({
               <Button
                 fullWidth
                 size="lg"
-                className="min-h-14 text-[1.0625rem]"
+                className="min-h-14 text-body"
                 loading={status === 'paying'}
                 disabled={!payable || unsettled}
                 onClick={handlePay}
@@ -930,7 +934,7 @@ export function SeatCheckout({
               <Button
                 fullWidth
                 size="lg"
-                className="min-h-14 text-[1.0625rem]"
+                className="min-h-14 text-body"
                 disabled={selected.length === 0 || !onSale || shortfalls.length > 0}
                 loading={status === 'reserving'}
                 onClick={handleReserve}
@@ -941,12 +945,12 @@ export function SeatCheckout({
               </Button>
             )}
             {holding && namesRefused ? (
-              <p className="text-xs text-status-danger">
+              <p className="text-caption text-status-danger">
                 One of the names needs changing before you can pay.
               </p>
             ) : null}
             {!holding && shortfalls.length > 0 ? (
-              <ul className="space-y-1 text-xs text-status-danger">
+              <ul className="space-y-1 text-caption text-status-danger">
                 {shortfalls.map(({ tier, count, minimum }) => (
                   <li key={tier.id}>
                     Seats sold as “{tier.name}” are sold at least {minimum} at a time, and you have

@@ -87,14 +87,13 @@ import {
   venueRefusalSentence,
 } from '../lib/checkout-api.js'
 import { isBooked, notBookedNotice } from '../lib/checkout-outcome.js'
-import { formatEventStart } from '../lib/format.js'
 import { formatPrice, priceSelection } from '../lib/pricing.js'
 import { describeApiRefusal } from '../lib/refusal.js'
 import { groupTiersBySession, sessionDisplayLabel, sessionForTier } from '../lib/sessions.js'
 import { AttendeeNames, attendeesFrom, hasNameProblems } from './attendee-names.jsx'
 import { BookedOrder } from './booked-order.jsx'
 import { OUTLINE_LINK, PRIMARY_LINK } from './link-classes.js'
-import { EventArt } from './event-art.jsx'
+import { checkoutStepFor, useReportCheckoutStep } from './checkout-route.jsx'
 import { useFocusAfterRender } from './focus-after-render.jsx'
 import { OrderSummary, totalsFromEstimate, totalsFromQuote } from './order-summary.jsx'
 import { PaymentMethodChoice } from './payment-method-choice.jsx'
@@ -163,6 +162,7 @@ export function attendeeSlots(lines, nightOf) {
  * @property {object[]} ticketTypes Ticket tiers with availability folded in.
  * @property {{name: string, email: string}|null} [buyer] The signed-in buyer, or null.
  * @property {string} [signInHref] Where a signed-out visitor signs in, returning here.
+ * @property {ReactNode} [notice] The simulated-payment notice, drawn at the head of the summary until the order is booked.
  * @property {Function} [reserve] Override for the hold calls; supplied by tests.
  * @property {Function} [release] Override for releasing holds; supplied by tests.
  * @property {Function} [quote] Override for the quote call; supplied by tests.
@@ -180,6 +180,7 @@ export function CheckoutBasket({
   ticketTypes,
   buyer = null,
   signInHref = '/sign-in',
+  notice: paymentNotice = null,
   reserve = reserveThroughApi,
   release = releaseThroughApi,
   quote: requestQuote = quoteThroughApi,
@@ -212,6 +213,11 @@ export function CheckoutBasket({
   const noticeRef = useRef(null)
   const summaryHeadingRef = useRef(null)
   const focusAfterRender = useFocusAfterRender()
+
+  // Where the buyer is, for the route line in the page's band.
+  useReportCheckoutStep(
+    checkoutStepFor(status === 'paid' && !isBooked(order) ? 'unsettled' : status),
+  )
 
   /**
    * Start a new purchase attempt: a fresh idempotency key, because the last
@@ -730,22 +736,19 @@ export function CheckoutBasket({
   const payable = Boolean(quote) && !quoting && !namesRefused
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:items-start lg:gap-8">
-      <section
-        aria-labelledby="choose-tickets"
-        className="min-w-0 rounded-card bg-surface-raised p-5 shadow-card sm:p-8"
-      >
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start lg:gap-12">
+      <section aria-labelledby="choose-tickets" className="min-w-0">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <div>
             <h2 id="choose-tickets" className="text-h2 font-semibold text-ink">
               Choose your tickets
             </h2>
-            <p className="mt-1 max-w-prose text-sm text-ink-muted">
-              Reserving holds your tickets for a while, and the held notice says until when — plenty
+            <p className="mt-2 max-w-prose text-ink-muted">
+              Reserving holds your tickets for a while, and the held notice says until when. Plenty
               of time to argue about who is paying.
             </p>
           </div>
-          <p aria-hidden="true" className="text-xs text-ink-subtle sm:text-right">
+          <p aria-hidden="true" className="text-caption text-ink-muted sm:text-right">
             Face value, then with the booking fee
           </p>
         </div>
@@ -753,7 +756,7 @@ export function CheckoutBasket({
         {groups.map((group) => (
           <div key={group.key} className="mt-6">
             {group.heading ? (
-              <h3 className="text-base font-bold text-ink">{group.heading}</h3>
+              <h3 className="font-display text-h3 font-bold text-ink">{group.heading}</h3>
             ) : null}
             <ul className={`flex flex-col gap-3 ${group.heading ? 'mt-3' : ''}`}>
               {group.tiers.map((tier) => (
@@ -774,9 +777,9 @@ export function CheckoutBasket({
         ))}
 
         {holding ? (
-          <Alert variant="success" title="Tickets held" className="mt-5">
-            {until ? `Held for you until ${until}.` : 'Held for you for a limited time.'} Payment on
-            this site is simulated: you will not be asked for a card, and no money moves.
+          <Alert variant="success" title="Tickets held" className="mt-6">
+            {until ? `Held for you until ${until}.` : 'Held for you for a limited time.'} Give each
+            ticket a name below if you like, then pay.
           </Alert>
         ) : null}
 
@@ -795,29 +798,16 @@ export function CheckoutBasket({
 
       <section
         aria-labelledby="order-summary"
-        className="overflow-hidden rounded-card bg-surface-raised shadow-card lg:sticky lg:top-28"
+        className="overflow-hidden rounded-card border border-line-strong bg-surface-raised lg:sticky lg:top-[calc(var(--chrome-top)+1.5rem)]"
       >
-        <div className="flex items-center gap-4 bg-surface-subtle px-5 py-4 sm:px-6">
-          <div
-            aria-hidden="true"
-            className="h-16 w-24 shrink-0 overflow-hidden rounded-control bg-surface-inverse"
-          >
-            <EventArt event={event} className="h-full" decorative sizes="96px" />
-          </div>
-          <div className="min-w-0">
-            <p className="leading-5 font-bold text-ink">{event.title}</p>
-            {event.startsAt ? (
-              <p className="mt-1 text-xs text-ink-muted">{formatEventStart(event)}</p>
-            ) : null}
-          </div>
-        </div>
+        <div className="px-5 pt-6 pb-5 sm:px-7">
+          {paymentNotice ? <div className="mb-6">{paymentNotice}</div> : null}
 
-        <div className="px-5 pt-6 pb-5 sm:px-8">
           <h2
             id="order-summary"
             ref={summaryHeadingRef}
             tabIndex={-1}
-            className="rounded-sm text-h3 font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
+            className="rounded-sm font-display text-h3 font-bold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
           >
             Order summary
           </h2>
@@ -964,7 +954,7 @@ export function CheckoutBasket({
                 <Link href={signInHref} className={PRIMARY_LINK}>
                   Sign in to buy
                 </Link>
-                <p className="text-xs text-ink-muted">
+                <p className="text-caption text-ink-muted">
                   Tickets are kept in your account; receipts are not emailed. So buying needs an
                   account: signing in brings you back here.
                 </p>
@@ -973,7 +963,7 @@ export function CheckoutBasket({
               <Button
                 fullWidth
                 size="lg"
-                className="min-h-14 text-[1.0625rem]"
+                className="min-h-14 text-body"
                 loading={status === 'paying'}
                 disabled={!payable || unsettled}
                 onClick={handlePay}
@@ -984,7 +974,7 @@ export function CheckoutBasket({
               <Button
                 fullWidth
                 size="lg"
-                className="min-h-14 text-[1.0625rem]"
+                className="min-h-14 text-body"
                 disabled={ticketCount === 0}
                 loading={status === 'reserving'}
                 onClick={handleReserve}
@@ -993,18 +983,22 @@ export function CheckoutBasket({
               </Button>
             )}
             {holding && namesRefused ? (
-              <p className="text-xs text-status-danger">
+              <p className="text-caption text-status-danger">
                 One of the names needs changing before you can pay.
               </p>
             ) : null}
           </div>
         </div>
 
-        <p className="border-t border-line px-5 py-4 text-xs text-ink-muted sm:px-8">
+        <p className="border-t border-line bg-surface-subtle px-5 py-4 text-caption text-ink-muted sm:px-7">
           {quote
             ? 'This total is the ticketing service’s own quote for the tickets you hold.'
             : 'The ticketing service prices the order again before it is placed.'}{' '}
-          <Link href={`/events/${event.slug}`} className={QUIET_LINK}>
+          <Link
+            href={`/events/${event.slug}`}
+            transitionTypes={['nav-back']}
+            className={QUIET_LINK}
+          >
             Back to {event.title}
           </Link>
         </p>
@@ -1037,12 +1031,15 @@ function TierRow({ tier, event, session, quantity, place, feeTerms, disabled, on
 
   return (
     <li
-      className={`grid grid-cols-1 items-center gap-3 rounded-2xl border-[1.5px] p-4 transition-colors duration-(--duration-fast) sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-5 sm:pl-5 ${
-        chosen ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface-raised'
+      data-chosen={chosen ? '' : undefined}
+      className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-control border-[1.5px] p-4 transition-colors duration-(--duration-fast) ease-out sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-6 sm:p-5 ${
+        chosen ? 'border-ink bg-surface-subtle' : 'border-line-strong bg-surface-raised'
       }`}
     >
-      <div className="min-w-0">
-        <p className="font-bold text-ink">
+      {/* On a phone the name takes the whole row, then the price sits
+          beside the stepper; from sm all three share one row. */}
+      <div className="col-span-2 min-w-0 sm:col-span-1">
+        <p className="text-label font-bold text-ink sm:text-body">
           {tier.name}
           {/* Only a team member's checkout lists a hidden tier at all. */}
           {tier.visibility === 'HIDDEN' ? (
@@ -1066,18 +1063,18 @@ function TierRow({ tier, event, session, quantity, place, feeTerms, disabled, on
       </div>
 
       <p className="text-left sm:text-right">
-        <span className="block font-bold text-ink tabular-nums">
+        <span className="block font-display text-h3 leading-none font-bold text-ink tabular-nums">
           {formatPrice(tier.priceCents, tier.currency)}
         </span>
         {allIn ? (
-          <span className="block text-xs text-ink-muted tabular-nums">
+          <span className="block text-caption text-ink-muted tabular-nums">
             {formatPrice(allIn.totalCents, tier.currency)} with fees
             {allIn.taxCents > 0 ? ' and tax' : ''}
           </span>
         ) : null}
       </p>
 
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 items-center justify-end gap-3">
         {tier.reserved ? (
           seatMap && tier.isSoldOut ? (
             // Its own seats, not the night's: another zone having seats does
@@ -1088,6 +1085,7 @@ function TierRow({ tier, event, session, quantity, place, feeTerms, disabled, on
           ) : seatMap ? (
             <Link
               href={`/events/${encodeURIComponent(event.slug)}/seats/${encodeURIComponent(seatMap.id)}`}
+              transitionTypes={['nav-forward']}
               className={OUTLINE_LINK}
               aria-describedby={availabilityId}
             >
