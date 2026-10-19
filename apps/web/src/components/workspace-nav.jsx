@@ -242,6 +242,30 @@ function RailLink({ item, current, collapsed }) {
   )
 }
 
+/** Room left above or below the current entry when it is scrolled to. */
+const REVEAL_MARGIN = 16
+
+/**
+ * Scroll a rail's own list, and nothing else, until its current entry is in
+ * view. The page is not moved: `scrollIntoView` would scroll every scrolling
+ * ancestor, the window included. A hidden rail measures nothing and is left.
+ *
+ * @param {HTMLElement|null} scroller The rail's scrolling list.
+ * @returns {void}
+ */
+export function revealCurrent(scroller) {
+  const here = scroller?.querySelector('[aria-current="page"]')
+  if (!scroller || !here) return
+
+  const box = scroller.getBoundingClientRect()
+  const entry = here.getBoundingClientRect()
+
+  if (box.height === 0) return
+  if (entry.top < box.top) scroller.scrollTop -= box.top - entry.top + REVEAL_MARGIN
+  else if (entry.bottom > box.bottom)
+    scroller.scrollTop += entry.bottom - box.bottom + REVEAL_MARGIN
+}
+
 /**
  * @typedef {object} WorkspaceRailProps
  * @property {RailGroup[]} groups The grouped entries this session is offered.
@@ -261,7 +285,16 @@ export function WorkspaceRail({ groups, label = 'Workspace' }) {
   const items = groups.flatMap((group) => group.items)
   const current = currentHref(items, pathname, search)
   const panelRef = useRef(null)
+  const scrollerRef = useRef(null)
   const labelId = useId()
+
+  // The rail's entries scroll on their own, and a long one (a platform
+  // administrator's) runs past the fold. The current entry is brought into
+  // the rail's view on arrival, and when the sheet opens, so the page always
+  // shows where it is.
+  useEffect(() => {
+    if (current) revealCurrent(scrollerRef.current)
+  }, [current, open])
 
   const close = useCallback(() => {
     setOpen(false)
@@ -338,7 +371,10 @@ export function WorkspaceRail({ groups, label = 'Workspace' }) {
         <nav aria-label={label} className="flex min-h-0 flex-1 flex-col">
           {/* The entries scroll on their own, above the fold control, so a
               long rail never slides an entry under it. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-3 py-5">
+          <div
+            ref={scrollerRef}
+            className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-3 py-5"
+          >
             {groups.map((group) => (
               <div key={group.id}>
                 {/* A label, not a heading: the rail sits before the page's own
