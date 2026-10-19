@@ -14,7 +14,7 @@
  * @module app/admin/users/platform-role-change.test
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -225,5 +225,21 @@ describe('changing a platform role', () => {
 
     expect(screen.getByRole('button', { name: 'Change platform role' })).toBeDisabled()
     expect(screen.getByText(/Another super administrator must change/u)).toBeVisible()
+  })
+})
+
+describe('the control’s mark', () => {
+  it('is drawn gold and says it is the super administrator’s, in words as well as colour', () => {
+    const { container } = render(<PlatformRoleChange account={account()} onChanged={vi.fn()} />)
+
+    const control = container.querySelector('[data-authority="super"]')
+    const heading = screen.getByRole('heading', { level: 3 })
+    const mark = within(heading).getByText('Super administrators only')
+
+    expect(control).toHaveClass('border-l-4', 'border-highlight')
+    expect(heading).toHaveTextContent('Platform role Super administrators only')
+    // Gold is a fill with purple ink on it, never gold text on white.
+    expect(mark).toHaveClass('bg-highlight', 'text-highlight-ink')
+    expect(mark.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 })

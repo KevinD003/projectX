@@ -150,26 +150,31 @@ export function UserSearch({ mayChangePlatformRoles = false }) {
 
   return (
     <div className="mt-8">
-      <form onSubmit={onSubmit} noValidate aria-label="Find an account" className="max-w-xl">
-        <FormField
-          label="Email address, name or account id"
-          id={`${id}-q`}
-          required
-          description="At least three characters. The search is sent in the request, never in the address bar, and is forgotten when you leave."
-        >
-          <Input
-            type="search"
-            autoComplete="off"
-            spellCheck={false}
-            value={terms}
-            onChange={(changed) => setTerms(changed.target.value)}
-          />
-        </FormField>
-        <div className="mt-4">
-          <Button type="submit" className="min-h-11" disabled={busy || trimmed.length < QUERY_MIN}>
-            {busy ? 'Searching…' : 'Search'}
-          </Button>
+      <form
+        onSubmit={onSubmit}
+        noValidate
+        aria-label="Find an account"
+        className="flex max-w-2xl flex-wrap items-end gap-3"
+      >
+        <div className="min-w-0 flex-[1_1_18rem]">
+          <FormField
+            label="Email address, name or account id"
+            id={`${id}-q`}
+            required
+            description="At least three characters. The search is sent in the request, never in the address bar, and is forgotten when you leave."
+          >
+            <Input
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              value={terms}
+              onChange={(changed) => setTerms(changed.target.value)}
+            />
+          </FormField>
         </div>
+        <Button type="submit" className="min-h-11" disabled={busy || trimmed.length < QUERY_MIN}>
+          {busy ? 'Searching…' : 'Search'}
+        </Button>
       </form>
 
       <p role="status" aria-live="polite" className="mt-4 text-sm text-ink-muted">
@@ -186,7 +191,10 @@ export function UserSearch({ mayChangePlatformRoles = false }) {
 
       {found && found.accounts.length > 0 ? (
         <>
-          <ul className="mt-4 space-y-4" aria-label="Accounts found">
+          <ul
+            className="mt-4 divide-y divide-line border-y border-line"
+            aria-label="Accounts found"
+          >
             {found.accounts.map((account) => (
               <li key={account.id}>
                 <AccountCard
@@ -241,50 +249,51 @@ function AccountCard({ account, onChanged, mayChangePlatformRoles }) {
   return (
     <article
       aria-labelledby={headingId}
-      className="rounded-card border border-line bg-surface-raised p-5 shadow-card"
+      className="grid gap-x-10 gap-y-6 py-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={headingId} className="text-lg font-semibold text-ink">
-          {account.displayName}
-          {account.self ? <span className="ml-2 text-sm text-ink-muted">(you)</span> : null}
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant={privileged ? 'info' : 'neutral'} srLabel="Platform role:">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h2 id={headingId} className="text-title font-semibold text-ink">
+            {account.displayName}
+            {account.self ? <span className="ml-2 text-sm text-ink-muted">(you)</span> : null}
+          </h2>
+          <Badge variant={roleBadgeVariant(account.role)} srLabel="Platform role:">
             {platformRoleLabel(account.role)}
           </Badge>
           {account.suspended ? <Badge variant="danger">Suspended</Badge> : null}
         </div>
+        <p className="mt-1 text-sm break-words text-ink-muted">{account.email}</p>
+
+        <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
+          <dt className="font-medium text-ink">Two-step sign-in</dt>
+          <dd className="text-ink-muted">
+            {account.mfaEnrolled
+              ? 'Set up'
+              : privileged
+                ? 'Not set up. This role cannot work until it is.'
+                : 'Not set up'}
+          </dd>
+          <dt className="font-medium text-ink">Account id</dt>
+          <dd className="font-mono text-xs break-all text-ink-muted">{account.id}</dd>
+          <dt className="font-medium text-ink">Organisations</dt>
+          <dd className="text-ink-muted">
+            {account.memberships.length === 0 ? (
+              'None.'
+            ) : (
+              <ul className="space-y-0.5">
+                {account.memberships.map((membership) => (
+                  <li key={membership.organizationId}>
+                    {membership.organizationName ?? membership.organizationId} ·{' '}
+                    {roleLabel(membership.role)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </dd>
+        </dl>
       </div>
-      <p className="mt-1 text-sm break-all text-ink-muted">{account.email}</p>
 
-      <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-        <dt className="font-medium text-ink">Two-step sign-in</dt>
-        <dd className="text-ink-muted">
-          {account.mfaEnrolled
-            ? 'Set up'
-            : privileged
-              ? 'Not set up — this role cannot work until it is'
-              : 'Not set up'}
-        </dd>
-        <dt className="font-medium text-ink">Account id</dt>
-        <dd className="font-mono text-ink-muted">{account.id}</dd>
-      </dl>
-
-      <h3 className="mt-4 text-sm font-semibold text-ink">Organisations</h3>
-      {account.memberships.length === 0 ? (
-        <p className="mt-1 text-sm text-ink-muted">None.</p>
-      ) : (
-        <ul className="mt-1 space-y-0.5 text-sm text-ink-muted">
-          {account.memberships.map((membership) => (
-            <li key={membership.organizationId}>
-              {membership.organizationName ?? membership.organizationId} ·{' '}
-              {roleLabel(membership.role)}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="grid min-w-0 content-start gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         {mayChangePlatformRoles ? (
           <PlatformRoleChange account={account} onChanged={onChanged} />
         ) : (
@@ -309,6 +318,20 @@ function AccountCard({ account, onChanged, mayChangePlatformRoles }) {
       </div>
     </article>
   )
+}
+
+/**
+ * The badge a platform role wears: gold for a super administrator, the one
+ * role that can change the others; the info tone for every other privileged
+ * role; neutral for everybody else.
+ *
+ * @param {string} role A platform role.
+ * @returns {string} A `Badge` variant.
+ */
+export function roleBadgeVariant(role) {
+  if (role === 'SUPER_ADMIN') return 'highlight'
+
+  return PRIVILEGED_PLATFORM_ROLES.includes(role) ? 'info' : 'neutral'
 }
 
 /**
