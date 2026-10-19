@@ -27,7 +27,7 @@ export default async function NewVenuePage() {
     <div className="max-w-2xl">
       <h1 className="text-h2 text-ink">Add a venue</h1>
       <p className="mt-2 text-ink-muted">
-        For a hall you run. To list an event somewhere shared, choose it when you create the event —
+        For a hall you run. To list an event somewhere shared, choose it when you create the event;
         you do not need a record of your own.
       </p>
 
