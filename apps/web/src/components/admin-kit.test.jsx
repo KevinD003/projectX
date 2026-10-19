@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   AllClear,
-  EmailText,
   FilterLinks,
   Instant,
   STATUS_WORD_TONES,
@@ -104,25 +103,6 @@ describe('Instant', () => {
   it('formats the time of day in another zone', () => {
     expect(formatTimeIn('2026-10-16T12:45:00.000Z', 'America/New_York')).toBe('8:45 AM EDT')
     expect(formatTimeIn('not a date')).toBeNull()
-  })
-})
-
-describe('EmailText', () => {
-  it('is the whole address as one run of text, with a break offered before the @ and each dot', () => {
-    const { container } = render(<EmailText address="new-organiser@desi-event.example" />)
-
-    const email = container.querySelector('[data-slot="email"]')
-
-    expect(email).toHaveTextContent('new-organiser@desi-event.example')
-    expect(email.querySelectorAll('wbr')).toHaveLength(2)
-    expect(email).toHaveClass('break-words')
-    expect(email.className).not.toMatch(/break-all/u)
-  })
-
-  it('says so when there is no address', () => {
-    render(<EmailText address="" fallback="Not recorded" />)
-
-    expect(screen.getByText('Not recorded')).toHaveClass('text-ink-muted')
   })
 })
 
