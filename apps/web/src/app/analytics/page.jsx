@@ -54,7 +54,7 @@ import { Alert } from '../../components/ui.jsx'
 import { TEXT_LINK } from '../../components/workspace-kit.jsx'
 import { admits } from '../../lib/areas.js'
 import { getAnalytics } from '../../lib/organizer-api.js'
-import { formatPrice } from '../../lib/pricing.js'
+import { formatAmount } from '../../lib/pricing.js'
 import { readSession, sessionCan } from '../../lib/session.js'
 import { CHART_CAPTION } from '../../lib/traffic-chart.js'
 import {
@@ -178,7 +178,7 @@ function Breakdown({ caption, unit, rows, money }) {
               </th>
               <td className={NUM}>{row.quantity}</td>
               {money ? (
-                <td className={NUM}>{formatPrice(row.lineValueCents, row.currency)}</td>
+                <td className={NUM}>{formatAmount(row.lineValueCents, row.currency)}</td>
               ) : null}
               <td className={NUM}>{row.refundedQuantity}</td>
               {cancelled ? <td className={NUM}>{row.cancelledQuantity ?? 0}</td> : null}

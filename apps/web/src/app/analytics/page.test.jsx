@@ -642,6 +642,38 @@ describe('paying at the venue (SPEC3 §9.10, SPEC3-XI §9.10)', () => {
     expect(within(table).getAllByRole('row')[1]).toHaveTextContent('1')
   })
 
+  it('prints a free tier\'s line value as money, $0.00, not the shop window\'s "Free"', async () => {
+    getAnalytics.mockResolvedValue(
+      analytics({
+        moneyVisible: true,
+        moneyWithheld: null,
+        sales: {
+          byEvent: [
+            {
+              id: EVENT,
+              label: 'Navratri on the Lawn',
+              currency: 'USD',
+              quantity: 4,
+              lineValueCents: 0,
+              refundedQuantity: 0,
+            },
+          ],
+          bySession: [],
+          byTicketType: [],
+          byDate: [],
+        },
+      }),
+    )
+    await renderPage(OWNER)
+
+    const table = screen.getByRole('table', { name: 'Sales by event' })
+    const row = within(table).getAllByRole('row')[1]
+
+    expect(within(table).getByRole('columnheader', { name: 'Line value' })).toBeTruthy()
+    expect(within(row).getByText('$0.00')).toBeTruthy()
+    expect(within(table).queryByText('Free')).toBeNull()
+  })
+
   it('puts the sentences in the singular and the plural', () => {
     expect(bookedUnpaidSentence(1)).toBe(
       '1 order booked to pay at the venue is waiting for payment at the door and is not counted as paid.',
