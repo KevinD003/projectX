@@ -33,7 +33,7 @@ import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 import { loadEventBySlug } from './api.js'
 import { getApiBaseUrl } from './api-client.js'
 import { mediaSrc } from './media.js'
-import { describePoster, toSvgString } from './poster-art.js'
+import { describePoster, posterArt, posterInk, posterTitle, toSvgString } from './poster-art.js'
 
 /** A social card's size, as Open Graph and X both recommend. */
 export const SOCIAL_IMAGE_SIZE = Object.freeze({ width: 1200, height: 630 })
@@ -127,12 +127,11 @@ export function posterDataUri(event) {
   const svg = toSvgString({
     seed: event?.slug ?? event?.id ?? 'desi-event',
     category: event?.category,
-    variant: 'hero',
-    idPrefix: 'social',
     title: socialImageFor(event).alt,
+    aspect: SOCIAL_IMAGE_SIZE.height / SOCIAL_IMAGE_SIZE.width,
   }).replace(
     '<svg ',
-    `<svg width="${SOCIAL_IMAGE_SIZE.width}" height="${SOCIAL_IMAGE_SIZE.height}" preserveAspectRatio="xMidYMid slice" `,
+    `<svg width="${SOCIAL_IMAGE_SIZE.width}" height="${SOCIAL_IMAGE_SIZE.height}" `,
   )
 
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
@@ -182,6 +181,57 @@ export async function publicEventForCard(params, { load = loadEventBySlug } = {}
 }
 
 /**
+ * The title as the poster on the page sets it, laid over the drawing: the
+ * headline in capitals, large, on the side away from the shape, in the
+ * design's own tone. The renderer's built-in sans stands in for the display
+ * face, which it cannot load from the page's stylesheet.
+ *
+ * @param {object} event The event payload.
+ * @returns {JSX.Element} The lettering.
+ */
+export function posterLettering(event) {
+  const art = posterArt({
+    seed: event?.slug ?? event?.id ?? 'desi-event',
+    category: event?.category,
+  })
+  const { headline } = posterTitle(event?.title ?? '')
+  const size = headline.length <= 14 ? 120 : headline.length <= 26 ? 96 : 72
+
+  return createElement(
+    'div',
+    {
+      style: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: art.titleAt === 'bottom' ? 'flex-end' : 'flex-start',
+        padding: 72,
+      },
+    },
+    createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          maxWidth: 820,
+          color: posterInk(art.tone),
+          fontSize: size,
+          fontWeight: 700,
+          lineHeight: 0.95,
+          letterSpacing: '-0.01em',
+          textTransform: 'uppercase',
+        },
+      },
+      headline,
+    ),
+  )
+}
+
+/**
  * Render an event's social card.
  *
  * @param {object} options Options.
@@ -194,16 +244,18 @@ export async function renderSocialImage({ event, fetchCover = fetchPublicCover, 
   const bytes = coverIsEmbeddable(event?.coverImage) ? await fetchCover(event.coverImage) : null
   const plan = socialImagePlan({ event, bytes })
 
+  const picture = createElement('img', {
+    src: plan.src,
+    width: SOCIAL_IMAGE_SIZE.width,
+    height: SOCIAL_IMAGE_SIZE.height,
+    style: { width: '100%', height: '100%', objectFit: 'cover' },
+  })
+
   return new ImageResponse(
     createElement(
       'div',
-      { style: { display: 'flex', width: '100%', height: '100%' } },
-      createElement('img', {
-        src: plan.src,
-        width: SOCIAL_IMAGE_SIZE.width,
-        height: SOCIAL_IMAGE_SIZE.height,
-        style: { width: '100%', height: '100%', objectFit: 'cover' },
-      }),
+      { style: { display: 'flex', position: 'relative', width: '100%', height: '100%' } },
+      ...(plan.kind === 'poster' ? [picture, posterLettering(event)] : [picture]),
     ),
     { ...SOCIAL_IMAGE_SIZE, headers: { 'cache-control': SOCIAL_IMAGE_CACHE_CONTROL } },
   )

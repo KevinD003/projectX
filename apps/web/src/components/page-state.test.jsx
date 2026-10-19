@@ -44,6 +44,39 @@ describe('Breadcrumbs', () => {
 
     expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
   })
+
+  it('carries a schema.org BreadcrumbList in its own markup when asked, and none otherwise', () => {
+    const trail = [
+      { href: '/', label: 'Home' },
+      { href: '/events', label: 'Discover events' },
+      { href: null, label: 'Bay Lights Garba' },
+    ]
+    const { container, rerender } = render(<Breadcrumbs trail={trail} />)
+
+    expect(container.querySelector('[itemscope]')).toBeNull()
+
+    rerender(<Breadcrumbs trail={trail} structured />)
+
+    const list = container.querySelector('ol')
+    const items = [...list.querySelectorAll(':scope > li')]
+
+    expect(list).toHaveAttribute('itemtype', 'https://schema.org/BreadcrumbList')
+    expect(
+      items.map((item) => [
+        item.getAttribute('itemprop'),
+        item.getAttribute('itemtype'),
+        item.querySelector('[itemprop="name"]').textContent,
+        item.querySelector('[itemprop="item"]')?.getAttribute('href') ?? null,
+        item.querySelector('meta[itemprop="position"]').getAttribute('content'),
+      ]),
+    ).toEqual([
+      ['itemListElement', 'https://schema.org/ListItem', 'Home', '/', '1'],
+      ['itemListElement', 'https://schema.org/ListItem', 'Discover events', '/events', '2'],
+      ['itemListElement', 'https://schema.org/ListItem', 'Bay Lights Garba', null, '3'],
+    ])
+    // The links are still named by their words alone.
+    expect(screen.getByRole('link', { name: 'Discover events' })).toHaveAttribute('href', '/events')
+  })
 })
 
 describe('Failure', () => {

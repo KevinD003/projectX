@@ -1,121 +1,178 @@
 /**
- * Original poster art for an event, drawn from its slug.
+ * The house poster an event wears when nobody has uploaded a cover.
  *
- * Every event on the site gets an illustration without anybody uploading one:
- * garba dancers circling a lit garbo under string lights, a pair of dandiya
- * sticks over a mandala, or a festival toran — chosen by category and varied by
- * a seed, so the same event always draws the same picture and two events on one
- * page rarely draw the same one. Nothing here is a photograph or anybody else's
- * artwork; it is geometry, generated.
+ * Every event gets a poster in the site's own vernacular: the best poster on
+ * the community-centre noticeboard. A flat ink plate in one of the brand kit's
+ * colours, one bold printed shape (a sun, an arch, a burst of rays, a set of
+ * bands, a rainbow of half rings, a halftone, a lattice), and, laid over it by
+ * `EventPoster`, the event's own title set huge and condensed with its date
+ * and city on a snipe. No two neighbouring cards need to look alike: the
+ * scheme, the shape, its corner and where the title sits are all chosen from
+ * the event's slug, so an event wears the same poster everywhere it appears
+ * (the listing, its own page, checkout, the wallet) and a page of events is a
+ * wall of different posters, not one illustration recoloured.
  *
- * The output is a small element tree, not markup: `{ tag, attrs, children }`.
- * `EventPoster` renders it as React elements, and {@link toSvgString} writes it
- * as a standalone SVG file (the design canvas uses those). Every attribute
- * value comes from this module — numbers and the palette constants below — so
- * nothing an organiser typed can reach the drawing.
+ * This module draws the geometry only. The drawing is a small element tree,
+ * `{ tag, attrs, children }`, which `EventPoster` renders as React elements
+ * and {@link toSvgString} writes as a standalone SVG (the social card uses
+ * it). Every attribute value comes from here, numbers and the palette below,
+ * so nothing an organiser typed can reach the drawing: the title is set by
+ * the component as ordinary escaped text, outside the SVG.
+ *
+ * ## Colour that stays legible
+ *
+ * The title may land on the ground or on the shape, so every scheme pairs a
+ * title tone with plates that tone reads on. A white title only ever sits on
+ * purple, deep purple or magenta (at least 7:1); a purple title only on gold,
+ * orange, white or lilac (at least 5.5:1). The fourth colour, the foil, is
+ * kept to thin rules and small marks in the shape's own corner, and it is the
+ * colour of the registration ghost the hero animates into place.
  *
  * @module lib/poster-art
  */
 
-/** The drawing's coordinate space: 3:2, cropped to fit by the container. */
-export const POSTER_VIEWBOX = Object.freeze({ width: 600, height: 400 })
+import { categoryDescriptor } from './catalog.js'
 
 /**
- * Every element a drawing may contain: shapes, groups and gradient
- * definitions, and nothing that can hold text, script, a link or a foreign
- * document. `EventPoster` renders only these, and a test holds every drawing
- * to them, so a new shape has to be added here on purpose.
+ * The drawing's coordinate space: a square tile, anchored by `EventPoster` to
+ * the corner its shape belongs in, and cropped by the frame. A square crops
+ * well to a 4:5 poster, a 3:2 card and a 16:9 social card alike.
  */
-export const POSTER_ELEMENTS = Object.freeze([
-  'circle',
-  'defs',
-  'ellipse',
-  'g',
-  'line',
-  'linearGradient',
-  'path',
-  'radialGradient',
-  'rect',
-  'stop',
-])
+export const POSTER_VIEWBOX = Object.freeze({ width: 100, height: 100 })
 
 /**
- * The illustration palette: every colour a poster is drawn in.
+ * Every element a drawing may contain: flat shapes and groups, and nothing
+ * that can hold text, script, a link, a picture or a foreign document.
+ * `EventPoster` renders only these, and a test holds every drawing to them, so
+ * a new shape has to be added here on purpose.
+ */
+export const POSTER_ELEMENTS = Object.freeze(['circle', 'g', 'line', 'path', 'rect'])
+
+/**
+ * Every colour a poster is drawn in: the brand kit's four colours and the
+ * three quiet ones they are printed beside.
  *
- * These are artwork, not interface. No poster colour is ever text, a ground
- * for text or a control, so they sit outside the theme's semantic tokens, and
- * this table is the one place in the web app's code where a hex value may be
- * written: `packages/config/tests/semantic-classes.test.js` finds this
- * declaration and fails on any hex elsewhere in the file.
+ * These are artwork, not interface. No drawn colour is ever text or a control
+ * (the title and the snipe are set by `EventPoster` in theme tokens), so they
+ * sit outside the semantic tokens, and this table is the one place in the web
+ * app's code where a hex value may be written:
+ * `packages/config/tests/semantic-classes.test.js` finds this declaration and
+ * fails on any hex elsewhere in the file.
  *
- * `shared` is what every scheme uses alike: the white of a star, a mirror or a
- * bulb's glint, the shadow of the wire the lights hang on, the fired clay of a
- * garbo and of a diya, and a flame's two colours. Each of `schemes` is a night
- * or dusk sky and five festival colours: `sky` runs top to bottom; `glow` is
- * the lamp's warmth; `ink` is the dancers' silhouette; `accents` dress the
- * skirts, the lights and the bunting.
+ * `kit` is the brand kit exactly (`docs/BRAND.md`). Each scheme names its
+ * `ground`, the `plate` its shape is printed in, a `second` plate, the `foil`
+ * for rules and the registration ghost, and the `tone` of the title set over
+ * it: `inverse` (white) or `ink` (purple).
  */
 const PALETTES = Object.freeze({
-  shared: Object.freeze({
-    light: '#ffffff',
-    wire: '#000000',
-    garboClay: '#b5532b',
-    diyaClay: '#c2562d',
-    flame: '#ffd166',
-    flameCore: '#fff4d6',
+  kit: Object.freeze({
+    purple: '#32105e',
+    magenta: '#b0004a',
+    gold: '#d4a529',
+    orange: '#f47a1f',
+  }),
+  quiet: Object.freeze({
+    night: '#1d0838',
+    paper: '#ffffff',
+    lilac: '#ece3f6',
+    wine: '#7d0036',
   }),
   schemes: Object.freeze([
     {
-      name: 'navratri-night',
-      sky: ['#1b0f35', '#3b1552'],
-      glow: '#ffb347',
-      ink: '#12091f',
-      accents: ['#e0457b', '#f7b32b', '#1fb5a5', '#3f5bd8', '#2ba84a'],
+      name: 'royal',
+      ground: '#32105e',
+      plate: '#b0004a',
+      second: '#1d0838',
+      foil: '#d4a529',
+      tone: 'inverse',
     },
     {
-      name: 'sunset-raas',
-      sky: ['#3a0f3d', '#b8452e'],
-      glow: '#ffd166',
-      ink: '#1f0a1c',
-      accents: ['#ffd166', '#ff8fab', '#7fdbca', '#f25c54', '#9d4edd'],
+      name: 'magenta',
+      ground: '#b0004a',
+      plate: '#32105e',
+      second: '#7d0036',
+      foil: '#f47a1f',
+      tone: 'inverse',
     },
     {
-      name: 'peacock',
-      sky: ['#062b36', '#0e5e6f'],
-      glow: '#ffc857',
-      ink: '#03161c',
-      accents: ['#f7b32b', '#e0457b', '#9be564', '#48cae4', '#ff7b54'],
+      name: 'foil',
+      ground: '#d4a529',
+      plate: '#f47a1f',
+      second: '#ffffff',
+      foil: '#32105e',
+      tone: 'ink',
     },
     {
-      name: 'royal-durbar',
-      sky: ['#14103d', '#2e2a7a'],
-      glow: '#ffbe5c',
-      ink: '#0b0826',
-      accents: ['#f28f3b', '#e94f6f', '#ffd166', '#5bd1d7', '#c77dff'],
+      name: 'tonight',
+      ground: '#f47a1f',
+      plate: '#d4a529',
+      second: '#ece3f6',
+      foil: '#32105e',
+      tone: 'ink',
     },
     {
-      name: 'kesari',
-      sky: ['#4a0f1c', '#c2410c'],
-      glow: '#ffe066',
-      ink: '#240610',
-      accents: ['#ffe066', '#2ec4b6', '#f8f4e3', '#ff5d8f', '#6a4c93'],
+      name: 'night',
+      ground: '#1d0838',
+      plate: '#32105e',
+      second: '#b0004a',
+      foil: '#d4a529',
+      tone: 'inverse',
+    },
+    {
+      name: 'paper',
+      ground: '#ece3f6',
+      plate: '#d4a529',
+      second: '#ffffff',
+      foil: '#b0004a',
+      tone: 'ink',
     },
   ]),
 })
 
 /**
- * What every drawing function is handed.
+ * The colour a title is set in over a drawing, for a renderer that cannot
+ * read the theme (the social card): white for `inverse`, the kit's Royal
+ * Purple for `ink`. On the page, `EventPoster` uses the theme's tokens.
  *
- * @typedef {object} DrawingContext
- * @property {function(): number} random The seeded generator.
- * @property {object} palette One of the palette's schemes.
- * @property {object} shared The colours every scheme shares.
- * @property {string} id Prefix for this poster's gradient ids.
- * @property {number} width The drawing's width.
- * @property {number} height The drawing's height.
- * @property {boolean} hero Whether to draw the fuller hero scene.
- * @property {number} glowY Where the lamp glow sits.
+ * @param {'inverse'|'ink'} tone The design's tone.
+ * @returns {string} A hex colour.
  */
+export function posterInk(tone) {
+  return tone === 'ink' ? PALETTES.kit.purple : PALETTES.quiet.paper
+}
+
+/** The printed shapes a poster can carry. */
+export const POSTER_MOTIFS = Object.freeze([
+  'sun',
+  'arch',
+  'rays',
+  'bands',
+  'rainbow',
+  'halftone',
+  'lattice',
+])
+
+/**
+ * Which shapes suit which kind of night: three per category, so a category
+ * page is still varied and a comedy night is never dressed as a temple arch.
+ * A category the site does not know yet may wear any of them.
+ */
+const CATEGORY_MOTIFS = Object.freeze({
+  GARBA_DANDIYA: ['rainbow', 'lattice', 'sun'],
+  MUSIC_CONCERT: ['rays', 'halftone', 'rainbow'],
+  BOLLYWOOD_NIGHT: ['rays', 'sun', 'bands'],
+  CLASSICAL_DANCE: ['arch', 'lattice', 'rainbow'],
+  COMEDY: ['halftone', 'bands', 'sun'],
+  FILM_SCREENING: ['rays', 'bands', 'halftone'],
+  CULTURAL_FESTIVAL: ['sun', 'lattice', 'rays'],
+  FOOD_FESTIVAL: ['sun', 'halftone', 'bands'],
+  WEDDING_EXPO: ['arch', 'lattice', 'sun'],
+  RELIGIOUS: ['arch', 'sun', 'rainbow'],
+  THEATRE: ['arch', 'bands', 'rays'],
+  WORKSHOP: ['bands', 'halftone', 'lattice'],
+  NETWORKING: ['halftone', 'bands', 'lattice'],
+  SPORTS: ['bands', 'sun', 'halftone'],
+})
 
 /**
  * A 32-bit hash of a string (FNV-1a).
@@ -157,10 +214,10 @@ function seededRandom(seed) {
  * Round for the output, so a poster is not a wall of seventeen-digit floats.
  *
  * @param {number} value A coordinate.
- * @returns {number} It, to one decimal place.
+ * @returns {number} It, to two decimal places.
  */
-function r1(value) {
-  return Math.round(value * 10) / 10
+function r2(value) {
+  return Math.round(value * 100) / 100
 }
 
 /**
@@ -176,651 +233,335 @@ function el(tag, attrs = {}, children = []) {
 }
 
 /**
- * A number between two others.
+ * A point on a circle.
  *
- * @param {function(): number} random The generator.
- * @param {number} low Inclusive.
- * @param {number} high Exclusive.
- * @returns {number} A value in [low, high).
- */
-function between(random, low, high) {
-  return low + random() * (high - low)
-}
-
-/**
- * The sky, its lamp glow and a scatter of stars.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} Background elements.
- */
-function sky(context) {
-  const { random, palette, shared, id, width, height, glowY } = context
-  const stars = []
-
-  for (let index = 0; index < 26; index += 1) {
-    stars.push(
-      el('circle', {
-        cx: r1(between(random, 0, width)),
-        cy: r1(between(random, 0, height * 0.55)),
-        r: r1(between(random, 0.6, 1.8)),
-        fill: shared.light,
-        'fill-opacity': r1(between(random, 0.25, 0.7) * 10) / 10,
-      }),
-    )
-  }
-
-  return [
-    el('defs', {}, [
-      el('linearGradient', { id: `${id}-sky`, x1: 0, y1: 0, x2: 0, y2: 1 }, [
-        el('stop', { offset: '0%', 'stop-color': palette.sky[0] }),
-        el('stop', { offset: '100%', 'stop-color': palette.sky[1] }),
-      ]),
-      el('radialGradient', { id: `${id}-glow`, cx: '50%', cy: '50%', r: '50%' }, [
-        el('stop', { offset: '0%', 'stop-color': palette.glow, 'stop-opacity': 0.75 }),
-        el('stop', { offset: '45%', 'stop-color': palette.glow, 'stop-opacity': 0.22 }),
-        el('stop', { offset: '100%', 'stop-color': palette.glow, 'stop-opacity': 0 }),
-      ]),
-    ]),
-    el('rect', { width, height, fill: `url(#${id}-sky)` }),
-    el('g', {}, stars),
-    el('ellipse', {
-      cx: width / 2,
-      cy: glowY,
-      rx: width * 0.46,
-      ry: height * 0.42,
-      fill: `url(#${id}-glow)`,
-    }),
-  ]
-}
-
-/**
- * Strings of festival lights, sagging across the top.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} Wires and bulbs.
- */
-function stringLights(context) {
-  const { random, palette, shared, width } = context
-  const out = []
-  const strands = 2 + Math.floor(random() * 2)
-
-  for (let strand = 0; strand < strands; strand += 1) {
-    const y0 = between(random, 8, 34) + strand * 16
-    const y1 = between(random, 8, 34) + strand * 16
-    const sag = between(random, 28, 58)
-    const cx = width / 2
-    const cy = (y0 + y1) / 2 + sag
-
-    out.push(
-      el('path', {
-        d: `M -10 ${r1(y0)} Q ${r1(cx)} ${r1(cy)} ${width + 10} ${r1(y1)}`,
-        fill: 'none',
-        stroke: shared.wire,
-        'stroke-opacity': 0.35,
-        'stroke-width': 1.2,
-      }),
-    )
-
-    const bulbs = 14 + Math.floor(random() * 6)
-
-    for (let index = 1; index < bulbs; index += 1) {
-      const t = index / bulbs
-      const x = (1 - t) * (1 - t) * -10 + 2 * (1 - t) * t * cx + t * t * (width + 10)
-      const y = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y1
-      const colour = palette.accents[(index + strand) % palette.accents.length]
-
-      out.push(
-        el('circle', { cx: r1(x), cy: r1(y + 5), r: 7, fill: colour, 'fill-opacity': 0.22 }),
-        el('circle', { cx: r1(x), cy: r1(y + 5), r: 2.6, fill: colour }),
-      )
-    }
-  }
-
-  return [el('g', {}, out)]
-}
-
-/**
- * A toran of triangular bunting along the top edge.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} The line and its flags.
- */
-function toran(context) {
-  const { random, palette, shared, width } = context
-  const flags = []
-  const count = 16
-  const step = width / count
-  const drop = between(random, 4, 10)
-
-  for (let index = 0; index < count; index += 1) {
-    const x = index * step
-    const colour = palette.accents[index % palette.accents.length]
-
-    flags.push(
-      el('path', {
-        d: `M ${r1(x + 2)} ${r1(drop)} L ${r1(x + step - 2)} ${r1(drop)} L ${r1(x + step / 2)} ${r1(drop + 26)} Z`,
-        fill: colour,
-      }),
-      el('circle', {
-        cx: r1(x + step / 2),
-        cy: r1(drop + 9),
-        r: 2.2,
-        fill: shared.light,
-        'fill-opacity': 0.85,
-      }),
-    )
-  }
-
-  return [
-    el('g', {}, [
-      el('line', {
-        x1: 0,
-        y1: r1(drop),
-        x2: width,
-        y2: r1(drop),
-        stroke: palette.glow,
-        'stroke-width': 2,
-      }),
-      ...flags,
-    ]),
-  ]
-}
-
-/**
- * A garbo: the pierced clay pot with a lamp inside, the centre of the circle.
- *
- * @param {DrawingContext} context The drawing context.
- * @param {number} cx Centre x.
- * @param {number} baseY Where it stands.
- * @param {number} scale Its size.
- * @returns {Array<object>} The pot, its holes and the flame.
- */
-function garbo(context, cx, baseY, scale) {
-  const { palette, shared } = context
-  const w = 34 * scale
-  const h = 40 * scale
-  const holes = []
-
-  for (let row = 0; row < 3; row += 1) {
-    for (let col = -2; col <= 2; col += 1) {
-      holes.push(
-        el('circle', {
-          cx: r1(cx + col * 6 * scale + (row % 2) * 3 * scale),
-          cy: r1(baseY - h * 0.28 - row * 7 * scale),
-          r: r1(1.6 * scale),
-          fill: palette.glow,
-        }),
-      )
-    }
-  }
-
-  return [
-    el('ellipse', {
-      cx,
-      cy: r1(baseY - h * 0.45),
-      rx: r1(w * 1.9),
-      ry: r1(h * 1.4),
-      fill: palette.glow,
-      'fill-opacity': 0.18,
-    }),
-    el('path', {
-      d: [
-        `M ${r1(cx - w * 0.3)} ${r1(baseY - h)}`,
-        `C ${r1(cx - w * 0.9)} ${r1(baseY - h * 0.75)} ${r1(cx - w * 0.75)} ${r1(baseY)} ${r1(cx)} ${r1(baseY)}`,
-        `C ${r1(cx + w * 0.75)} ${r1(baseY)} ${r1(cx + w * 0.9)} ${r1(baseY - h * 0.75)} ${r1(cx + w * 0.3)} ${r1(baseY - h)}`,
-        'Z',
-      ].join(' '),
-      fill: shared.garboClay,
-    }),
-    el('rect', {
-      x: r1(cx - w * 0.34),
-      y: r1(baseY - h - 4 * scale),
-      width: r1(w * 0.68),
-      height: r1(5 * scale),
-      rx: r1(2 * scale),
-      fill: palette.accents[1],
-    }),
-    ...holes,
-    el('path', {
-      d: `M ${r1(cx)} ${r1(baseY - h - 26 * scale)} C ${r1(cx + 9 * scale)} ${r1(baseY - h - 12 * scale)} ${r1(cx + 7 * scale)} ${r1(baseY - h - 3 * scale)} ${r1(cx)} ${r1(baseY - h - 3 * scale)} C ${r1(cx - 7 * scale)} ${r1(baseY - h - 3 * scale)} ${r1(cx - 9 * scale)} ${r1(baseY - h - 12 * scale)} ${r1(cx)} ${r1(baseY - h - 26 * scale)} Z`,
-      fill: shared.flame,
-    }),
-    el('path', {
-      d: `M ${r1(cx)} ${r1(baseY - h - 17 * scale)} C ${r1(cx + 4 * scale)} ${r1(baseY - h - 9 * scale)} ${r1(cx + 3 * scale)} ${r1(baseY - h - 5 * scale)} ${r1(cx)} ${r1(baseY - h - 5 * scale)} C ${r1(cx - 3 * scale)} ${r1(baseY - h - 5 * scale)} ${r1(cx - 4 * scale)} ${r1(baseY - h - 9 * scale)} ${r1(cx)} ${r1(baseY - h - 17 * scale)} Z`,
-      fill: shared.flameCore,
-    }),
-  ]
-}
-
-/**
- * One dancer: a flared chaniya with mirror-work, a blouse, raised arms and a
- * dandiya stick in each hand.
- *
- * @param {DrawingContext} context The drawing context.
- * @param {number} x Feet, horizontally.
- * @param {number} y Feet, vertically.
- * @param {number} scale Size, smaller at the back of the circle.
- * @param {string} skirt The chaniya's colour.
- * @param {string} trim The hem and blouse colour.
- * @param {number} lean -1 to 1: which way the turn is going.
- * @returns {object} A group.
- */
-function dancer(context, x, y, scale, skirt, trim, lean) {
-  const { random, palette, shared } = context
-  const s = scale
-  const hipY = y - 30 * s
-  const shoulderY = y - 50 * s
-  const headY = y - 60 * s
-  const flare = 22 * s * (0.9 + random() * 0.35)
-  const swing = lean * 6 * s
-  const mirrors = []
-
-  for (let index = -2; index <= 2; index += 1) {
-    mirrors.push(
-      el('circle', {
-        cx: r1(x + swing * 0.6 + index * flare * 0.34),
-        cy: r1(y - 6 * s - Math.abs(index) * 1.5 * s),
-        r: r1(1.3 * s),
-        fill: shared.light,
-        'fill-opacity': 0.9,
-      }),
-    )
-  }
-
-  const armLift = between(random, 0.55, 1)
-  const leftHand = [x - 17 * s + swing * 0.2, shoulderY - 16 * s * armLift]
-  const rightHand = [x + 17 * s + swing * 0.2, shoulderY - 16 * s * (1.4 - armLift)]
-  const stick = (hand, angle) => {
-    const length = 12 * s
-
-    return el('line', {
-      x1: r1(hand[0] - Math.cos(angle) * length * 0.5),
-      y1: r1(hand[1] - Math.sin(angle) * length * 0.5),
-      x2: r1(hand[0] + Math.cos(angle) * length * 0.5),
-      y2: r1(hand[1] + Math.sin(angle) * length * 0.5),
-      stroke: palette.accents[1],
-      'stroke-width': r1(2.2 * s),
-      'stroke-linecap': 'round',
-    })
-  }
-
-  return el('g', {}, [
-    el('path', {
-      d: [
-        `M ${r1(x - 6 * s)} ${r1(hipY)}`,
-        `Q ${r1(x - flare * 0.7 + swing)} ${r1(y - 14 * s)} ${r1(x - flare + swing)} ${r1(y)}`,
-        `Q ${r1(x + swing)} ${r1(y + 5 * s)} ${r1(x + flare + swing)} ${r1(y)}`,
-        `Q ${r1(x + flare * 0.7 + swing)} ${r1(y - 14 * s)} ${r1(x + 6 * s)} ${r1(hipY)}`,
-        'Z',
-      ].join(' '),
-      fill: skirt,
-    }),
-    el('path', {
-      d: `M ${r1(x - flare + swing)} ${r1(y)} Q ${r1(x + swing)} ${r1(y + 5 * s)} ${r1(x + flare + swing)} ${r1(y)}`,
-      fill: 'none',
-      stroke: trim,
-      'stroke-width': r1(3 * s),
-    }),
-    ...mirrors,
-    el('path', {
-      d: `M ${r1(x - 7 * s)} ${r1(hipY)} L ${r1(x - 6 * s)} ${r1(shoulderY)} L ${r1(x + 6 * s)} ${r1(shoulderY)} L ${r1(x + 7 * s)} ${r1(hipY)} Z`,
-      fill: trim,
-    }),
-    el('path', {
-      d: `M ${r1(x - 6 * s)} ${r1(shoulderY + s)} L ${r1(leftHand[0])} ${r1(leftHand[1])} M ${r1(x + 6 * s)} ${r1(shoulderY + s)} L ${r1(rightHand[0])} ${r1(rightHand[1])}`,
-      fill: 'none',
-      stroke: palette.ink,
-      'stroke-width': r1(3.2 * s),
-      'stroke-linecap': 'round',
-    }),
-    stick(leftHand, -0.9),
-    stick(rightHand, 0.9),
-    el('circle', { cx: r1(x + swing * 0.1), cy: r1(headY), r: r1(6.5 * s), fill: palette.ink }),
-    el('path', {
-      d: `M ${r1(x - 6 * s)} ${r1(headY - s)} Q ${r1(x - 2 * s)} ${r1(headY + 14 * s)} ${r1(x - 10 * s + swing)} ${r1(hipY)}`,
-      fill: 'none',
-      stroke: palette.ink,
-      'stroke-width': r1(3 * s),
-      'stroke-linecap': 'round',
-    }),
-  ])
-}
-
-/**
- * The garba circle: dancers on an ellipse around the garbo, the far side
- * smaller and drawn first so the near side overlaps it.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} The circle.
- */
-function garbaCircle(context) {
-  const { random, palette, width, height, hero } = context
-  const count = hero ? 10 : 7 + Math.floor(random() * 3)
-  const cx = width / 2
-  const cy = height * 0.74
-  const rx = width * (hero ? 0.39 : 0.35)
-  const ry = height * 0.12
-  const turn = random() * Math.PI * 2
-  const placed = []
-
-  for (let index = 0; index < count; index += 1) {
-    const angle = turn + (index / count) * Math.PI * 2
-    const depth = (Math.sin(angle) + 1) / 2
-    placed.push({
-      x: cx + Math.cos(angle) * rx,
-      y: cy + Math.sin(angle) * ry,
-      scale: 1.05 + depth * 0.62,
-      lean: Math.cos(angle + Math.PI / 2) > 0 ? 1 : -1,
-      depth,
-      skirt: palette.accents[index % palette.accents.length],
-      trim: palette.accents[(index + 2) % palette.accents.length],
-    })
-  }
-
-  placed.sort((left, right) => left.depth - right.depth)
-
-  const back = placed.filter((item) => item.depth < 0.5)
-  const front = placed.filter((item) => item.depth >= 0.5)
-  const draw = (item) =>
-    dancer(context, item.x, item.y, item.scale, item.skirt, item.trim, item.lean)
-
-  return [
-    el('ellipse', {
-      cx,
-      cy: r1(cy + 14),
-      rx: r1(rx + 70),
-      ry: r1(ry + 26),
-      fill: palette.glow,
-      'fill-opacity': 0.14,
-    }),
-    el('ellipse', {
-      cx,
-      cy: r1(cy + 12),
-      rx: r1(rx + 24),
-      ry: r1(ry + 10),
-      fill: palette.glow,
-      'fill-opacity': 0.12,
-    }),
-    ...back.map(draw),
-    ...garbo(context, cx, cy + 4, hero ? 1.6 : 1.4),
-    ...front.map(draw),
-  ]
-}
-
-/**
- * A mandala of petal rings, in the palette's colours.
- *
- * @param {DrawingContext} context The drawing context.
  * @param {number} cx Centre x.
  * @param {number} cy Centre y.
- * @param {number} size Outer radius.
- * @returns {Array<object>} The rings.
+ * @param {number} radius Radius.
+ * @param {number} degrees Angle, clockwise from three o'clock.
+ * @returns {Array<number>} The point, `[x, y]`.
  */
-function mandala(context, cx, cy, size) {
-  const { random, palette, shared } = context
-  const rings = []
-  const layers = 4
+function polar(cx, cy, radius, degrees) {
+  const radians = (degrees * Math.PI) / 180
 
-  for (let layer = layers; layer >= 1; layer -= 1) {
-    const radius = (size * layer) / layers
-    const petals = 8 + layer * 4
-    const colour = palette.accents[(layer + Math.floor(random() * 5)) % palette.accents.length]
-    const petalsOut = []
+  return [r2(cx + radius * Math.cos(radians)), r2(cy + radius * Math.sin(radians))]
+}
 
-    for (let index = 0; index < petals; index += 1) {
-      const angle = (index / petals) * Math.PI * 2
-      const tipX = cx + Math.cos(angle) * radius
-      const tipY = cy + Math.sin(angle) * radius
-      const inner = radius * 0.62
-      const side = (Math.PI / petals) * 0.9
-      const aX = cx + Math.cos(angle - side) * inner
-      const aY = cy + Math.sin(angle - side) * inner
-      const bX = cx + Math.cos(angle + side) * inner
-      const bY = cy + Math.sin(angle + side) * inner
+/**
+ * The plate and its ghost: the same shape twice, the ghost in the foil and
+ * printed a little off, the way a second colour lands on a screen print. The
+ * ghost group is marked so the hero can slide it into register.
+ *
+ * @param {Array<object>} plate The shape in its plate colour.
+ * @param {Array<object>} ghost The same outline in the foil.
+ * @returns {Array<object>} Both groups, ghost first so the plate prints over it.
+ */
+function registered(plate, ghost) {
+  return [el('g', { 'data-plate': 'ghost' }, ghost), el('g', { 'data-plate': 'key' }, plate)]
+}
 
-      petalsOut.push(
-        el('path', {
-          d: `M ${r1(aX)} ${r1(aY)} Q ${r1(tipX)} ${r1(tipY)} ${r1(bX)} ${r1(bY)} Z`,
-          fill: colour,
-          'fill-opacity': layer === layers ? 0.55 : 0.85,
-        }),
+/**
+ * The drawing functions, one per motif. Each draws into the bottom-right of
+ * the tile, the corner `EventPoster` anchors it to (a mirrored poster flips
+ * the whole tile), and returns its elements.
+ */
+const MOTIF_DRAWINGS = Object.freeze({
+  /**
+   * A low sun: a big disc rising from the corner, a ring around it in the
+   * second plate, a foil keyline.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  sun(c) {
+    const cx = r2(66 + c.random() * 12)
+    const cy = r2(70 + c.random() * 10)
+    const radius = r2(30 + c.random() * 8)
+
+    return [
+      el('circle', { cx, cy, r: r2(radius + 12), fill: c.scheme.second }),
+      ...registered(
+        [el('circle', { cx, cy, r: radius, fill: c.scheme.plate })],
+        [
+          el('circle', {
+            cx: r2(cx - 2),
+            cy: r2(cy - 2),
+            r: radius,
+            fill: 'none',
+            stroke: c.scheme.foil,
+            'stroke-width': 1.2,
+          }),
+        ],
+      ),
+    ]
+  },
+
+  /**
+   * An arch, as a doorway or a jharokha frames it: a tall pointed opening in
+   * the plate, an inner keyline in the foil, a step at its foot.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  arch(c) {
+    const left = r2(48 + c.random() * 8)
+    const width = r2(42 + c.random() * 8)
+    const right = r2(left + width)
+    const spring = r2(52 + c.random() * 8)
+    const mid = r2(left + width / 2)
+    const peak = r2(spring - width * 0.72)
+    const outline = (inset) =>
+      `M ${r2(left + inset)} 104 L ${r2(left + inset)} ${spring} Q ${r2(left + inset)} ${r2(peak + inset * 1.4)} ${mid} ${r2(peak + inset * 1.6)} Q ${r2(right - inset)} ${r2(peak + inset * 1.4)} ${r2(right - inset)} ${spring} L ${r2(right - inset)} 104 Z`
+
+    return [
+      el('rect', {
+        x: r2(left - 6),
+        y: 92,
+        width: r2(width + 12),
+        height: 10,
+        fill: c.scheme.second,
+      }),
+      ...registered(
+        [el('path', { d: outline(0), fill: c.scheme.plate })],
+        [
+          el('path', {
+            d: outline(5),
+            fill: 'none',
+            stroke: c.scheme.foil,
+            'stroke-width': 1.1,
+          }),
+        ],
+      ),
+    ]
+  },
+
+  /**
+   * A burst of rays from the corner, the way a film poster throws light.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  rays(c) {
+    const cx = 104
+    const cy = 104
+    const count = 7 + Math.floor(c.random() * 4)
+    const reach = 150
+    const span = 90 / (count * 2)
+    const plate = []
+    const ghost = []
+
+    for (let index = 0; index < count; index += 1) {
+      const from = 180 + index * span * 2
+      const [x1, y1] = polar(cx, cy, reach, from)
+      const [x2, y2] = polar(cx, cy, reach, from + span)
+
+      plate.push(
+        el('path', { d: `M ${cx} ${cy} L ${x1} ${y1} L ${x2} ${y2} Z`, fill: c.scheme.plate }),
       )
     }
 
-    rings.push(el('g', {}, petalsOut))
-    rings.push(
+    const hub = r2(18 + c.random() * 8)
+
+    ghost.push(
       el('circle', {
-        cx,
-        cy,
-        r: r1(radius * 0.6),
+        cx: r2(cx - 2),
+        cy: r2(cy - 2),
+        r: r2(hub + 8),
         fill: 'none',
-        stroke: shared.light,
-        'stroke-opacity': 0.35,
+        stroke: c.scheme.foil,
         'stroke-width': 1.2,
-        'stroke-dasharray': '2 5',
       }),
     )
-  }
+    plate.push(el('circle', { cx, cy, r: hub, fill: c.scheme.second }))
 
-  rings.push(el('circle', { cx, cy, r: r1(size * 0.12), fill: palette.glow }))
+    return registered(plate, ghost)
+  },
 
-  return rings
-}
+  /**
+   * Bold diagonal bands across the corner, like a mela banner.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  bands(c) {
+    const count = 3 + Math.floor(c.random() * 2)
+    const width = r2(9 + c.random() * 4)
+    const start = r2(70 + c.random() * 20)
+    const plate = []
+    const ghost = []
 
-/**
- * Crossed dandiya pairs, ribboned, over a mandala.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} The sticks and their mandala.
- */
-function dandiyaSticks(context) {
-  const { palette, width, height } = context
-  const cx = width / 2
-  const cy = height * 0.58
-  const sticks = []
-  const pairs = [
-    { angle: 0, offset: -120, colour: palette.accents[0] },
-    { angle: 0, offset: 120, colour: palette.accents[2] },
-  ]
+    for (let index = 0; index < count; index += 1) {
+      const offset = start + index * width * 1.9
+      const fill = index % 2 === 0 ? c.scheme.plate : c.scheme.second
 
-  for (const pair of pairs) {
-    for (const cross of [-0.5, 0.5]) {
-      const angle = pair.angle + cross
-      const length = 190
-      const x = cx + pair.offset
-      const x1 = x - Math.sin(angle) * length * 0.5
-      const y1 = cy + Math.cos(angle) * length * 0.5
-      const x2 = x + Math.sin(angle) * length * 0.5
-      const y2 = cy - Math.cos(angle) * length * 0.5
-
-      sticks.push(
-        el('line', {
-          x1: r1(x1),
-          y1: r1(y1),
-          x2: r1(x2),
-          y2: r1(y2),
-          stroke: pair.colour,
-          'stroke-width': 9,
-          'stroke-linecap': 'round',
+      plate.push(
+        el('path', {
+          d: `M ${r2(offset)} 104 L 104 ${r2(offset)} L 104 ${r2(offset + width)} L ${r2(offset + width)} 104 Z`,
+          fill,
         }),
-        el('line', {
-          x1: r1(x1),
-          y1: r1(y1),
-          x2: r1(x2),
-          y2: r1(y2),
-          stroke: palette.accents[1],
-          'stroke-width': 9,
-          'stroke-linecap': 'round',
-          'stroke-dasharray': '6 12',
-        }),
-        el('circle', { cx: r1(x2), cy: r1(y2), r: 6, fill: palette.glow }),
       )
     }
-  }
 
-  return [...mandala(context, cx, cy, 140), el('g', {}, sticks)]
-}
-
-/**
- * A band of mirror-work along the bottom edge: diamonds and discs.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} The band.
- */
-function mirrorBand(context) {
-  const { palette, shared, width, height } = context
-  const out = [
-    el('rect', {
-      x: 0,
-      y: height - 22,
-      width,
-      height: 22,
-      fill: palette.ink,
-      'fill-opacity': 0.85,
-    }),
-  ]
-  const step = 24
-
-  for (let x = step / 2, index = 0; x < width; x += step, index += 1) {
-    const colour = palette.accents[index % palette.accents.length]
-    const cy = height - 11
-
-    out.push(
-      el('path', {
-        d: `M ${r1(x)} ${cy - 7} L ${r1(x + 7)} ${cy} L ${r1(x)} ${cy + 7} L ${r1(x - 7)} ${cy} Z`,
-        fill: colour,
-      }),
-      el('circle', { cx: r1(x), cy, r: 2.4, fill: shared.light, 'fill-opacity': 0.9 }),
-    )
-  }
-
-  return [el('g', {}, out)]
-}
-
-/**
- * Kandil lanterns hanging from the top edge on strings.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} Strings and lanterns.
- */
-function lanterns(context) {
-  const { random, palette, shared, width } = context
-  const out = []
-  const count = 5
-
-  for (let index = 0; index < count; index += 1) {
-    const x = ((index + 0.5) / count) * width + between(random, -18, 18)
-    const drop = between(random, 70, 150)
-    const colour = palette.accents[index % palette.accents.length]
-    const w = 26
-    const h = 34
-
-    out.push(
+    ghost.push(
       el('line', {
-        x1: r1(x),
-        y1: 0,
-        x2: r1(x),
-        y2: r1(drop - h / 2),
-        stroke: palette.glow,
-        'stroke-opacity': 0.7,
+        x1: r2(start - 6),
+        y1: 104,
+        x2: 104,
+        y2: r2(start - 6),
+        stroke: c.scheme.foil,
+        'stroke-width': 1.4,
+      }),
+    )
+
+    return registered(plate, ghost)
+  },
+
+  /**
+   * Half rings stacked from the bottom edge, a seventies concert flyer's
+   * rainbow in the kit's colours.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  rainbow(c) {
+    const cx = r2(62 + c.random() * 14)
+    const rings = [44, 34, 24, 14]
+    const fills = [c.scheme.plate, c.scheme.second, c.scheme.plate, c.scheme.ground]
+    const plate = rings.map((radius, index) =>
+      el('path', {
+        d: `M ${r2(cx - radius)} 102 A ${radius} ${radius} 0 0 1 ${r2(cx + radius)} 102 Z`,
+        fill: fills[index],
+      }),
+    )
+    const ghost = [
+      el('path', {
+        d: `M ${r2(cx - 50)} 100 A 50 50 0 0 1 ${r2(cx + 50)} 100`,
+        fill: 'none',
+        stroke: c.scheme.foil,
         'stroke-width': 1.2,
       }),
-      el('ellipse', {
-        cx: r1(x),
-        cy: r1(drop),
-        rx: r1(w * 1.4),
-        ry: r1(h * 1.2),
-        fill: colour,
-        'fill-opacity': 0.18,
-      }),
-      el('path', {
-        d: `M ${r1(x)} ${r1(drop - h / 2)} L ${r1(x + w / 2)} ${r1(drop)} L ${r1(x)} ${r1(drop + h / 2)} L ${r1(x - w / 2)} ${r1(drop)} Z`,
-        fill: colour,
-      }),
-      el('path', {
-        d: `M ${r1(x)} ${r1(drop - h / 2)} L ${r1(x + w / 4)} ${r1(drop)} L ${r1(x)} ${r1(drop + h / 2)} L ${r1(x - w / 4)} ${r1(drop)} Z`,
-        fill: shared.light,
-        'fill-opacity': 0.28,
-      }),
+    ]
+
+    return registered(plate, ghost)
+  },
+
+  /**
+   * A halftone: dots that grow toward the corner, the texture of a cheap
+   * print run enlarged until it is the picture.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  halftone(c) {
+    const step = 7
+    const dots = []
+
+    for (let row = 0; row < 8; row += 1) {
+      for (let column = 0; column < 8; column += 1) {
+        const x = 100 - column * step - step / 2
+        const y = 100 - row * step - step / 2
+        const reach = 1 - Math.hypot(column, row) / 9
+
+        if (reach > 0.08) {
+          dots.push(
+            el('circle', {
+              cx: r2(x),
+              cy: r2(y),
+              r: r2(reach * step * 0.62),
+              fill: c.scheme.plate,
+            }),
+          )
+        }
+      }
+    }
+
+    const ring = r2(14 + c.random() * 6)
+
+    return [
+      ...registered(dots, [
+        el('circle', {
+          cx: r2(82 - c.random() * 6),
+          cy: r2(82 - c.random() * 6),
+          r: ring,
+          fill: 'none',
+          stroke: c.scheme.foil,
+          'stroke-width': 1.2,
+        }),
+      ]),
+      el('circle', { cx: 88, cy: 88, r: r2(ring * 0.55), fill: c.scheme.second }),
+    ]
+  },
+
+  /**
+   * A lattice of diamonds, as a jaali screen or a rangoli grid repeats one.
+   *
+   * @param {object} c The scheme and generator.
+   * @returns {Array<object>} Elements.
+   */
+  lattice(c) {
+    const size = r2(9 + c.random() * 3)
+    const plate = []
+
+    for (let row = 0; row < 6; row += 1) {
+      for (let column = 0; column < 6; column += 1) {
+        if (row + column > 6) continue
+
+        const x = 100 - column * size * 1.15 - size / 2
+        const y = 100 - row * size * 1.15 - size / 2
+        const half = size / 2
+        const fill = (row + column) % 3 === 1 ? c.scheme.second : c.scheme.plate
+
+        plate.push(
+          el('path', {
+            d: `M ${r2(x)} ${r2(y - half)} L ${r2(x + half)} ${r2(y)} L ${r2(x)} ${r2(y + half)} L ${r2(x - half)} ${r2(y)} Z`,
+            fill,
+          }),
+        )
+      }
+    }
+
+    const reach = r2(size * 1.15 * 5.6)
+
+    return registered(plate, [
       el('line', {
-        x1: r1(x),
-        y1: r1(drop + h / 2),
-        x2: r1(x),
-        y2: r1(drop + h / 2 + 14),
-        stroke: colour,
-        'stroke-width': 2,
+        x1: r2(100 - reach),
+        y1: 101,
+        x2: 101,
+        y2: r2(100 - reach),
+        stroke: c.scheme.foil,
+        'stroke-width': 1.2,
       }),
-    )
+    ])
+  },
+})
+
+/**
+ * Everything about an event's poster that is chosen rather than read: the
+ * colour scheme, the shape, the corner it sits in, and where the title goes.
+ *
+ * @param {object} options What to choose for.
+ * @param {string} options.seed The event's slug (or any stable string).
+ * @param {string} [options.category] Its category.
+ * @returns {{seed: number, scheme: object, motif: string, mirrored: boolean, titleAt: 'top'|'bottom', tone: 'inverse'|'ink', anchor: string}} The design.
+ */
+export function posterDesign({ seed, category }) {
+  const hash = hashString(`${seed}`)
+  const scheme = PALETTES.schemes[hash % PALETTES.schemes.length]
+  const motifs = CATEGORY_MOTIFS[category] ?? POSTER_MOTIFS
+  const motif = motifs[Math.floor(hash / PALETTES.schemes.length) % motifs.length]
+  const mirrored = ((hash >>> 11) & 1) === 1
+  const titleAt = ((hash >>> 13) & 3) === 0 ? 'bottom' : 'top'
+  const corner = `${mirrored ? 'xMin' : 'xMax'}${titleAt === 'top' ? 'YMax' : 'YMin'}`
+
+  return {
+    seed: hash,
+    scheme,
+    motif,
+    mirrored,
+    titleAt,
+    tone: scheme.tone,
+    anchor: `${corner} slice`,
   }
-
-  return [el('g', {}, out)]
-}
-
-/**
- * A row of lit diyas along the ground.
- *
- * @param {DrawingContext} context The drawing context.
- * @returns {Array<object>} Lamps and flames.
- */
-function diyas(context) {
-  const { palette, shared, width, height } = context
-  const out = []
-  const count = 9
-  const y = height - 38
-
-  for (let index = 0; index < count; index += 1) {
-    const x = ((index + 0.5) / count) * width
-
-    out.push(
-      el('ellipse', {
-        cx: r1(x),
-        cy: r1(y - 8),
-        rx: 16,
-        ry: 14,
-        fill: palette.glow,
-        'fill-opacity': 0.25,
-      }),
-      el('path', {
-        d: `M ${r1(x - 12)} ${r1(y - 4)} Q ${r1(x)} ${r1(y + 10)} ${r1(x + 12)} ${r1(y - 4)} Z`,
-        fill: shared.diyaClay,
-      }),
-      el('path', {
-        d: `M ${r1(x)} ${r1(y - 18)} C ${r1(x + 4)} ${r1(y - 11)} ${r1(x + 3)} ${r1(y - 5)} ${r1(x)} ${r1(y - 5)} C ${r1(x - 3)} ${r1(y - 5)} ${r1(x - 4)} ${r1(y - 11)} ${r1(x)} ${r1(y - 18)} Z`,
-        fill: shared.flame,
-      }),
-    )
-  }
-
-  return [el('g', {}, out)]
-}
-
-/**
- * Which picture a category gets.
- *
- * @param {string|undefined} category An `EVENT_CATEGORIES` value.
- * @returns {'circle'|'sticks'|'mandala'} The motif.
- */
-export function motifFor(category) {
-  if (category === 'GARBA_DANDIYA' || category === 'CLASSICAL_DANCE') return 'circle'
-  if (category === 'WORKSHOP' || category === 'SPORTS') return 'sticks'
-
-  return 'mandala'
-}
-
-/**
- * A plain-language description of the picture, for its accessible name.
- *
- * @param {string|undefined} category An `EVENT_CATEGORIES` value.
- * @returns {string} What the illustration shows.
- */
-export function describePoster(category) {
-  const motif = motifFor(category)
-
-  if (motif === 'circle')
-    return 'Illustration of garba dancers circling a lit lamp under festival lights'
-  if (motif === 'sticks') return 'Illustration of crossed dandiya sticks over a mandala'
-
-  return 'Illustration of a festival mandala under a toran of bunting'
 }
 
 /**
@@ -829,49 +570,159 @@ export function describePoster(category) {
  * @param {object} options What to draw.
  * @param {string} options.seed The event's slug (or any stable string).
  * @param {string} [options.category] Its category.
- * @param {'card'|'hero'} [options.variant] A hero draws a fuller scene.
- * @param {string} [options.idPrefix] Prefix for gradient ids, unique per page.
- * @returns {{viewBox: string, palette: string, children: Array<object>}} The tree's root content.
+ * @returns {{viewBox: string, palette: string, motif: string, tone: 'inverse'|'ink', titleAt: 'top'|'bottom', anchor: string, children: Array<object>}} The drawing and how to set the title over it.
  */
 export function posterArt(options) {
-  const { seed, category, variant = 'card', idPrefix = 'poster' } = options
-  const hash = hashString(`${seed}`)
-  const random = seededRandom(hash)
-  const palette = PALETTES.schemes[hash % PALETTES.schemes.length]
+  const design = posterDesign(options)
   const { width, height } = POSTER_VIEWBOX
-  const id = `${idPrefix}-${hash.toString(36)}`
-  const motif = motifFor(category)
-  const context = {
-    random,
-    palette,
-    shared: PALETTES.shared,
-    id,
-    width,
-    height,
-    hero: variant === 'hero',
-    glowY: height * 0.62,
-  }
-  const children = [...sky(context)]
-
-  if (motif === 'mandala') {
-    children.push(
-      ...lanterns(context),
-      ...mandala(context, width / 2, height * 0.55, 150),
-      ...toran(context),
-      ...diyas(context),
-    )
-  } else {
-    children.push(...stringLights(context))
-    children.push(...(motif === 'circle' ? garbaCircle(context) : dandiyaSticks(context)))
-  }
-
-  children.push(...mirrorBand(context))
+  const random = seededRandom(design.seed)
+  const shape = MOTIF_DRAWINGS[design.motif]({ random, scheme: design.scheme })
+  // The shape is drawn for the bottom-right; a mirrored poster flips the tile
+  // across, a title-at-the-bottom poster flips it up, so the shape always
+  // sits in the corner away from the words.
+  const flipX = design.mirrored ? -1 : 1
+  const flipY = design.titleAt === 'bottom' ? -1 : 1
+  const transform =
+    flipX === 1 && flipY === 1
+      ? null
+      : `matrix(${flipX} 0 0 ${flipY} ${flipX === -1 ? width : 0} ${flipY === -1 ? height : 0})`
 
   return {
     viewBox: `0 0 ${width} ${height}`,
-    palette: palette.name,
-    children,
+    palette: design.scheme.name,
+    motif: design.motif,
+    tone: design.tone,
+    titleAt: design.titleAt,
+    anchor: design.anchor,
+    children: [
+      el('rect', {
+        x: -200,
+        y: -200,
+        width: width + 400,
+        height: height + 400,
+        fill: design.scheme.ground,
+      }),
+      el('g', transform ? { transform } : {}, shape),
+    ],
   }
+}
+
+/**
+ * What the poster is, for its accessible name: the kind of night it
+ * advertises. `EventPoster` adds " for <title>".
+ *
+ * @param {string|undefined} category An `EVENT_CATEGORIES` value.
+ * @returns {string} Such as "Comedy poster", or "Event poster" for a category the site does not know.
+ */
+export function describePoster(category) {
+  return `${categoryDescriptor(category).label} poster`
+}
+
+/** Joints at which a long title splits into a headline and a line under it. */
+const TITLE_JOINTS = [/\s*:\s+/u, /\s+[-–—|]\s+/u]
+
+/** Words that start the part of a long title a poster can set smaller. */
+const TITLE_TAILS = /\s+(?=(?:with|featuring|feat\.|ft\.|presents|live at|at the)\s)/iu
+
+/**
+ * The part of a title a poster sets huge, and the rest it sets small.
+ *
+ * "Bay Lights Garba: Opening Night" is a headline and a line under it, as is
+ * "Navratri Garba Nights - 16th Oct in NJ". A long title with no such joint
+ * is split before "with" or "featuring". A short title is all headline.
+ *
+ * @param {string} title The event's title.
+ * @returns {{headline: string, subline: string|null}} The two parts.
+ */
+export function posterTitle(title) {
+  const text = String(title ?? '')
+    .replace(/\s+/gu, ' ')
+    .trim()
+
+  for (const joint of TITLE_JOINTS) {
+    const match = joint.exec(text)
+
+    if (match && match.index >= 3 && match.index <= 44) {
+      const rest = text.slice(match.index + match[0].length).trim()
+
+      if (rest) return { headline: text.slice(0, match.index), subline: rest }
+    }
+  }
+
+  if (text.length > 30) {
+    const match = TITLE_TAILS.exec(text)
+
+    if (match && match.index >= 6) {
+      return { headline: text.slice(0, match.index), subline: text.slice(match.index).trim() }
+    }
+  }
+
+  return { headline: text, subline: null }
+}
+
+/**
+ * How large to set a headline so it fills its poster without breaking a word.
+ *
+ * Measured in container units, so one answer holds for a 60px thumbnail and a
+ * 600px hero: the size is the largest at which the longest word fits the
+ * measure and the wrapped lines fit the share of the height the title may
+ * take, at the face's condensed bold (about 0.46em a capital).
+ *
+ * @param {string} headline The words to set.
+ * @param {object} [options] Options.
+ * @param {number} [options.aspect] The frame's height over its width (1.25 for 4:5).
+ * @returns {{fontSize: string, lines: number}} A CSS `font-size` and the line count it was fitted for.
+ */
+export function fitHeadline(headline, { aspect = 1.25 } = {}) {
+  const words = String(headline ?? '')
+    .toUpperCase()
+    .split(/\s+/u)
+    .filter(Boolean)
+  const em = 0.46
+  const measure = 84
+  const share = 54
+  const leading = 0.9
+
+  if (words.length === 0) return { fontSize: 'min(12cqi, 6rem)', lines: 1 }
+
+  const longest = Math.max(...words.map((word) => word.length))
+  /**
+   * How many lines the words wrap to at a size.
+   *
+   * @param {number} size A size in cqi.
+   * @returns {number} The line count.
+   */
+  const linesAt = (size) => {
+    const capacity = measure / (size * em)
+    let lines = 1
+    let used = 0
+
+    for (const word of words) {
+      const needed = used === 0 ? word.length : used + 0.45 + word.length
+
+      if (needed <= capacity) used = needed
+      else {
+        lines += 1
+        used = word.length
+      }
+    }
+
+    return lines
+  }
+
+  let best = { size: 4, lines: linesAt(4) }
+
+  for (let size = 4; size <= 34; size += 0.5) {
+    if (size * em * longest > measure) break
+
+    const lines = linesAt(size)
+
+    if (lines * size * leading <= share * aspect) best = { size, lines }
+  }
+
+  const heightCap = r2(share / (best.lines * leading))
+
+  return { fontSize: `min(${best.size}cqi, ${heightCap}cqb, 6rem)`, lines: best.lines }
 }
 
 /**
@@ -901,18 +752,39 @@ function nodeToString(node) {
 }
 
 /**
- * A standalone SVG file of an event's poster.
+ * The window onto the drawing a frame of another shape shows, for a renderer
+ * that does not honour `preserveAspectRatio` (the social card). A tall frame
+ * is cut from the tile toward the shape's corner, as a browser's `slice`
+ * would cut it. A wide one shows the whole height of the tile against its
+ * corner and lets the ground run on to the far edge, which keeps the shape at
+ * a poster's scale and gives the title the open side.
+ *
+ * @param {string} anchor The design's anchor, such as `xMaxYMax slice`.
+ * @param {number} aspect The frame's height over its width.
+ * @returns {string} A `viewBox` value.
+ */
+export function croppedViewBox(anchor, aspect) {
+  const { width, height } = POSTER_VIEWBOX
+  const w = r2(width / aspect)
+
+  return `${anchor.startsWith('xMax') ? r2(width - w) : 0} 0 ${w} ${height}`
+}
+
+/**
+ * A standalone SVG file of an event's poster: the plate and its shape.
  *
  * @param {object} options As {@link posterArt}, plus an accessible title.
  * @param {string} options.title Written into `<title>`.
- * @returns {string} A complete SVG document.
+ * @param {number} [options.aspect] Crop to a frame of this height over width, toward the shape's corner, instead of leaving the crop to the viewer.
+ * @returns {string} A complete SVG document, anchored to its shape's corner.
  */
 export function toSvgString(options) {
-  const { title, ...drawing } = options
+  const { title, aspect, ...drawing } = options
   const art = posterArt(drawing)
+  const viewBox = aspect ? croppedViewBox(art.anchor, aspect) : art.viewBox
 
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${art.viewBox}" role="img">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" preserveAspectRatio="${art.anchor}" role="img">`,
     `<title>${escapeAttribute(title)}</title>`,
     art.children.map(nodeToString).join(''),
     '</svg>',

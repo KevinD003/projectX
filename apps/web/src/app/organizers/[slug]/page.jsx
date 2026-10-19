@@ -25,15 +25,16 @@
 
 import Link from 'next/link'
 
-import { ArrowRightIcon, PolicyIcon, VerifiedIcon } from '../../../components/icons.jsx'
+import { ArrowRightIcon, VerifiedIcon } from '../../../components/icons.jsx'
 import { INVERSE_TEXT_LINK } from '../../../components/link-classes.js'
-import { FadeIn, Reveal } from '../../../components/motion.jsx'
+import { JsonLd } from '../../../components/json-ld.jsx'
 import { NotFoundView } from '../../../components/not-found-view.jsx'
 import { Breadcrumbs } from '../../../components/page-state.jsx'
 import { PageHero } from '../../../components/page-hero.jsx'
 import { SampleDataNotice } from '../../../components/sample-data-notice.jsx'
 import { loadOrganizerBySlug } from '../../../lib/api.js'
 import { calendarLeaf } from '../../../lib/home-sections.js'
+import { organiserJsonLd } from '../../../lib/site-seo.js'
 import {
   formatEventDate,
   formatEventTime,
@@ -95,24 +96,20 @@ function EventRow({ event, timezone }) {
   const leaf = calendarLeaf({ ...event, timezone })
 
   return (
-    <li className="border-b border-line last:border-b-0">
-      <Link
-        href={`/events/${event.slug}`}
-        className="group flex items-center gap-4 px-5 py-4 transition-colors duration-(--duration-fast) hover:bg-surface-subtle"
-      >
+    <li className="border-b border-line">
+      <Link href={`/events/${event.slug}`} className="group flex items-center gap-4 py-4">
         {leaf ? (
-          <span
-            aria-hidden="true"
-            className="flex h-14 w-13 shrink-0 flex-col items-center justify-center rounded-control bg-surface-subtle group-hover:bg-surface-raised"
-          >
-            <span className="text-[0.6875rem] font-bold tracking-eyebrow text-accent-strong uppercase">
+          <span aria-hidden="true" className="flex w-12 shrink-0 flex-col leading-none">
+            <span className="text-caption font-bold tracking-caps text-accent-strong uppercase">
               {leaf.month}
             </span>
-            <span className="font-display text-xl leading-6 font-bold text-ink">{leaf.day}</span>
+            <span className="mt-1 font-display text-h2 leading-[0.9] font-extrabold text-ink tabular-nums [font-stretch:75%]">
+              {leaf.day}
+            </span>
           </span>
         ) : null}
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-bold text-ink underline-offset-4 group-hover:text-accent-strong">
+          <span className="font-display text-title font-bold text-ink group-hover:text-accent-strong group-hover:underline group-hover:underline-offset-4">
             {event.title}
           </span>
           {/*
@@ -154,20 +151,20 @@ function EventRow({ event, timezone }) {
  */
 function EventSection({ id, title, events, empty, timezone }) {
   return (
-    <Reveal as="section" aria-labelledby={id}>
-      <h2 id={id} className="text-h2 font-semibold text-ink">
+    <section aria-labelledby={id}>
+      <h2 id={id} className="text-h2 text-ink">
         {title}
       </h2>
       {events.length === 0 ? (
         <p className="mt-4 text-ink-muted">{empty}</p>
       ) : (
-        <ul className="mt-5 overflow-hidden rounded-card bg-surface-raised shadow-card">
+        <ul className="mt-5 border-t-2 border-ink">
           {events.map((event) => (
             <EventRow key={event.slug} event={event} timezone={timezone} />
           ))}
         </ul>
       )}
-    </Reveal>
+    </section>
   )
 }
 
@@ -196,11 +193,15 @@ export default async function OrganizerPage({ params }) {
 
   return (
     <article>
+      <JsonLd data={usedFallback ? null : organiserJsonLd(organizer)} />
       <PageHero
         headingId="organiser-heading"
+        tone="plate"
+        size="display"
         breadcrumbs={
           <Breadcrumbs
             tone="inverse"
+            structured
             trail={[
               { href: '/', label: 'Home' },
               { href: '/organizers', label: 'Organisers' },
@@ -208,7 +209,6 @@ export default async function OrganizerPage({ params }) {
             ]}
           />
         }
-        eyebrow="Organiser"
         title={organizer.name}
       >
         {/*
@@ -217,11 +217,11 @@ export default async function OrganizerPage({ params }) {
           than one state is a badge people learn to read as decoration.
         */}
         {organizer.verified || organizer.websiteUrl ? (
-          <FadeIn delay={0.08}>
-            <p className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <>
+            <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
               {organizer.verified ? (
-                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-ink-inverse/25 bg-ink-inverse/10 pr-3.5 pl-2 text-sm font-bold text-ink-inverse">
-                  <VerifiedIcon className="h-4.5 w-4.5 text-accent-inverse" />
+                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-highlight pr-3.5 pl-2 text-label font-bold text-highlight-ink">
+                  <VerifiedIcon className="h-4.5 w-4.5" />
                   <span className="sr-only">Organiser status: </span>
                   Verified organiser
                 </span>
@@ -236,7 +236,7 @@ export default async function OrganizerPage({ params }) {
                 </a>
               ) : null}
             </p>
-          </FadeIn>
+          </>
         ) : null}
       </PageHero>
 
@@ -247,7 +247,7 @@ export default async function OrganizerPage({ params }) {
           <div className="min-w-0 space-y-14">
             {about.length > 0 ? (
               <section aria-labelledby="about-heading">
-                <h2 id="about-heading" className="text-h2 font-semibold text-ink">
+                <h2 id="about-heading" className="text-h2 text-ink">
                   About
                 </h2>
                 <div className="mt-4 space-y-4 text-body text-ink-muted">
@@ -275,17 +275,9 @@ export default async function OrganizerPage({ params }) {
             />
           </div>
 
-          <div className="space-y-8 lg:sticky lg:top-28 lg:self-start">
-            <Reveal
-              as="section"
-              aria-labelledby="policy-heading"
-              className="rounded-card bg-surface-subtle p-6"
-            >
-              <h2
-                id="policy-heading"
-                className="flex items-center gap-3 text-h3 font-semibold text-ink"
-              >
-                <PolicyIcon className="h-5.5 w-5.5 text-accent-strong" />
+          <div className="space-y-8 lg:sticky lg:top-24 lg:self-start">
+            <section aria-labelledby="policy-heading" className="border-t-2 border-ink pt-5">
+              <h2 id="policy-heading" className="text-h3 text-ink">
                 Refunds
               </h2>
               {policy.length > 0 ? (
@@ -301,13 +293,10 @@ export default async function OrganizerPage({ params }) {
                 This is the policy as it reads now. This site does not keep a copy of it as it stood
                 when you bought, so if the terms matter to you, read them before you buy.
               </p>
-            </Reveal>
+            </section>
 
-            <section
-              aria-labelledby="contact-heading"
-              className="rounded-card bg-surface-raised p-6 shadow-card"
-            >
-              <h2 id="contact-heading" className="text-h3 font-semibold text-ink">
+            <section aria-labelledby="contact-heading" className="border-t border-line pt-5">
+              <h2 id="contact-heading" className="text-h3 text-ink">
                 Contact
               </h2>
               {/*

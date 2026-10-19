@@ -174,7 +174,9 @@ describe('the organiser directory', () => {
     const container = await draw()
 
     expect(
-      screen.getByText(/These are the organisers with upcoming events listed on The Desi Events/),
+      screen.getByText(
+        'The organisers with upcoming events listed on The Desi Events, and how many each has coming up. Open one to see what they have on and how they handle refunds.',
+      ),
     ).toBeInTheDocument()
     expect(container.textContent).not.toMatch(/as soon as one of their events is published/)
   })

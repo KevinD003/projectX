@@ -17,6 +17,8 @@
  * @file components/event-content
  */
 
+import { Icon } from '@desi-event/ui/icons'
+
 import { TEXT_LINK } from './link-classes.js'
 import { SOCIAL_HOSTS, SOCIAL_NETWORK_LABELS, SOCIAL_NETWORKS } from '../lib/event-content.js'
 import { LINK_REL, isSafeHref } from '../lib/rich-text.js'
@@ -202,13 +204,17 @@ export function EventFaq({ items = [] }) {
 
   return (
     <Section id="faq-heading" title="Questions people ask">
-      <div className="divide-y divide-line rounded-card border border-line">
+      <div className="divide-y divide-line border-y border-line">
         {items.map((item, index) => (
-          <details key={`${item.question}-${index}`} className="group px-4 py-3">
-            <summary className="cursor-pointer rounded-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus">
+          <details key={`${item.question}-${index}`} className="group/faq">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-3 text-title font-semibold text-ink hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
               {item.question}
+              <Icon
+                name="chevron-down"
+                className="h-5 w-5 shrink-0 text-accent-strong transition-transform duration-(--duration-fast) ease-out group-open/faq:rotate-180"
+              />
             </summary>
-            <p className="mt-2 whitespace-pre-line text-ink-muted">{item.answer}</p>
+            <p className="max-w-[65ch] pb-4 whitespace-pre-line text-ink-muted">{item.answer}</p>
           </details>
         ))}
       </div>

@@ -42,6 +42,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Input, Select } from './ui.jsx'
+import { Icon } from '@desi-event/ui/icons'
 import { SearchIcon } from './icons.jsx'
 
 import { buildEventsHref, countMoreFilters, regionValue } from '../lib/search-params.js'
@@ -65,11 +66,21 @@ import { buildEventsHref, countMoreFilters, regionValue } from '../lib/search-pa
  * @property {number} [resultCount] How many events match, announced politely when it changes.
  */
 
-/** A field's label: the small uppercase eyebrow, in the muted ink. */
-const LABEL = 'pl-1 text-micro font-bold tracking-eyebrow text-ink-muted uppercase'
+/** A field's label: short, sentence case, above its control. */
+const LABEL = 'text-caption font-semibold text-ink-muted'
 
-/** A field's hint, under it. */
-const HINT = 'text-xs text-ink-subtle'
+/** A field's hint, under it, where the reader needs it to use the control. */
+const HINT = 'text-caption text-ink-subtle'
+
+/**
+ * A hint the control is described by, kept for a screen reader but not drawn:
+ * what it says (how the counts are counted, how search matches) is useful to
+ * hear once on arrival and only clutter for an eye scanning a filter bar.
+ */
+const QUIET_HINT = 'sr-only'
+
+/** Every select and search box in the bar: one height, 44px on a phone. */
+const CONTROL = 'h-11 font-semibold sm:h-12'
 
 /** Countries whose states are listed first, in this order; any other follows by code. */
 const COUNTRY_ORDER = Object.freeze(['US', 'CA'])
@@ -356,78 +367,10 @@ export function EventFilters({
       onSubmit={handleSubmit}
       aria-label="Filter events"
       data-enhanced={enhanced ? 'true' : undefined}
-      className="rounded-card bg-surface-raised p-4 shadow-dialog sm:p-5 lg:p-6"
+      className="flex flex-col gap-3"
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start lg:gap-5">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="filter-category" className={LABEL}>
-            Category
-          </label>
-          <Select
-            id="filter-category"
-            name="category"
-            defaultValue={filters.category ?? ''}
-            onChange={applyFilters}
-            className="h-13 font-semibold"
-            options={[
-              { value: '', label: 'All categories' },
-              ...categories.map((category) => ({ value: category.value, label: category.label })),
-            ]}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="filter-region" className={LABEL}>
-            State or province
-          </label>
-          <Select
-            id="filter-region"
-            name="region"
-            defaultValue={filters.region ?? ''}
-            onChange={changeRegion}
-            aria-describedby="filter-region-description"
-            className="h-13 font-semibold"
-          >
-            <option value="">Every state and province</option>
-            {groups.map((group) => (
-              <optgroup key={group.country} label={group.label}>
-                {group.regions.map((entry) => (
-                  <option key={regionValue(entry)} value={regionValue(entry)}>
-                    {Number.isInteger(entry.count) ? `${entry.name} (${entry.count})` : entry.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </Select>
-          <p id="filter-region-description" className={HINT}>
-            The number is how many events each has listed.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="filter-city" className={LABEL}>
-            City
-          </label>
-          <Select
-            id="filter-city"
-            name="city"
-            defaultValue={filters.city ?? ''}
-            onChange={applyFilters}
-            aria-describedby="filter-city-description"
-            className="h-13 font-semibold"
-            options={[
-              { value: '', label: everyCityLabel },
-              ...cities.map((city) => ({ value: city, label: city })),
-            ]}
-          />
-          <p id="filter-city-description" className={HINT}>
-            {filters.region
-              ? 'Cities in the state or province you chose.'
-              : 'Choose a state or province to list only its cities.'}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-1">
+      <div className="grid grid-cols-2 items-end gap-x-3 gap-y-3 md:grid-cols-4 xl:grid-cols-[minmax(0,1.25fr)_repeat(3,minmax(0,1fr))_auto]">
+        <div className="col-span-2 flex flex-col gap-1.5 md:col-span-4 xl:col-span-1">
           <label htmlFor="filter-q" className={LABEL}>
             Search
           </label>
@@ -441,14 +384,87 @@ export function EventFilters({
               placeholder="Event, venue or organiser"
               autoComplete="off"
               aria-describedby="filter-q-description"
-              className="h-13 pl-11"
+              className={`${CONTROL} pl-11 font-normal`}
             />
           </div>
-          <p id="filter-q-description" className={HINT}>
+          <p id="filter-q-description" className={QUIET_HINT}>
             Searches events, venues, cities and organisers. Every word has to match, so “garba
             houston” finds the garba nights in Houston.
           </p>
         </div>
+
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <label htmlFor="filter-category" className={LABEL}>
+            Category
+          </label>
+          <Select
+            id="filter-category"
+            name="category"
+            defaultValue={filters.category ?? ''}
+            onChange={applyFilters}
+            className={CONTROL}
+            options={[
+              { value: '', label: 'All categories' },
+              ...categories.map((category) => ({ value: category.value, label: category.label })),
+            ]}
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <label htmlFor="filter-region" className={LABEL}>
+            State or province
+          </label>
+          <Select
+            id="filter-region"
+            name="region"
+            defaultValue={filters.region ?? ''}
+            onChange={changeRegion}
+            aria-describedby="filter-region-description"
+            className={CONTROL}
+          >
+            <option value="">Every state and province</option>
+            {groups.map((group) => (
+              <optgroup key={group.country} label={group.label}>
+                {group.regions.map((entry) => (
+                  <option key={regionValue(entry)} value={regionValue(entry)}>
+                    {Number.isInteger(entry.count) ? `${entry.name} (${entry.count})` : entry.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
+          <p id="filter-region-description" className={QUIET_HINT}>
+            The number is how many events each has listed.
+          </p>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <label htmlFor="filter-city" className={LABEL}>
+            City
+          </label>
+          <Select
+            id="filter-city"
+            name="city"
+            defaultValue={filters.city ?? ''}
+            onChange={applyFilters}
+            aria-describedby="filter-city-description"
+            className={CONTROL}
+            options={[
+              { value: '', label: everyCityLabel },
+              ...cities.map((city) => ({ value: city, label: city })),
+            ]}
+          />
+          <p id="filter-city-description" className={QUIET_HINT}>
+            {filters.region
+              ? 'Cities in the state or province you chose.'
+              : 'Choose a state or province to list only its cities.'}
+          </p>
+        </div>
+
+        <Button type="submit" size="lg" className="h-11 sm:h-12">
+          <SearchIcon className="h-4.5 w-4.5" />
+          Apply
+        </Button>
       </div>
 
       {/*
@@ -456,139 +472,168 @@ export function EventFilters({
         native disclosure — so the server's `open` and the DOM's may differ at
         hydration. The DOM is the visitor's choice and is left alone.
       */}
-      <details
-        open={moreStartsOpen}
-        suppressHydrationWarning
-        className="mt-4 rounded-control border border-line px-4 py-2"
-      >
-        <summary className="flex min-h-11 cursor-pointer items-center rounded-sm font-bold text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus">
-          More filters
-          {moreChosen > 0 ? (
-            <span className="ml-2 font-semibold text-ink-muted">· {moreChosen} chosen</span>
-          ) : null}
-        </summary>
-
-        <div className="grid grid-cols-1 gap-4 pt-2 pb-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="filter-when" className={LABEL}>
-              When
-            </label>
-            <Select
-              id="filter-when"
-              name="when"
-              defaultValue={filters.when ?? ''}
-              onChange={changeWhen}
-              aria-describedby="filter-when-description"
-              className="h-13 font-semibold"
-              options={WHEN_CHOICES}
+      <div className="flex flex-wrap items-start justify-between gap-x-6">
+        <details
+          open={moreStartsOpen}
+          suppressHydrationWarning
+          className="group/more min-w-0 open:basis-full"
+        >
+          <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 rounded-control font-bold text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
+            <Icon
+              name="chevron-down"
+              className="h-4.5 w-4.5 transition-transform duration-(--duration-fast) ease-out group-open/more:rotate-180"
             />
-            <p id="filter-when-description" className={HINT}>
-              Days are counted where each event happens. This weekend is Friday to Sunday; this week
-              runs to Sunday.
-            </p>
-          </div>
+            More filters
+            {moreChosen > 0 ? (
+              <span className="font-semibold text-ink-muted">· {moreChosen} chosen</span>
+            ) : null}
+          </summary>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="filter-from" className={LABEL}>
-              From
-            </label>
-            <Input
-              id="filter-from"
-              type="date"
-              name="from"
-              defaultValue={filters.from ?? ''}
-              onChange={changeDay}
-              aria-describedby="filter-dates-description"
-              className="h-13"
-            />
-          </div>
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-4 rounded-card bg-surface-raised p-4 shadow-card md:grid-cols-4 lg:p-5">
+            <div className="col-span-2 flex flex-col gap-1.5 md:col-span-1">
+              <label htmlFor="filter-when" className={LABEL}>
+                When
+              </label>
+              <Select
+                id="filter-when"
+                name="when"
+                defaultValue={filters.when ?? ''}
+                onChange={changeWhen}
+                aria-describedby="filter-when-description"
+                className={CONTROL}
+                options={WHEN_CHOICES}
+              />
+              <p id="filter-when-description" className={HINT}>
+                Days are counted where each event happens. This weekend is Friday to Sunday; this
+                week runs to Sunday.
+              </p>
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="filter-to" className={LABEL}>
-              To
-            </label>
-            <Input
-              id="filter-to"
-              type="date"
-              name="to"
-              defaultValue={filters.to ?? ''}
-              onChange={changeDay}
-              aria-describedby="filter-dates-description"
-              className="h-13"
-            />
-            <p id="filter-dates-description" className={HINT}>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <label htmlFor="filter-from" className={LABEL}>
+                From
+              </label>
+              <Input
+                id="filter-from"
+                type="date"
+                name="from"
+                defaultValue={filters.from ?? ''}
+                onChange={changeDay}
+                aria-describedby="filter-dates-description"
+                className="h-11 sm:h-12"
+              />
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <label htmlFor="filter-to" className={LABEL}>
+                To
+              </label>
+              <Input
+                id="filter-to"
+                type="date"
+                name="to"
+                defaultValue={filters.to ?? ''}
+                onChange={changeDay}
+                aria-describedby="filter-dates-description"
+                className="h-11 sm:h-12"
+              />
+            </div>
+
+            <p
+              id="filter-dates-description"
+              className={`${HINT} col-span-2 md:col-span-1 md:self-center`}
+            >
               For Choose dates. Either day may be left empty; press Apply when they are set.
             </p>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="filter-language" className={LABEL}>
-              Language
-            </label>
-            <Select
-              id="filter-language"
-              name="language"
-              defaultValue={filters.language ?? ''}
-              onChange={applyFilters}
-              className="h-13 font-semibold"
-              options={[
-                { value: '', label: 'Any language' },
-                ...languages.map((language) => ({ value: language, label: language })),
-              ]}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="filter-format" className={LABEL}>
-              Format
-            </label>
-            <Select
-              id="filter-format"
-              name="format"
-              defaultValue={filters.format ?? ''}
-              onChange={applyFilters}
-              className="h-13 font-semibold"
-              options={[
-                { value: '', label: 'In person or online' },
-                { value: 'in_person', label: 'In person' },
-                { value: 'online', label: 'Online' },
-              ]}
-            />
-          </div>
-
-          <fieldset className="flex flex-col gap-2 sm:col-span-2 lg:col-span-3">
-            <legend className={`${LABEL} mb-2`}>Price and tickets</legend>
-            <div className="flex flex-wrap gap-x-6 gap-y-1">
-              <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-ink">
-                <input
-                  type="checkbox"
-                  name="free"
-                  value="true"
-                  defaultChecked={Boolean(filters.free)}
-                  onChange={applyFilters}
-                  aria-describedby="filter-free-description"
-                  className="size-5 rounded border-line-strong"
-                />
-                Free only
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <label htmlFor="filter-language" className={LABEL}>
+                Language
               </label>
-              <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-ink">
-                <input
-                  type="checkbox"
-                  name="onSale"
-                  value="true"
-                  defaultChecked={Boolean(filters.onSale)}
-                  onChange={applyFilters}
-                  className="size-5 rounded border-line-strong"
-                />
-                Tickets on sale now
-              </label>
+              <Select
+                id="filter-language"
+                name="language"
+                defaultValue={filters.language ?? ''}
+                onChange={applyFilters}
+                className={CONTROL}
+                options={[
+                  { value: '', label: 'Any language' },
+                  ...languages.map((language) => ({ value: language, label: language })),
+                ]}
+              />
             </div>
-            <p id="filter-free-description" className={HINT}>
-              Free means the card’s price starts at $0.
-            </p>
-          </fieldset>
+
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <label htmlFor="filter-format" className={LABEL}>
+                Format
+              </label>
+              <Select
+                id="filter-format"
+                name="format"
+                defaultValue={filters.format ?? ''}
+                onChange={applyFilters}
+                className={CONTROL}
+                options={[
+                  { value: '', label: 'In person or online' },
+                  { value: 'in_person', label: 'In person' },
+                  { value: 'online', label: 'Online' },
+                ]}
+              />
+            </div>
+
+            <fieldset className="col-span-2 flex flex-col gap-1.5">
+              <legend className={`${LABEL} mb-1.5`}>Price and tickets</legend>
+              <div className="flex flex-wrap gap-x-6 gap-y-1">
+                <label className="flex min-h-11 items-center gap-2 text-label font-semibold text-ink">
+                  <input
+                    type="checkbox"
+                    name="free"
+                    value="true"
+                    defaultChecked={Boolean(filters.free)}
+                    onChange={applyFilters}
+                    aria-describedby="filter-free-description"
+                    className="size-5 rounded border-line-strong accent-action-primary"
+                  />
+                  Free only
+                </label>
+                <label className="flex min-h-11 items-center gap-2 text-label font-semibold text-ink">
+                  <input
+                    type="checkbox"
+                    name="onSale"
+                    value="true"
+                    defaultChecked={Boolean(filters.onSale)}
+                    onChange={applyFilters}
+                    className="size-5 rounded border-line-strong accent-action-primary"
+                  />
+                  Tickets on sale now
+                </label>
+              </div>
+              <p id="filter-free-description" className={HINT}>
+                Free means the card’s price starts at $0.
+              </p>
+            </fieldset>
+          </div>
+        </details>
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 ml-auto">
+          {anyActive ? (
+            <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : null}
+          {/*
+          A deliberate way to reach the results, for a keyboard user who has
+          just changed a filter and does not want to tab through the rest of
+          the bar. Focus moves only when they ask for it.
+        */}
+          <a
+            href="#event-results"
+            className="inline-flex min-h-11 items-center rounded-control text-label font-bold text-accent-strong underline underline-offset-4 hover:decoration-2"
+          >
+            Skip to results
+          </a>
         </div>
-      </details>
+      </div>
 
       {/*
         Polite, atomic, and never focused: the count is read out after whatever
@@ -597,29 +642,6 @@ export function EventFilters({
       <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </p>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button type="submit" size="lg" className="h-13">
-          <SearchIcon className="h-4.5 w-4.5" />
-          Apply
-        </Button>
-        {anyActive ? (
-          <Button type="button" variant="ghost" size="lg" className="h-13" onClick={clearFilters}>
-            Clear filters
-          </Button>
-        ) : null}
-        {/*
-          A deliberate way to reach the results, for a keyboard user who has
-          just changed a filter and does not want to tab through the rest of
-          the bar. Focus moves only when they ask for it.
-        */}
-        <a
-          href="#event-results"
-          className="inline-flex min-h-11 items-center rounded-control px-2 text-sm font-bold text-accent-strong underline underline-offset-4 hover:decoration-2"
-        >
-          Skip to results
-        </a>
-      </div>
     </form>
   )
 }

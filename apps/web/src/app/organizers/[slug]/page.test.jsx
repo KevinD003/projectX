@@ -256,3 +256,60 @@ describe('the organiser page', () => {
     expect(screen.getByText(/sample/i)).toBeInTheDocument()
   })
 })
+
+describe('the organiser page for search engines', () => {
+  beforeEach(() => {
+    loadOrganizerBySlug.mockReset()
+  })
+
+  /**
+   * The JSON-LD blocks on a rendered page.
+   *
+   * @param {HTMLElement} container The render container.
+   * @returns {object[]} The parsed blocks.
+   */
+  const blocks = (container) =>
+    [...container.querySelectorAll('script[type="application/ld+json"]')].map((script) =>
+      JSON.parse(script.textContent),
+    )
+
+  it('describes the organiser as an Organization, with only what its record carries', async () => {
+    loadOrganizerBySlug.mockResolvedValue({ organizer: organizer(), usedFallback: false })
+
+    const { container } = render(await OrganizerPage(route))
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3000'
+
+    expect(blocks(container)).toEqual([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Swar Sadhana Trust',
+        url: new URL('/organizers/swar-sadhana-trust', base).href,
+        description: 'Custodians of Hindustani repertoire.\n\nAnd of the artists who carry it.',
+        sameAs: ['https://swarsadhana.example'],
+      },
+    ])
+  })
+
+  it('says nothing to search engines about a sample organiser', async () => {
+    loadOrganizerBySlug.mockResolvedValue({ organizer: organizer(), usedFallback: true })
+
+    const { container } = render(await OrganizerPage(route))
+
+    expect(blocks(container)).toEqual([])
+  })
+
+  it('opens on the purple plate, with the trail as a BreadcrumbList and the badge in gold', async () => {
+    loadOrganizerBySlug.mockResolvedValue({ organizer: organizer(), usedFallback: false })
+
+    const { container } = render(await OrganizerPage(route))
+    const masthead = screen.getByRole('region', { name: 'Swar Sadhana Trust' })
+
+    expect(masthead).toHaveClass('bg-surface-inverse')
+    expect(within(masthead).getByText('Verified organiser').closest('span')).toHaveClass(
+      'bg-highlight',
+      'text-highlight-ink',
+    )
+    expect(container.querySelector('[itemtype="https://schema.org/BreadcrumbList"]')).not.toBeNull()
+  })
+})

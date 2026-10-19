@@ -21,6 +21,7 @@ import {
   socialImageFor,
   socialImagePlan,
 } from './social-image.js'
+import { posterTitle } from './poster-art.js'
 
 const EVENT = {
   slug: 'garba-night',
@@ -175,7 +176,11 @@ describe('posterDataUri', () => {
   it('crops the poster to the card and titles it', () => {
     const svg = Buffer.from(posterDataUri(EVENT).split(',')[1], 'base64').toString('utf8')
 
-    expect(svg).toContain('width="1200" height="630" preserveAspectRatio="xMidYMid slice"')
+    // Cropped toward the corner its shape sits in, as the poster on the page is.
+    expect(svg).toMatch(
+      /^<svg width="1200" height="630" xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="(?:0|-90\.48) 0 190\.48 100" preserveAspectRatio="x(?:Min|Max)Y(?:Min|Max) slice"/u,
+    )
+    expect(svg.match(/preserveAspectRatio=/gu)).toHaveLength(1)
     expect(svg).toContain('for Garba Night</title>')
   })
 })
@@ -270,8 +275,10 @@ describe('renderSocialImage', () => {
       fetchCover,
       ImageResponse: FakeImageResponse,
     })
-    const img = response.element.props.children
+    const [img, ...rest] = [response.element.props.children].flat()
 
+    // A cover is the organiser's picture: nothing is lettered over it.
+    expect(rest).toEqual([])
     expect(fetchCover).toHaveBeenCalledTimes(1)
     expect(img.type).toBe('img')
     expect(img.props.src.startsWith('data:image/png;base64,')).toBe(true)
@@ -290,8 +297,13 @@ describe('renderSocialImage', () => {
       ImageResponse: FakeImageResponse,
     })
 
+    const [picture, lettering] = response.element.props.children
+
     expect(fetchCover).not.toHaveBeenCalled()
-    expect(response.element.props.children.props.src.startsWith('data:image/svg+xml')).toBe(true)
+    expect(picture.props.src.startsWith('data:image/svg+xml')).toBe(true)
+    // The poster carries its title, as the one on the page does.
+    expect(lettering.props.children.props.children).toBe(posterTitle(EVENT.title).headline)
+    expect(lettering.props.children.props.style).toMatchObject({ textTransform: 'uppercase' })
   })
 
   it('renders a real PNG of the poster through next/og', async () => {
