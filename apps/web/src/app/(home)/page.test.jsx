@@ -2,7 +2,7 @@
  * The home page says only what the catalogue says.
  *
  * Each section is read from the listing and the facets the page loaded: the
- * featured cards, the cities and their counts, the categories, the next event
+ * agenda, the cities and their counts, the categories, the next event
  * behind the hero's poster. These tests feed it the sample catalogue — the
  * same data the page falls back to — and a few hand-made edges, and hold it
  * to the rules the rest of the public site keeps: one `h1`, a search that
@@ -36,7 +36,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 
 const { loadCatalogueFacets, loadCatalogueOverview } = await import('../../lib/api.js')
 const { sampleEventSummaries } = await import('../../lib/sample-data.js')
-const { default: HomePage } = await import('./page.jsx')
+const { default: HomePage, metadata } = await import('./page.jsx')
+const { homeAgenda, notYetOver } = await import('../../lib/home-sections.js')
 
 /**
  * Facet counts for a set of summaries, as the API computes them.
@@ -97,9 +98,7 @@ describe('the home page', () => {
     const [heading] = screen.getAllByRole('heading', { level: 1 })
 
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(heading.textContent.replace(/\s+/g, ' ').trim()).toBe(
-      'Nine nights. One circle. Find your garba.',
-    )
+    expect(heading.textContent.replace(/\s+/g, ' ').trim()).toBe('Plans for the weekend, sorted.')
   })
 
   it('searches with a plain GET to the listing, offering every listed city', async () => {
@@ -137,7 +136,7 @@ describe('the home page', () => {
     expect(container).toHaveTextContent(/search for an event, a venue or an organiser/i)
   })
 
-  it('features the four soonest events that have not finished, earliest first', async () => {
+  it('lists this weekend, or else the soonest events, earliest first, as a dated agenda', async () => {
     const events = sampleEventSummaries()
 
     await draw({ events })
@@ -146,8 +145,32 @@ describe('the home page', () => {
     const titles = within(list)
       .getAllByRole('heading', { level: 3 })
       .map((heading) => heading.textContent)
+    const agenda = homeAgenda(events, { limit: 8 })
 
-    expect(titles).toEqual(events.slice(0, 4).map((event) => event.title))
+    expect(titles.length).toBeGreaterThan(0)
+    expect(titles.length).toBeLessThanOrEqual(8)
+    expect(titles).toEqual(agenda.events.map((event) => event.title))
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: agenda.kind === 'weekend' ? 'This weekend' : 'Coming up',
+      }),
+    ).toBeInTheDocument()
+    // Each row says its start in words, zone and all, inside a machine date.
+    for (const time of within(list).getAllByRole('time', { hidden: true })) {
+      expect(time).toHaveAttribute('datetime')
+    }
+    expect(within(list).getAllByRole('listitem')).toHaveLength(titles.length)
+  })
+
+  it('is not a wall of cards: the agenda is a list of rows, with no poster announced', async () => {
+    await draw()
+
+    const list = screen.getByRole('list', { name: 'Upcoming events' })
+
+    // The small posters beside each row are decoration: the row says it all.
+    expect(within(list).queryAllByRole('img')).toHaveLength(0)
+    expect(screen.getByRole('link', { name: 'See all events' })).toHaveAttribute('href', '/events')
   })
 
   it('leaves out a night that has already ended, whatever its status', async () => {
@@ -164,26 +187,30 @@ describe('the home page', () => {
     expect(container.textContent).not.toContain('A Night That Has Ended')
   })
 
-  it('puts the next garba night’s own poster behind the hero, with a link to it', async () => {
+  it('puts the next event’s own poster in the hero, with a link to it', async () => {
     const events = sampleEventSummaries()
-    const garba = events.find((event) => event.category === 'GARBA_DANDIYA')
+    const [next] = notYetOver(events)
 
     await draw({ events })
 
-    const hero = screen.getByRole('region', { name: /Nine nights/ })
-    const next = within(hero).getByRole('link', { name: /^Next garba night:/ })
+    const hero = screen.getByRole('region', { name: 'Plans for the weekend, sorted.' })
+    const link = within(hero).getByRole('link', { name: /^Next up:/ })
 
-    expect(next).toHaveAttribute('href', `/events/${garba.slug}`)
-    expect(next).toHaveAccessibleName(new RegExp(garba.title.replace(/[:.]/g, '.')))
-    expect(within(hero).getByRole('img')).toHaveAccessibleName(new RegExp(`for ${garba.title}$`))
+    expect(link).toHaveAttribute('href', `/events/${next.slug}`)
+    expect(link).toHaveAccessibleName(`Next up: ${next.title}`)
+    expect(within(hero).getByRole('img')).toHaveAccessibleName(
+      new RegExp(`for ${next.title.replace(/[:.()]/g, '.')}$`),
+    )
+    // The one plate moment on the page: the poster prints into register.
+    expect(hero.querySelector('[data-slot="poster"]')).toHaveAttribute('data-registration')
   })
 
-  it('falls back to the next night of any kind when no garba night is listed', async () => {
+  it('features the next event of any kind, not only a garba night', async () => {
     const events = sampleEventSummaries().filter((event) => event.category === 'WORKSHOP')
 
     await draw({ events })
 
-    const hero = screen.getByRole('region', { name: /Nine nights/ })
+    const hero = screen.getByRole('region', { name: 'Plans for the weekend, sorted.' })
 
     expect(within(hero).getByRole('link', { name: /^Next up:/ })).toHaveAttribute(
       'href',
@@ -202,6 +229,27 @@ describe('the home page', () => {
     expect(screen.getByRole('list', { name: 'Cities in Pacific Time' })).toBeInTheDocument()
   })
 
+  it('names the busiest cities first in a short index, and keeps every city one disclosure away', async () => {
+    const events = sampleEventSummaries()
+    const container = await draw({ events })
+
+    const top = screen.getByRole('list', { name: 'Cities with the most events' })
+    const links = within(top).getAllByRole('link')
+    const counts = links.map((link) => Number(/(\d+) events? listed$/.exec(link.textContent)[1]))
+
+    expect(links.length).toBeGreaterThan(0)
+    expect(links.length).toBeLessThanOrEqual(12)
+    expect([...counts].sort((left, right) => right - left)).toEqual(counts)
+    // The full list is there, closed: a phone is not handed a wall of cities.
+    const every = container.querySelector('details')
+
+    expect(every).not.toHaveAttribute('open')
+    expect(within(every).getByText('Every city, by time zone')).toBeInTheDocument()
+    expect(every.querySelectorAll('a[href^="/events?city="]').length).toBe(
+      new Set(events.map((event) => event.city)).size,
+    )
+  })
+
   it('offers the categories that have something listed, and only those', async () => {
     await draw()
 
@@ -215,6 +263,27 @@ describe('the home page', () => {
     expect(names).not.toContain('Comedy')
   })
 
+  it('names the next event of each kind, linked on its own', async () => {
+    const events = sampleEventSummaries()
+
+    await draw({ events })
+
+    const categories = screen.getByRole('list', { name: 'Browse by category' })
+    const garba = within(categories)
+      .getAllByRole('listitem')
+      .find((item) => within(item).queryByRole('heading', { name: 'Garba & Dandiya' }))
+    const next = notYetOver(events).find((event) => event.category === 'GARBA_DANDIYA')
+
+    expect(within(garba).getByRole('link', { name: /^Garba & Dandiya/ })).toHaveAttribute(
+      'href',
+      '/events?category=GARBA_DANDIYA',
+    )
+    expect(within(garba).getByRole('link', { name: next.title })).toHaveAttribute(
+      'href',
+      `/events/${next.slug}`,
+    )
+  })
+
   it('says in its own words that payments are simulated and tax is not calculated', async () => {
     const container = await draw()
 
@@ -224,18 +293,22 @@ describe('the home page', () => {
     expect(container.textContent).toMatch(/US sales tax is not calculated in this demo/)
   })
 
-  it('lists events across the USA and Canada, and says only tickets sold here are in US dollars', async () => {
+  it('speaks for the whole calendar across the USA and Canada, and says only tickets sold here are in US dollars', async () => {
     const container = await draw()
     const text = container.textContent.replace(/\s+/g, ' ')
 
-    expect(text).toContain('Garba & dandiya nights · across the USA and Canada')
     expect(text).toContain(
-      'Garba, dandiya and raas nights from Edison to Santa Clara. Tickets sold here are priced in US dollars, or Canadian dollars at a venue in Canada, and the booking fee is shown before you reach checkout.',
+      'Concerts, stand-up, garba, Durga Puja, Diwali melas and Bollywood nights across the USA and Canada. Search for what you feel like, and see the full price before you book.',
     )
     expect(text).toContain(
       'Tickets sold here are priced in US dollars, or Canadian dollars at a venue in Canada. US sales tax is not calculated in this demo, so checkout shows it as $0.00.',
     )
     expect(text).not.toMatch(/Prices are in US dollars/)
+    expect(text).not.toMatch(/Find your garba|Nine nights/)
+  })
+
+  it('is canonical at the site’s root', () => {
+    expect(metadata).toEqual({ alternates: { canonical: '/' } })
   })
 
   it('points organisers at the workspace and at accepting an invitation, and says events are reviewed', async () => {
@@ -323,10 +396,16 @@ describe('counting clicks on the home page', () => {
     expect(cardLinks.every((link) => link.dataset.trafficPlacement === 'HOME')).toBe(true)
     expect(cardLinks.every((link) => link.dataset.trafficKind === 'CARD_CLICK')).toBe(true)
 
-    // The hero's "next night" link is a card click on the home page too.
+    // The hero's "next up" link and each kind of night's next event are card
+    // clicks on the home page too.
     const marked = [...document.querySelectorAll('a[data-traffic-kind]')]
+    const kinds = within(screen.getByRole('list', { name: 'Browse by category' }))
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('href').startsWith('/events/'))
 
-    expect(marked.length).toBe(cardLinks.length + 1)
+    expect(kinds.length).toBeGreaterThan(0)
+    expect(kinds.every((link) => link.dataset.trafficPlacement === 'HOME')).toBe(true)
+    expect(marked.length).toBe(cardLinks.length + 1 + kinds.length)
   })
 
   it('counts nothing on sample data, whose events do not exist', async () => {
@@ -361,6 +440,32 @@ describe('who runs the site, for search engines', () => {
           '/brand/logo-square-512.png',
           process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3000',
         ).href,
+      },
+    ])
+  })
+
+  it('describes the site as a WebSite whose search is the listing’s own', async () => {
+    const container = await draw()
+    const blocks = [...container.querySelectorAll('script[type="application/ld+json"]')].map(
+      (script) => JSON.parse(script.textContent),
+    )
+    const site = blocks.filter((block) => block['@type'] === 'WebSite')
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3000'
+
+    expect(site).toEqual([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'The Desi Events',
+        url: new URL('/', base).href,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${new URL('/events', base).href}?q={search_term_string}`,
+          },
+          'query-input': 'required name=search_term_string',
+        },
       },
     ])
   })

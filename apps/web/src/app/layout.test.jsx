@@ -45,6 +45,32 @@ describe('root layout metadata', () => {
     expect(metadata.description).not.toMatch(/every price shown in US dollars/u)
   })
 
+  it('speaks for the whole calendar, not one festival, without a dash in its words', () => {
+    expect(metadata.title.default).toBe(
+      'The Desi Events · South Asian events across the USA and Canada',
+    )
+    expect(metadata.openGraph.title).toBe(metadata.title.default)
+    expect(metadata.twitter.description).toBe(
+      'South Asian events across the USA and Canada, in one place.',
+    )
+
+    for (const words of [metadata.description, metadata.openGraph.description]) {
+      expect(words).toMatch(/comedy/u)
+      expect(words).toMatch(/Durga Puja/u)
+      expect(words).toMatch(/garba/iu)
+    }
+
+    for (const words of [
+      metadata.title.default,
+      metadata.description,
+      metadata.openGraph.title,
+      metadata.openGraph.description,
+      metadata.twitter.description,
+    ]) {
+      expect(words).not.toMatch(/—/u)
+    }
+  })
+
   it('resolves relative addresses against an absolute base', () => {
     expect(metadata.metadataBase).toBeInstanceOf(URL)
     expect(metadata.metadataBase.protocol).toMatch(/^https?:$/u)

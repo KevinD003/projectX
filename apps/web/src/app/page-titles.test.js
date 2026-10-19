@@ -41,7 +41,7 @@ function pages(directory = '.') {
 const PAGES = pages()
 
 /** The front page takes the site's default title from the root layout. */
-const DEFAULT_TITLED = new Set(['page.jsx'])
+const DEFAULT_TITLED = new Set([path.join('(home)', 'page.jsx')])
 
 /** Pages about one ticket, order or transfer: their title is a fixed word. */
 const FIXED_TITLE = [
@@ -55,6 +55,15 @@ const FIXED_TITLE = [
 describe('page titles', () => {
   it('finds the pages it is about', () => {
     expect(PAGES.length).toBeGreaterThan(40)
+  })
+
+  it('finds the front page, which leaves its title to the root layout', () => {
+    for (const page of DEFAULT_TITLED) {
+      expect(PAGES).toContain(page)
+      expect(readFileSync(path.join(HERE, page), 'utf8')).toMatch(
+        /export const metadata = \{ alternates: \{ canonical: '\/' \} \}/u,
+      )
+    }
   })
 
   it.each(PAGES.filter((page) => !DEFAULT_TITLED.has(page)))('%s names itself', (page) => {
