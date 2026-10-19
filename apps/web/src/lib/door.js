@@ -74,7 +74,7 @@ export const LOOK_AGAIN = Object.freeze([
  * @type {Readonly<Record<string, string>>}
  */
 export const REFUSAL_HEADINGS = Object.freeze({
-  UNPAID_CANCELLED: 'Cancelled — not paid',
+  UNPAID_CANCELLED: 'Cancelled, not paid',
 })
 
 /**

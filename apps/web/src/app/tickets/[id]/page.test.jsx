@@ -346,7 +346,7 @@ describe('a ticket booked to pay at the door (SPEC3-XI §12.7)', () => {
 
     await renderPage()
 
-    expect(within(whereItStands()).getByText('Cancelled — not paid')).toBeInTheDocument()
+    expect(within(whereItStands()).getByText('Cancelled, not paid')).toBeInTheDocument()
     expect(
       within(whereItStands()).getByText(
         'The organiser cancelled this ticket on Thu, Oct 8, 2026 because it had not been paid for. You no longer owe $40.00 for it.',

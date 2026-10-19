@@ -1887,7 +1887,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     render(<DoorWorkspace events={[ENTRY]} />)
     await lookUp(user)
 
-    const heading = await screen.findByRole('heading', { name: 'Cancelled — not paid' })
+    const heading = await screen.findByRole('heading', { name: 'Cancelled, not paid' })
 
     await waitFor(() => expect(document.activeElement).toBe(heading))
     expect(screen.getByRole('alert').textContent).toBe(
@@ -1914,7 +1914,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     )
     await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
 
-    expect(await screen.findByRole('heading', { name: 'Cancelled — not paid' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Cancelled, not paid' })).toBeTruthy()
     expect(screen.getByRole('alert').textContent).toMatch(
       /had not been paid for\. Don't let it in\./u,
     )

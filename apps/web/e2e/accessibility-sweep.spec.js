@@ -6002,7 +6002,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
 
     await openVenueDoor(scanner, ga.title)
     await lookUp(scanner, venue.cancelledCode)
-    await expect(scanner.getByRole('heading', { name: 'Cancelled — not paid' })).toBeVisible()
+    await expect(scanner.getByRole('heading', { name: 'Cancelled, not paid' })).toBeVisible()
 
     await measuredEverywhere(scanner, 'the door, a ticket cancelled unpaid')
 
@@ -6173,7 +6173,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
 
     await buyer2.setViewportSize({ width: 1280, height: 900 })
     await buyer2.goto('/tickets')
-    await expect(buyer2.locator('main')).toContainText('Cancelled — not paid')
+    await expect(buyer2.locator('main')).toContainText('Cancelled, not paid')
 
     await measuredEverywhere(buyer2, 'the wallet, with a ticket cancelled unpaid')
   })

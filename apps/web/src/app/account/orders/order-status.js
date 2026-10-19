@@ -160,7 +160,7 @@ export function venueTicketMeaning(ticket, currency) {
   const venue = ticket?.venuePayment ?? null
 
   if (!venue) return null
-  if (venue.cancelled) return { label: 'Cancelled — not paid', tone: 'neutral' }
+  if (venue.cancelled) return { label: 'Cancelled, not paid', tone: 'neutral' }
 
   if (ticket.purchaserHolding === 'TRANSFERRED_AWAY' && ticket.passedOn?.state === 'OWES') {
     return {
