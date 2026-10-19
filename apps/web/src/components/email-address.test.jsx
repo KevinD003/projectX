@@ -51,4 +51,20 @@ describe('EmailAddress', () => {
     expect(container.textContent).toBe('not-an-address')
     expect(container.querySelector('wbr')).toBeNull()
   })
+
+  it('keeps a hyphenated address whole, in a column as well as a cell', () => {
+    const { container } = render(<EmailAddress address="new-organiser@desi-event.example" />)
+    const drawn = container.querySelector('[data-slot="email-address"]')
+
+    expect(drawn).toHaveTextContent('new-organiser@desi-event.example')
+    expect(drawn.querySelectorAll('wbr')).toHaveLength(2)
+    expect(drawn).toHaveClass('break-words')
+    expect(drawn.className).not.toMatch(/break-all/u)
+  })
+
+  it('draws the fallback in the muted ink', () => {
+    render(<EmailAddress address="" fallback="Not recorded" />)
+
+    expect(screen.getByText('Not recorded')).toHaveClass('text-ink-muted')
+  })
 })

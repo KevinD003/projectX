@@ -345,7 +345,7 @@ dense lists for people who come back every day. They share
   below that each row is a ruled record with visible labels, so nothing
   scrolls sideways on a phone (All events, the referral codes). A moment in
   a column is the day over the time (`Instant`); an email wraps before its
-  `@` and dots (`EmailText`).
+  `@` and dots (`EmailAddress`, shared with the organiser team tables).
 - **Money is money.** Finance and operations print every amount with
   `formatAmount`, so a zero is "$0.00", set in the muted ink; the shop's
   `formatPrice` (which calls zero "Free") is for prices. Several figures are

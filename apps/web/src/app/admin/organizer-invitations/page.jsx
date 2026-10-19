@@ -31,7 +31,8 @@
 import Link from 'next/link'
 
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
-import { EmailText, StatusWord } from '../../../components/admin-kit.jsx'
+import { StatusWord } from '../../../components/admin-kit.jsx'
+import { EmailAddress } from '../../../components/email-address.jsx'
 import { EmptyState } from '../../../components/ui.jsx'
 import { PANEL, PageHeader, TABLE_FRAME, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
@@ -295,7 +296,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
                     return (
                       <tr key={invitation.id} className="border-b border-line align-top">
                         <td className="pr-4 text-ink">
-                          <EmailText address={invitation.email} />
+                          <EmailAddress address={invitation.email} />
                         </td>
                         <td className="pr-4 text-ink">
                           {invitation.status === 'ACCEPTED' && invitation.organization ? (
