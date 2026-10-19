@@ -216,6 +216,13 @@ const PAIRINGS = Object.freeze([
       kind: 'text',
     }),
   ),
+  {
+    foreground: 'ink-muted',
+    background: 'surface-subtle',
+    where: 'the door’s primary action while it cannot be pressed (Look up, disabled)',
+    kind: 'text',
+    registers: ['door'],
+  },
   ...['page', 'surface', 'surface-raised', 'surface-subtle'].map((background) => ({
     foreground: 'ink-subtle',
     background,

@@ -10,7 +10,7 @@ vi.mock('../lib/qr-decode.js', () => ({ decodeFrame: vi.fn() }))
 
 const { apiFetch } = await import('../lib/api-fetch.js')
 const { decodeFrame } = await import('../lib/qr-decode.js')
-const { DoorWorkspace } = await import('./door-workspace.jsx')
+const { DOOR_DISABLED_PRIMARY, DoorWorkspace } = await import('./door-workspace.jsx')
 
 const EVENT = {
   id: 'eventaaaaaaaaaaaaaaaaaaaa',
@@ -600,6 +600,21 @@ describe('DoorWorkspace: looking up, then admitting', () => {
   })
 })
 
+describe('DoorWorkspace: Look up, while it cannot be pressed', () => {
+  it('is drawn as the quiet door plate, not the gold one faded', () => {
+    render(<DoorWorkspace events={[ENTRY]} />)
+
+    const lookUp = screen.getByRole('button', { name: 'Look up' })
+
+    expect(lookUp).toBeDisabled()
+    expect(DOOR_DISABLED_PRIMARY).toBe(
+      'disabled:opacity-100 disabled:bg-surface-subtle disabled:text-ink-muted',
+    )
+    expect(lookUp).toHaveClass(...DOOR_DISABLED_PRIMARY.split(' '))
+    expect(lookUp.className).not.toMatch(/disabled:opacity-60/u)
+  })
+})
+
 describe('DoorWorkspace: the camera', () => {
   const original = navigator.mediaDevices
 
@@ -678,6 +693,57 @@ describe('DoorWorkspace: the camera', () => {
   function afterAFewFrames() {
     return act(() => new Promise((done) => setTimeout(done, 500)))
   }
+
+  it('gives keyboard focus back to the camera’s control once the camera is on', async () => {
+    const user = userEvent.setup()
+    const { tracks, stream, grant } = slowCamera()
+
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+
+    const start = screen.getByRole('button', { name: 'Start camera' })
+
+    start.focus()
+    await user.keyboard('{Enter}')
+    // While the browser asks, the control is busy and disabled, and a real
+    // browser drops focus from a disabled control to the page (jsdom keeps
+    // it, so the page's answer is stood in for).
+    expect(start).toBeDisabled()
+
+    const active = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(document.body)
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+
+    try {
+      await grant()
+
+      const stopButton = await screen.findByRole('button', { name: 'Stop camera' })
+
+      expect(focus.mock.contexts).toContain(stopButton)
+    } finally {
+      active.mockRestore()
+      focus.mockRestore()
+    }
+    expect(tracks[0].stop).not.toHaveBeenCalled()
+    expect(stream.getTracks()).toBe(tracks)
+  })
+
+  it('leaves focus where it is when the camera was started some other way', async () => {
+    const user = userEvent.setup()
+    const { grant } = slowCamera()
+
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+    await user.click(screen.getByRole('button', { name: 'Start camera' }))
+
+    const code = screen.queryByRole('textbox')
+
+    // Focus moved on by the steward while the camera was asked for stays put.
+    screen.getByRole('button', { name: /scan the qr pass/iu }).focus()
+    await grant()
+
+    expect(await screen.findByRole('button', { name: 'Stop camera' })).not.toHaveFocus()
+    expect(code).toBeNull()
+  })
 
   it('asks for the camera only when the steward presses Start camera', async () => {
     const user = userEvent.setup()

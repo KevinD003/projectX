@@ -110,6 +110,17 @@ import { formatAmount } from '../lib/pricing.js'
 import { looksLikeGroupCode } from '../lib/pass-shape.js'
 import { EVERY_NIGHT, sessionDisplayLabel } from '../lib/sessions.js'
 
+/**
+ * The door's primary action while it cannot be pressed. The shared disabled
+ * look is the gold plate at 60% opacity, which on the Showtime purple turns a
+ * muddy brown beside the gold Next ticket and the gold segmented control. At
+ * the door a disabled action is drawn as a quiet plate instead: the raised
+ * purple well with muted lavender words, a pair the contrast test measures
+ * in the door register.
+ */
+export const DOOR_DISABLED_PRIMARY =
+  'disabled:opacity-100 disabled:bg-surface-subtle disabled:text-ink-muted'
+
 /** How many recent tickets the session list shows. */
 const RECENT_LIMIT = 8
 
@@ -803,6 +814,7 @@ export function DoorWorkspace({ events, platform = false, venuePaymentsFor = [] 
                       disabled={
                         !online || code.trim() === '' || stage === 'preview' || stage === 'result'
                       }
+                      className={DOOR_DISABLED_PRIMARY}
                     >
                       Look up
                     </Button>
