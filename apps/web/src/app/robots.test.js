@@ -34,6 +34,11 @@ describe('robots.txt', () => {
     expect(file.sitemap).toMatch(/^https?:\/\/[^/]+\/sitemap\.xml$/)
   })
 
+  it('writes only the rules and the sitemap, with no non-standard Host line', () => {
+    expect(Object.keys(file).sort()).toEqual(['rules', 'sitemap'])
+    expect(file).not.toHaveProperty('host')
+  })
+
   it.each(COURTYARD_AREAS)('keeps crawlers out of %s and everything under it', (area) => {
     expect(blocked(area)).toBe(true)
     expect(blocked(`${area}/anything/deeper`)).toBe(true)

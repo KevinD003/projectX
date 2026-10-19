@@ -32,6 +32,7 @@ export const metadata = {
   title: 'What this site does not do',
   description:
     'The capabilities this build of The Desi Events does not have, with the status of each and what it means for you.',
+  alternates: { canonical: '/limitations' },
 }
 
 /** Classes for an in-text link. */
