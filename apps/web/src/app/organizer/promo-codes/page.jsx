@@ -187,10 +187,7 @@ export default async function PromoCodesPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Sales
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Promo codes</h1>
+      <h1 className="text-h2 text-ink">Promo codes</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">
         Discounts {selected.organizationName ?? 'this organisation'} offers at checkout. Anybody who
         has a code can use it, so share it only with the people it is for. A code for one event

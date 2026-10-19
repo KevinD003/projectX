@@ -116,10 +116,7 @@ export default async function OrganizationPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Events and venues
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">
+      <h1 className="text-h2 text-ink">
         {profile.value?.name ?? selected.organizationName ?? 'Organisation'}
       </h1>
       <p className="mt-2 max-w-3xl text-ink-muted">

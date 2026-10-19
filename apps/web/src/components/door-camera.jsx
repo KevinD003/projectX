@@ -271,7 +271,7 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
       <figure
         data-slot="door-viewfinder"
         data-look={look}
-        className="door-viewfinder relative isolate aspect-[4/3] w-full max-w-xl overflow-hidden rounded-[4px] bg-surface-sunken sm:aspect-video"
+        className="door-viewfinder relative isolate aspect-[4/3] w-full max-w-xl overflow-hidden rounded-plate bg-surface-sunken sm:aspect-video"
       >
         <video
           ref={video}
