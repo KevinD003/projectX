@@ -293,6 +293,21 @@ describe('the home page', () => {
     expect(container.textContent).toMatch(/US sales tax is not calculated in this demo/)
   })
 
+  it('says how booking works in plain sentences, not a numbered row of steps', async () => {
+    await draw()
+
+    const how = screen.getByRole('region', { name: 'How booking works' })
+
+    expect(within(how).queryByRole('list')).toBeNull()
+    expect(within(how).queryAllByRole('heading')).toHaveLength(1)
+    expect(how.textContent.replace(/\s+/g, ' ')).toContain(
+      'Search for an event, a venue or an organiser, pick your tickets, and we hold them while you check out. Tickets live in your account, so booking needs one. Payments on this site are simulated. No card is charged and no money moves.',
+    )
+    expect(
+      within(how).getByRole('link', { name: 'Read what else this demo leaves out' }),
+    ).toHaveAttribute('href', '/limitations')
+  })
+
   it('speaks for the whole calendar across the USA and Canada, and says only tickets sold here are in US dollars', async () => {
     const container = await draw()
     const text = container.textContent.replace(/\s+/g, ' ')
