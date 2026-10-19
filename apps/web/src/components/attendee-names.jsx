@@ -80,7 +80,7 @@ export function hasNameProblems(values, slots) {
 /**
  * @typedef {object} AttendeeSlot
  * @property {string} key A stable key.
- * @property {string} label What the box is for, e.g. `Ticket 2 of 3 — General admission, Night 2`.
+ * @property {string} label What the box is for, e.g. `Ticket 2 of 3: General admission, Night 2`.
  * @property {string} ticketTypeId The tier.
  * @property {string|null} [eventSeatId] The seat, for reserved seating.
  */

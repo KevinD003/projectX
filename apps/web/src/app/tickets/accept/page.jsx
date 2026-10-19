@@ -57,16 +57,13 @@ export default async function AcceptTransferPage() {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Your account
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Accept a ticket</h1>
-      <p className="mt-2 text-ink-muted">
+      <h1 className="text-h2 font-semibold text-ink">Accept a ticket</h1>
+      <p className="mt-2 max-w-prose text-ink-muted">
         Somebody has offered you a ticket. Accepting puts the ticket in this account and stops the
         sender’s pass working; declining leaves it with them. A reserved seat goes with its ticket.
       </p>
-      <p className="mt-2 text-sm text-ink">{DUE_STAYS_WITH_TICKET}</p>
-      <p className="mt-2 text-sm text-ink-muted">
+      <p className="mt-2 max-w-prose text-sm text-ink">{DUE_STAYS_WITH_TICKET}</p>
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">
         {arrives ? `${arrives} ` : null}
         Sign in with the address the ticket was offered to, then paste the code below.{' '}
         <Link
@@ -76,8 +73,8 @@ export default async function AcceptTransferPage() {
           What this site does not do
         </Link>
       </p>
-      <p className="mt-2 text-sm text-ink-muted">
-        The code is only ever typed in, never carried in a web address — an address with a secret in
+      <p className="mt-2 max-w-prose text-sm text-ink-muted">
+        The code is only ever typed in, never carried in a web address: an address with a secret in
         it survives in your history and in somebody’s server log long after the invitation is spent.
       </p>
 

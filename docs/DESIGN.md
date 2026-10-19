@@ -420,6 +420,34 @@ pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`
   and leaves on a read, a 160ms bracket lock, and verdicts as full-width
   solid bands (`door-admit`, `door-refuse`, `door-warn`).
 
+### Checkout, tickets and account
+
+- **Checkout route** (`components/checkout-route.jsx`). The purple band on the
+  checkout and seat pages carries a list of five stops (Event, Tickets or
+  Seats, Details, Pay, Done) labelled "Checkout progress". The basket reports
+  its step through `useReportCheckoutStep`; the gold fill grows between stops
+  on a transform, only under `prefers-reduced-motion: no-preference`. The
+  current stop has `aria-current="step"`; finished stops say ", done" in words.
+- **One payment notice per screen.** `PaymentModeNotice` heads the order
+  summary (or the seat selection) until the order is booked. Held notices and
+  buttons do not repeat it; a booked order says "simulated" once, as a fact.
+- **Direction.** Links deeper into checkout (to the seat map, from the
+  confirmation to the tickets or the order) carry `transitionTypes={['nav-forward']}`;
+  links back to the event carry `nav-back`. `PageTransition` maps them to the
+  `page-forward` / `page-back` classes: a 12px slide on one axis, 250ms in and
+  180ms out. Anything else keeps the shell's fade.
+- **The ticket object** (`components/ticket-object.jsx`, `commerce.css`). A face
+  and a stub on `ticket-paper`, notched at the tear line by a mask. The pass
+  panel is uncovered with a clip from the tear line; the QR never moves and
+  keeps one path. On the event's day a gold keyline is traced once.
+- **Ledgers, not card grids.** Orders and transfers are rows divided by a rule,
+  with the night's date in the margin (`components/ledger-date.jsx`, hidden
+  from assistive technology because the row's "When" says it). No poster
+  thumbnail is repeated down a history. The account overview is an index of
+  rows.
+- **Copy.** No em dashes in visible strings; times are written by the site's
+  formatters in the event's zone (or UTC, said so), never as raw ISO.
+
 ---
 
 ## 10. Do and don't

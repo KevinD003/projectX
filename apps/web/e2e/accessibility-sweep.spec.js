@@ -1465,7 +1465,7 @@ const PHASE_4_SURFACES = Object.freeze([
       const card = page.getByRole('listitem').filter({ hasText: commerce.orderReference })
 
       await expect(card.getByRole('link', { name: EVENT_TITLE, exact: true })).toBeVisible()
-      await expect(card).toContainText('Paid — simulated')
+      await expect(card).toContainText('Paid (simulated)')
     },
   },
   {
@@ -1479,7 +1479,7 @@ const PHASE_4_SURFACES = Object.freeze([
         commerce.orderReference,
       )
       await expect(
-        page.getByText('Simulated payment — no card was charged and no money moved.', {
+        page.getByText('Simulated payment: no card was charged and no money moved.', {
           exact: true,
         }),
       ).toBeVisible()
@@ -5887,7 +5887,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
       .click()
 
     const booked = buyer1.getByRole('status').filter({
-      has: buyer1.getByRole('heading', { name: 'Booked — pay at the door', exact: true }),
+      has: buyer1.getByRole('heading', { name: 'Booked, pay at the door', exact: true }),
     })
 
     await expect(booked).toBeVisible({ timeout: 30_000 })
@@ -6135,7 +6135,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
       [
         buyer3,
         venue.b3Ga,
-        'Passed on — its new holder pays $40.00 at the door',
+        'Passed on, its new holder pays $40.00 at the door',
         'an order paid at the door, with a ticket passed on',
       ],
       [

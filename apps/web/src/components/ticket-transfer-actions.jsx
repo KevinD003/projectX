@@ -334,7 +334,7 @@ export function TicketTransferActions({
                 Withdraw this ticket
               </Button>
               <p className="mt-1 text-sm text-ink-muted">
-                Stops it admitting anybody, permanently. It does not give any money back — a refund
+                Stops it admitting anybody, permanently. It does not give any money back: a refund
                 is a separate decision with its own record.
               </p>
             </li>
@@ -478,7 +478,7 @@ export function TicketTransferActions({
             <>
               <h3 className="font-semibold text-ink">Withdraw this ticket</h3>
               <p className="mt-1 text-sm text-ink-muted">
-                Permanent. It will admit nobody, and whoever holds it is told. No money moves — a
+                Permanent. It will admit nobody, and whoever holds it is told. No money moves: a
                 refund is a separate decision with its own record.
               </p>
               <div className="mt-3">

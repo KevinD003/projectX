@@ -54,7 +54,7 @@ describe('BookedOrder', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Booked — pay at the door' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Booked, pay at the door' })).toBeInTheDocument()
     expect(screen.getByText('Booked. Pay $40.00 at the door.')).toBeInTheDocument()
     expect(screen.getByText(/Paid online \(simulated\) \$3\.31/u)).toBeInTheDocument()
     expect(screen.getByText(AT_THE_DOOR_SENTENCE)).toBeInTheDocument()
@@ -63,7 +63,7 @@ describe('BookedOrder', () => {
         'Until you pay at the door, the organiser or The Desi Events can cancel unpaid tickets, and the booking fee is not refunded if they do.',
       ),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/Paid — simulated/u)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Paid (simulated)/u)).not.toBeInTheDocument()
   })
 
   it('says nothing was paid online when a referral code removed the fee', () => {

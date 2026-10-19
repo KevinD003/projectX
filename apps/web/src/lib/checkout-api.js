@@ -337,7 +337,7 @@ export function paymentParts(figures) {
  *
  * @param {object|null} quote The server's quote, or null when there is none.
  * @returns {string} "Pay $49.31 (simulated)", "Pay booking fee $5.31 (simulated)",
- *   "Book now — pay $45.00 at the door", or "Pay (simulated)" without a quote.
+ *   "Book now, pay $45.00 at the door", or "Pay (simulated)" without a quote.
  */
 export function payButtonLabel(quote) {
   if (!quote) return 'Pay (simulated)'
@@ -347,7 +347,7 @@ export function payButtonLabel(quote) {
   if (!atVenue) return `Pay ${formatAmount(online, quote.currency)} (simulated)`
   if (online > 0) return `Pay booking fee ${formatAmount(online, quote.currency)} (simulated)`
 
-  return `Book now — pay ${formatAmount(due, quote.currency)} at the door`
+  return `Book now, pay ${formatAmount(due, quote.currency)} at the door`
 }
 
 /**
