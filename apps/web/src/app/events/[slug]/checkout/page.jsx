@@ -14,6 +14,7 @@
  * @module app/events/slug/checkout/page
  */
 
+import { Icon } from '@desi-event/ui/icons'
 import Link from 'next/link'
 import { EmptyState } from '../../../../components/ui.jsx'
 
@@ -24,12 +25,12 @@ import {
   formatTimeZoneLabel,
 } from '../../../../lib/format.js'
 import { CheckoutBasket } from '../../../../components/checkout-basket.jsx'
-import { CalendarIcon, PinIcon, TicketIcon } from '../../../../components/icons.jsx'
+import { CheckoutRoute, CheckoutStepProvider } from '../../../../components/checkout-route.jsx'
+import { TicketIcon } from '../../../../components/icons.jsx'
 import { PRIMARY_LINK_SMALL } from '../../../../components/link-classes.js'
 import { FadeIn } from '../../../../components/motion.jsx'
 import { Breadcrumbs } from '../../../../components/page-state.jsx'
 import { PaymentModeNotice } from '../../../../components/payment-mode-notice.jsx'
-import { EventArt } from '../../../../components/event-art.jsx'
 import { NotFoundView } from '../../../../components/not-found-view.jsx'
 import { SampleDataNotice } from '../../../../components/sample-data-notice.jsx'
 import { signInHref } from '../../../../lib/next-path.js'
@@ -97,66 +98,57 @@ export default async function CheckoutPage({ params }) {
     : formatEventLocation(event)
 
   return (
-    <div>
-      <section
-        aria-labelledby="checkout-heading"
-        className="relative isolate overflow-hidden bg-surface-inverse text-ink-inverse"
-      >
-        <div className="relative mx-auto flex max-w-content flex-col gap-6 px-4 pt-16 pb-14 sm:px-6 md:flex-row md:items-center md:gap-8 md:pt-20">
-          <FadeIn
-            distance={0}
-            className="hidden h-36 w-54 shrink-0 overflow-hidden rounded-2xl ring-1 ring-ink-inverse/15 shadow-dialog md:block"
-          >
-            <EventArt event={event} className="h-full" decorative sizes="216px" />
+    <CheckoutStepProvider>
+      {/* The band: where the buyer is, and the route through checkout. One
+          plate, no picture: the event's poster is on the event's page. */}
+      <section aria-labelledby="checkout-heading" className="bg-surface-inverse text-ink-inverse">
+        <div className="mx-auto max-w-content px-4 pt-10 pb-8 sm:px-6 md:pt-14">
+          <Breadcrumbs
+            tone="inverse"
+            trail={[
+              { href: '/events', label: 'Events' },
+              { href: `/events/${event.slug}`, label: event.title },
+              { href: null, label: 'Tickets' },
+            ]}
+          />
+          <FadeIn>
+            <h1
+              id="checkout-heading"
+              className="mt-3 max-w-4xl text-h1 font-bold text-balance text-ink-inverse"
+            >
+              Tickets for {event.title}
+            </h1>
           </FadeIn>
-          <div className="min-w-0">
-            <Breadcrumbs
-              tone="inverse"
-              trail={[
-                { href: '/events', label: 'Events' },
-                { href: `/events/${event.slug}`, label: event.title },
-                { href: null, label: 'Tickets' },
-              ]}
-            />
-            <FadeIn>
-              <h1 id="checkout-heading" className="mt-2 text-h1 font-semibold text-ink-inverse">
-                Tickets for <span className="text-accent-inverse">{event.title}</span>
-              </h1>
-            </FadeIn>
-            <FadeIn delay={0.08}>
-              <ul className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-2 text-[0.9375rem] text-ink-inverse-muted">
-                <li className="flex items-center gap-2">
-                  <CalendarIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                  <span>
-                    {formatEventWhen(event)}
-                    {zone ? ` ${zone}` : ''}
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <PinIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                  <span>{locality}</span>
-                </li>
-              </ul>
-            </FadeIn>
-          </div>
+          <ul className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-2 text-label text-ink-inverse-muted">
+            <li className="flex items-center gap-2">
+              <Icon name="calendar" className="size-4.5 text-accent-inverse" />
+              <span>
+                {formatEventWhen(event)}
+                {zone ? ` ${zone}` : ''}
+              </span>
+            </li>
+            <li className="flex items-center gap-2">
+              <Icon name="pin" className="size-4.5 text-accent-inverse" />
+              <span>{locality}</span>
+            </li>
+          </ul>
+          {ticketTypes.length > 0 ? <CheckoutRoute eventHref={`/events/${event.slug}`} /> : null}
         </div>
       </section>
 
-      <div className="mx-auto max-w-content px-4 pt-10 sm:px-6">
-        <PaymentModeNotice />
-
+      <div className="mx-auto max-w-content px-4 pt-10 sm:px-6 md:pt-14">
         <SampleDataNotice show={usedFallback} />
 
         {bookingForTeam ? (
           <aside
             aria-labelledby="team-booking-heading"
             data-testid="team-booking-notice"
-            className="mt-6 rounded-card border border-status-info/25 bg-status-info-soft px-5 py-4 text-ink sm:px-6 sm:py-5"
+            className="mb-8 rounded-control bg-status-info-soft px-5 py-4 text-ink sm:px-6 sm:py-5"
           >
-            <h2 id="team-booking-heading" className="text-[1.0625rem] font-bold text-ink">
+            <h2 id="team-booking-heading" className="text-label font-bold text-ink">
               Booking for your team
             </h2>
-            <p className="mt-1 text-[0.9375rem] text-ink">
+            <p className="mt-1 text-label text-ink">
               You are on this event&rsquo;s team, so its hidden tiers are listed here too, marked
               Team only. Nobody outside the team sees them. The tickets you book are kept in your
               account: hand each one on to a guest with a transfer code from{' '}
@@ -171,29 +163,35 @@ export default async function CheckoutPage({ params }) {
           </aside>
         ) : null}
 
-        <div className="mt-8">
-          {ticketTypes.length === 0 ? (
+        {ticketTypes.length === 0 ? (
+          <div className="flex flex-col gap-6">
+            <PaymentModeNotice />
             <EmptyState
               icon={<TicketIcon className="h-8 w-8" />}
               title="No tickets are on sale for this event"
               description="This event has no ticket tiers open, so there is nothing to choose here. The event page shows the tiers once there are some."
               className="bg-surface-raised"
               action={
-                <Link href={`/events/${event.slug}`} className={PRIMARY_LINK_SMALL}>
+                <Link
+                  href={`/events/${event.slug}`}
+                  transitionTypes={['nav-back']}
+                  className={PRIMARY_LINK_SMALL}
+                >
                   Back to the event
                 </Link>
               }
             />
-          ) : (
-            <CheckoutBasket
-              event={event}
-              ticketTypes={ticketTypes}
-              buyer={buyer}
-              signInHref={signInHref(`/events/${event.slug}/checkout`)}
-            />
-          )}
-        </div>
+          </div>
+        ) : (
+          <CheckoutBasket
+            event={event}
+            ticketTypes={ticketTypes}
+            buyer={buyer}
+            signInHref={signInHref(`/events/${event.slug}/checkout`)}
+            notice={<PaymentModeNotice />}
+          />
+        )}
       </div>
-    </div>
+    </CheckoutStepProvider>
   )
 }

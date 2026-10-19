@@ -38,6 +38,27 @@ import { ViewTransition } from 'react'
 export const PAGE_FADE = Object.freeze({ public: 'page-fade', workspace: 'workspace-fade' })
 
 /**
+ * The classes for a step with a direction: a link carrying the `nav-forward`
+ * transition type (into checkout, on to the seats) slides the content on one
+ * axis, and `nav-back` slides it the other way (`globals.css`). A navigation
+ * with no type keeps the shell's fade.
+ */
+export const PAGE_DIRECTION = Object.freeze({
+  'nav-forward': 'page-forward',
+  'nav-back': 'page-back',
+})
+
+/**
+ * What the boundary enters and exits with, by transition type.
+ *
+ * @param {string} fade The shell's fade class.
+ * @returns {Record<string, string>} The map React's `ViewTransition` takes.
+ */
+function directed(fade) {
+  return { ...PAGE_DIRECTION, default: fade }
+}
+
+/**
  * @typedef {object} PageTransitionProps
  * @property {'public'|'workspace'} [kind] Which shell this is in. Defaults to `public`.
  * @property {string} [className] Classes for the content box.
@@ -53,9 +74,10 @@ export const PAGE_FADE = Object.freeze({ public: 'page-fade', workspace: 'worksp
 export function PageTransition({ kind = 'public', className = 'flex flex-1 flex-col', children }) {
   const fade = PAGE_FADE[kind] ?? PAGE_FADE.public
   const pathname = usePathname()
+  const moves = directed(fade)
 
   return (
-    <ViewTransition key={pathname} enter={fade} exit={fade} update="none" default="none">
+    <ViewTransition key={pathname} enter={moves} exit={moves} update="none" default="none">
       <div data-page-content={kind} className={className}>
         {children}
       </div>

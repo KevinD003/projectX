@@ -77,13 +77,13 @@ export function OrderSummary({
 
   return (
     <>
-      <dl className="mt-5 space-y-3 text-[0.9375rem]">
+      <dl className="mt-5 space-y-3 text-label">
         {totals.lines.map((line) => (
           <div key={line.key} className="flex justify-between gap-3">
             <dt className="min-w-0 text-ink">
               {line.name} <span className="text-ink-muted">× {line.quantity}</span>
               {line.night ? (
-                <span className="block text-xs text-ink-muted">{line.night}</span>
+                <span className="block text-caption text-ink-muted">{line.night}</span>
               ) : null}
             </dt>
             <dd className="shrink-0 font-bold text-ink tabular-nums">
@@ -132,7 +132,7 @@ export function OrderSummary({
               {totals.taxCents > 0
                 ? `${taxNameForPlace(place ?? {})} on the booking fee`
                 : taxNameForPlace(place ?? {})}
-              <span className="block text-xs text-ink-subtle">
+              <span className="block text-caption text-ink-muted">
                 No {taxNameInSentence(place ?? {})} is added to tickets paid at the venue.
               </span>
             </dt>
@@ -145,7 +145,7 @@ export function OrderSummary({
             <dt className="text-ink-muted">
               {taxLabelForPlace(place ?? {})}
               {salesTaxUncalculated ? (
-                <span className="block text-xs text-ink-subtle">
+                <span className="block text-caption text-ink-muted">
                   US sales tax is not calculated in this demo
                 </span>
               ) : null}
@@ -157,7 +157,7 @@ export function OrderSummary({
         )}
       </dl>
 
-      <div aria-hidden="true" className="my-5 h-px bg-line" />
+      <div aria-hidden="true" className="my-5 h-0.5 bg-ink" />
 
       {atVenue ? (
         <div className="space-y-3">
@@ -165,7 +165,7 @@ export function OrderSummary({
             <div className="flex items-end justify-between gap-3">
               <p className="text-base font-bold text-ink">Pay now (simulated)</p>
               <p
-                className="font-display text-2xl leading-none font-bold text-ink tabular-nums"
+                className="font-display text-h3 leading-none font-bold text-ink tabular-nums"
                 data-testid="summary-online"
               >
                 {formatAmount(totals.totalCents, currency)}
@@ -179,12 +179,10 @@ export function OrderSummary({
           <div className="flex items-end justify-between gap-3">
             <p className="flex flex-col">
               <span className="text-base font-bold text-ink">Pay at the door</span>
-              <span className="text-micro font-bold tracking-eyebrow text-ink-subtle uppercase">
-                {currency}
-              </span>
+              <span className="text-caption text-ink-muted">{currency}</span>
             </p>
             <p
-              className="font-display text-4xl leading-none font-bold text-ink tabular-nums"
+              className="font-display text-h2 leading-none font-bold text-ink tabular-nums"
               data-testid="summary-door"
             >
               {formatAmount(totals.venueDueCents ?? 0, currency)}
@@ -195,12 +193,10 @@ export function OrderSummary({
         <div className="flex items-end justify-between gap-3">
           <p className="flex flex-col">
             <span className="text-base font-bold text-ink">Total</span>
-            <span className="text-micro font-bold tracking-eyebrow text-ink-subtle uppercase">
-              {currency}
-            </span>
+            <span className="text-caption text-ink-muted">{currency}</span>
           </p>
           <p
-            className="font-display text-4xl leading-none font-bold text-ink tabular-nums"
+            className="font-display text-h2 leading-none font-bold text-ink tabular-nums"
             data-testid="summary-total"
           >
             {formatAmount(totals.totalCents, currency)}

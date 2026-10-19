@@ -14,7 +14,7 @@ const location = { pathname: '/organizer/events' }
 
 vi.mock('next/navigation', () => ({ usePathname: () => location.pathname }))
 
-const { PAGE_FADE, PageTransition } = await import('./page-transition.jsx')
+const { PAGE_DIRECTION, PAGE_FADE, PageTransition } = await import('./page-transition.jsx')
 
 /**
  * A page with a little state of its own, to tell a re-render from a remount.
@@ -94,5 +94,9 @@ describe('PageTransition', () => {
 
   it('fades the two shells under their own names, which the stylesheet times', () => {
     expect(PAGE_FADE).toEqual({ public: 'page-fade', workspace: 'workspace-fade' })
+  })
+
+  it('slides a step forward or back through checkout by its transition type, and fades the rest', () => {
+    expect(PAGE_DIRECTION).toEqual({ 'nav-forward': 'page-forward', 'nav-back': 'page-back' })
   })
 })
