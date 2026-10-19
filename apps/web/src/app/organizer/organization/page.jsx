@@ -59,9 +59,9 @@ async function attempt(load) {
  */
 function Fact({ term, children }) {
   return (
-    <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+    <div className="py-3 sm:grid sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
       <dt className="text-sm font-medium text-ink-muted">{term}</dt>
-      <dd className="mt-1 text-sm break-words text-ink sm:col-span-2 sm:mt-0">{children}</dd>
+      <dd className="mt-1 text-sm break-words text-ink sm:mt-0">{children}</dd>
     </div>
   )
 }
@@ -114,12 +114,13 @@ export default async function OrganizationPage({ searchParams }) {
     SUBMITTABLE_STATUSES.includes(state.status)
   const history = [...(state?.history ?? [])].reverse()
 
+  const eligibility = state?.eligible
+    ? 'It may publish events and be paid.'
+    : 'It may not publish events or be paid.'
+
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Events and venues
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">
+      <h1 className="text-h2 text-ink">
         {profile.value?.name ?? selected.organizationName ?? 'Organisation'}
       </h1>
       <p className="mt-2 max-w-3xl text-ink-muted">
@@ -204,13 +205,12 @@ export default async function OrganizationPage({ searchParams }) {
               <Badge variant={reading.tone} size="lg" srLabel="Verification:">
                 {reading.label}
               </Badge>
-              <span className="text-sm text-ink-muted">
-                {state.eligible
-                  ? 'It may publish events and be paid.'
-                  : 'It may not publish events or be paid.'}
-              </span>
+              <span className="text-sm text-ink-muted">{eligibility}</span>
             </p>
-            <p className="mt-2 text-sm text-ink-muted">{reading.meaning}</p>
+            {/* The state's own meaning, unless it only repeats the line above. */}
+            {reading.meaning !== eligibility ? (
+              <p className="mt-2 text-sm text-ink-muted">{reading.meaning}</p>
+            ) : null}
 
             {state.status === 'REQUIRES_INFORMATION' && state.note ? (
               <div className="mt-4 rounded-card border border-status-warning/30 bg-status-warning-soft p-4 text-sm text-ink">

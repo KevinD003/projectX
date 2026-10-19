@@ -393,6 +393,33 @@ pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`
 | The door (check-in)                                                                           | Operate, high frequency                    | Showtime                  | Dark ground, gold brackets and actions, full-width verdict bands.                                                               |
 | API docs, limitations, policy pages                                                           | Read                                       | Poster frame, calm column | The masthead and method plates; a 60–75ch column.                                                                               |
 
+### The organiser workspace, page by page
+
+- **Lists are ruled rows, not cards.** "Your events", "Your venues", the
+  editor's readiness checks and the overview's waiting list are one
+  `divide-y` list between two rules. A row is the title in the display face,
+  a line of tabular facts, and the state on the right (stacked under it on a
+  phone). Counts over a list are one ruled strip of figures (`dl > div`), not
+  a row of tiles, and count only the rows the page read.
+- **One plate per page.** The overview's "Next up" is the workspace's plate:
+  the date set large in gold on purple, the orange "Today"/"On now" mark on
+  the event's day, and the door link only then and only for somebody who
+  admits people there.
+- **The editor's steps are a stepper.** A numbered marker per step (drawn,
+  `aria-hidden`), the number said once in words, so each button is named
+  "Step 3 Sessions". Vertical with a rule from `lg`; a row that scrolls
+  inside itself on a phone.
+- **Words, not stamps.** Times read as "Oct 19, 2026, 7:24 PM UTC" with the
+  instant kept in `dateTime`; email addresses break only before the `@` and
+  a domain dot (`EmailAddress`); row headers in tables sit left.
+- **Removals are quiet.** A destructive action repeated per row is
+  danger-coloured text on a ghost button; the solid danger button is for the
+  one irreversible act on a screen (cancel, delete).
+- **The door** is §5's Showtime register: viewfinder with gold brackets, a
+  scan line that exists only under `prefers-reduced-motion: no-preference`
+  and leaves on a read, a 160ms bracket lock, and verdicts as full-width
+  solid bands (`door-admit`, `door-refuse`, `door-warn`).
+
 ---
 
 ## 10. Do and don't

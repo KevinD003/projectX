@@ -26,6 +26,8 @@
 
 import Link from 'next/link'
 
+import { formatInstantIn } from '../lib/format.js'
+
 /**
  * @typedef {object} BreadcrumbsProps
  * @property {Array<{href: string|null, label: string}>} trail Oldest ancestor first, current page last.
@@ -228,7 +230,8 @@ export function Loading({ label }) {
 
 /**
  * @typedef {object} StaleProps
- * @property {string} asOf When the data was read, already formatted.
+ * @property {string} asOf When the data was read: an ISO-8601 instant, which is shown to
+ *   the reader in words ("Oct 19, 2026, 7:13 PM UTC") and kept whole in `dateTime`.
  */
 
 /**
@@ -244,8 +247,8 @@ export function Loading({ label }) {
 export function AsOf({ asOf }) {
   return (
     <p className="mt-2 text-sm text-ink-muted">
-      Read at <time dateTime={asOf}>{asOf}</time>. This page does not refresh itself; reload it to
-      see anything that has changed since.
+      Read at <time dateTime={asOf}>{formatInstantIn(asOf) ?? asOf}</time>. This page does not
+      refresh itself; reload it to see anything that has changed since.
     </p>
   )
 }

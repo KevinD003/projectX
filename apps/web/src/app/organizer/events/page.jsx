@@ -42,10 +42,7 @@ import Link from 'next/link'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
 import { Badge, EmptyState } from '../../../components/ui.jsx'
 import {
-  CountTile,
-  CountTiles,
   PageHeader,
-  PANEL,
   PosterThumb,
   PRIMARY_LINK,
   TEXT_LINK,
@@ -138,7 +135,6 @@ export default async function OrganizerEventsPage({ searchParams } = {}) {
   return (
     <div>
       <PageHeader
-        eyebrow="Workspace · Events"
         title="Your events"
         actions={
           <Link href="/organizer/events/new" className={PRIMARY_LINK}>
@@ -205,24 +201,37 @@ export default async function OrganizerEventsPage({ searchParams } = {}) {
         </p>
       ) : null}
 
-      {/* Counts of the rows below and nothing else — no heading, so the only
-          second-level headings on this page are the events themselves. */}
+      {/* Counts of the rows below and nothing else: one ruled strip of
+          figures, not four cards, and no heading, so the only second-level
+          headings on this page are the events themselves. */}
       {events.length > 0 ? (
-        <CountTiles>
-          <CountTile
-            label="Listed here"
-            value={counts.listed}
-            hint={truncated ? 'The most recent; older events are not counted.' : undefined}
-          />
-          <CountTile label="Waiting on you" value={counts.yours} />
-          <CountTile label="With a moderator" value={counts.moderator} />
-          <CountTile label="On sale" value={counts.onSale} />
-        </CountTiles>
+        <dl
+          data-slot="event-tally"
+          className="mt-6 grid grid-cols-2 border-y border-line sm:grid-cols-4 sm:divide-x sm:divide-line"
+        >
+          {[
+            ['Listed here', counts.listed],
+            ['Waiting on you', counts.yours],
+            ['With a moderator', counts.moderator],
+            ['On sale', counts.onSale],
+          ].map(([label, value], index) => (
+            <div
+              key={label}
+              className={`flex flex-col gap-1 py-4 sm:px-5 sm:first:pl-0 ${
+                index < 2 ? 'border-b border-line sm:border-b-0' : ''
+              } ${index % 2 === 1 ? 'pl-4 sm:pl-5' : ''}`}
+            >
+              <dt className="text-sm font-medium text-ink-muted">{label}</dt>
+              <dd className="font-display text-h2 leading-none font-bold text-ink tabular-nums">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
-
       {truncated ? (
         <p className="mt-4 text-sm text-ink-muted">
-          The most recently created events are listed; older ones are not shown here.
+          The most recently created events are listed and counted; older ones are not shown here.
         </p>
       ) : null}
 
@@ -257,7 +266,7 @@ export default async function OrganizerEventsPage({ searchParams } = {}) {
       ) : null}
 
       {events.length > 0 ? (
-        <ul className="mt-6 space-y-3">
+        <ul data-slot="event-rows" className="mt-8 divide-y divide-line border-y border-line">
           {events.map((event) => {
             const reading = statusReading(event.status)
             // The Desi Events team's own editor for an event this reader is not
@@ -269,14 +278,17 @@ export default async function OrganizerEventsPage({ searchParams } = {}) {
             return (
               <li
                 key={event.id}
-                className={`flex overflow-hidden transition-shadow duration-(--duration-base) ease-standard focus-within:outline-2 focus-within:outline-focus focus-within:outline-offset-2 hover:shadow-card-hover ${PANEL}`}
+                className="group relative flex gap-4 py-4 transition-colors duration-(--duration-fast) ease-standard focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus hover:bg-surface-subtle sm:gap-5 sm:px-3"
               >
                 {/* The same poster the public card will wear, as a thumbnail. */}
-                <PosterThumb event={event} className="hidden w-32 sm:block" />
+                <PosterThumb
+                  event={event}
+                  className="hidden aspect-[4/3] w-28 shrink-0 self-start rounded-plate sm:block"
+                />
 
-                <div className="grid min-w-0 flex-1 gap-3 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-6">
+                <div className="grid min-w-0 flex-1 gap-2 lg:grid-cols-[minmax(0,1fr)_14rem] lg:items-center lg:gap-6">
                   <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-ink">
+                    <h2 className="font-display text-title leading-snug font-bold break-words text-ink">
                       <Link href={href} className={TEXT_LINK}>
                         {event.title}
                       </Link>
@@ -286,18 +298,22 @@ export default async function OrganizerEventsPage({ searchParams } = {}) {
                         {event.organizationName}
                       </p>
                     ) : null}
-                    <p className="mt-1 text-sm text-ink-muted">
+                    <p className="mt-1 text-sm text-ink-muted tabular-nums">
                       {formatEventDate(event.startsAt, event.timezone)}
                       {event.venueName ? ` · ${event.venueName}` : ''}
                       {event.city ? `, ${event.city}` : ''}
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 lg:flex-col lg:items-end">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 lg:flex-col lg:items-end lg:text-right">
                     <Badge variant={reading.tone} size="lg" srLabel="State:">
                       {reading.label}
                     </Badge>
-                    <p className="text-sm text-ink-muted">
+                    <p
+                      className={`text-sm ${
+                        reading.whose === 'you' ? 'font-semibold text-ink' : 'text-ink-muted'
+                      }`}
+                    >
                       {event.status === 'DELETED'
                         ? 'Off the site; only the team at The Desi Events can restore it'
                         : reading.whose === 'nobody'
