@@ -13,7 +13,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import LimitationsPage from './page.jsx'
+import LimitationsPage, { metadata } from './page.jsx'
 
 afterEach(cleanup)
 
@@ -533,5 +533,10 @@ describe('LimitationsPage', () => {
 
     expect(fetch).not.toHaveBeenCalled()
     fetch.mockRestore()
+  })
+
+  it('is canonical at its own address', () => {
+    expect(metadata.title).toBe('What this site does not do')
+    expect(metadata.alternates).toEqual({ canonical: '/limitations' })
   })
 })

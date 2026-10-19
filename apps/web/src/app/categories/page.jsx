@@ -41,6 +41,7 @@ export const metadata = {
   title: 'Categories',
   description:
     'Live music, comedy, garba and dandiya, Bollywood nights, melas, theatre, workshops and more: every kind of event on The Desi Events, with how many are listed in each.',
+  alternates: { canonical: '/categories' },
 }
 
 /**

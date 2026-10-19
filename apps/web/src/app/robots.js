@@ -39,12 +39,15 @@ export const DISALLOWED = Object.freeze([
 /**
  * The rules.
  *
+ * No `Host:` line. It is not part of the protocol (RFC 9309); Google ignores
+ * it, and the one crawler that reads it expects a bare host name, not the
+ * scheme and port a site address carries.
+ *
  * @returns {object} Next's robots shape.
  */
 export default function robots() {
   return {
     rules: [{ userAgent: '*', allow: '/', disallow: [...DISALLOWED] }],
     sitemap: `${siteUrl}/sitemap.xml`,
-    host: siteUrl,
   }
 }

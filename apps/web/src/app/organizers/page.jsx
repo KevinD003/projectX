@@ -39,7 +39,8 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Organisers',
   description:
-    'The collectives and promoters with upcoming garba, dandiya and Navratri events listed on The Desi Events — open one to see everything they have on.',
+    'The collectives and promoters with events coming up on The Desi Events: concerts, comedy, Durga Puja, garba and more. Open one to see everything they have on.',
+  alternates: { canonical: '/organizers' },
 }
 
 /**

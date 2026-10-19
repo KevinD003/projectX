@@ -69,7 +69,8 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Venues',
   description:
-    'Halls and pavilions on The Desi Events, with the accessibility each venue asserts — step-free entrances, hearing loops, accessible toilets and more.',
+    'Halls and pavilions on The Desi Events, with the accessibility each venue asserts: step-free entrances, hearing loops, accessible toilets and more.',
+  alternates: { canonical: '/venues' },
 }
 
 /** Classes for a pagination link, matching the event listing. */

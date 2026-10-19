@@ -133,6 +133,7 @@ describe('the category directory', () => {
   it('is a public, indexable page', () => {
     expect(metadata.title).toBe('Categories')
     expect(metadata.description).toEqual(expect.any(String))
+    expect(metadata.alternates).toEqual({ canonical: '/categories' })
     expect(metadata.robots).toBeUndefined()
   })
 })
