@@ -265,7 +265,7 @@ export default async function RefundDetailPage({ params }) {
               <tbody>
                 {refund.items.map((item) => (
                   <tr key={item.orderItemId}>
-                    <th scope="row" className={`${TD} font-mono font-normal`}>
+                    <th scope="row" className={`${TD} text-left font-mono font-normal`}>
                       {item.orderItemId}
                     </th>
                     <td className={NUM}>{item.quantity}</td>

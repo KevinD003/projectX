@@ -397,7 +397,7 @@ export default async function NotificationQueuePage({ searchParams }) {
 
                   return (
                     <tr key={message.id}>
-                      <th scope="row" className={`${TD} font-normal`}>
+                      <th scope="row" className={`${TD} text-left font-normal`}>
                         <Link
                           href={`${PATH}/${encodeURIComponent(message.id)}`}
                           className={`${LINK} font-mono font-medium`}

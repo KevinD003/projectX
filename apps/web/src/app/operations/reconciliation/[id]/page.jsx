@@ -142,7 +142,7 @@ function Evidence({ caption, evidence, absent }) {
         <tbody>
           {rows.map(([key, value]) => (
             <tr key={key}>
-              <th scope="row" className={`${TD} font-normal`}>
+              <th scope="row" className={`${TD} text-left font-normal`}>
                 {key}
               </th>
               <td className={`${TD} font-mono`}>{value === null ? '—' : String(value)}</td>
