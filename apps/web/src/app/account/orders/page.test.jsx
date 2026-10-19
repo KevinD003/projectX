@@ -123,10 +123,10 @@ afterEach(cleanup)
 
 describe('each order', () => {
   it.each([
-    ['PAID', 'Paid — simulated', 'success'],
+    ['PAID', 'Paid (simulated)', 'success'],
     ['PENDING', 'Waiting for payment', 'pending'],
     ['CANCELLED', 'Cancelled', 'neutral'],
-    ['REFUNDED', 'Refunded — simulated', 'info'],
+    ['REFUNDED', 'Refunded (simulated)', 'info'],
     ['EXPIRED', 'Expired', 'neutral'],
   ])('reads %s as “%s”, in words, a %s colour and its glyph', async (status, words, tone) => {
     getMyOrders.mockResolvedValue({ orders: [order({ status })], pagination: counters() })
@@ -360,7 +360,7 @@ describe('a booking paid at the venue in the list (SPEC3 §12.7)', () => {
 
     await renderPage()
 
-    expect(screen.getByText('Booked — pay $80.00 at the door')).toBeInTheDocument()
+    expect(screen.getByText('Booked, pay $80.00 at the door')).toBeInTheDocument()
     expect(screen.getByText('Paid online (simulated)')).toBeInTheDocument()
     expect(screen.getByText('$6.62')).toBeInTheDocument()
     expect(screen.getByText('To pay at the door')).toBeInTheDocument()

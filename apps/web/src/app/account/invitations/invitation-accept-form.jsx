@@ -58,7 +58,7 @@ export const PART_OF_A_CODE =
 
 /** What every unusable code is told. */
 export const UNUSABLE_CODE =
-  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was issued to a different email address — sign in with the address the invitation was sent to.'
+  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was issued to a different email address. Sign in with the address the invitation was sent to.'
 
 /** What an organiser invitation's code typed here is told. */
 export const ORGANIZER_CODE_HERE =

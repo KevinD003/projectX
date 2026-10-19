@@ -260,7 +260,7 @@ export function TicketPass({ ticketId }) {
                 brightness up if the scanner struggles.
               </p>
               <p>
-                Anybody holding this code — on a screen, printed, or as a screenshot — can use it to
+                Anybody holding this code, on a screen, printed or as a screenshot, can use it to
                 get in once. Do not post it or send it to anyone. If you want somebody else to use
                 this ticket, offer it to them below instead: that gives them their own pass and
                 cancels this one.

@@ -274,7 +274,7 @@ describe('a withdrawn ticket', () => {
     const section = screen.getByRole('region', { name: 'Where it stands' })
 
     expect(section).toHaveTextContent(
-      'Does not admit. Withdrawn — this ticket no longer works at the door.',
+      'Does not admit. Withdrawn: this ticket no longer works at the door.',
     )
     expect(section).not.toHaveTextContent('Cancelled. It admits nobody.')
   })

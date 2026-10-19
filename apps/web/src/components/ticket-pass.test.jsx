@@ -63,7 +63,7 @@ describe('TicketPass', () => {
       cache: 'no-store',
     })
     // And the honest sentence about screenshots, next to it.
-    expect(screen.getByText(/as a screenshot — can use it to get in once/iu)).toBeTruthy()
+    expect(screen.getByText(/as a screenshot, can use it to get in once/iu)).toBeTruthy()
     expect(screen.getByRole('button', { name: /hide pass/iu })).toBe(document.activeElement)
 
     // A valid figure: the code and its caption, the caption last, and the

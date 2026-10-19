@@ -45,10 +45,7 @@ const LINK =
 export default function AcceptOrganizerInvitationPage() {
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Your account
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Accept an organiser invitation</h1>
+      <h1 className="text-h2 font-semibold text-ink">Accept an organiser invitation</h1>
       <p className="mt-2 max-w-2xl text-ink-muted">
         Organisers join The Desi Events by invitation from the team at The Desi Events. If the team
         has sent you an organiser invitation code, type it here while signed in with the email

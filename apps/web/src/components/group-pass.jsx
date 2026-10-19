@@ -272,7 +272,7 @@ export function GroupPass({ reference, admits }) {
                 {shown.tickets.map((ticket) => (
                   <li key={ticket.key}>
                     {[ticket.tier ?? 'Ticket', ticket.seat].filter(Boolean).join(' · ')}
-                    {ticket.offered ? ' — offered to somebody; admits until they accept' : ''}
+                    {ticket.offered ? ', offered to somebody; admits until they accept' : ''}
                   </li>
                 ))}
               </ul>

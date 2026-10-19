@@ -984,8 +984,8 @@ describe('the server’s quote, promo codes and guests’ names', () => {
     const names = screen.getByRole('group', { name: 'Who is going?' })
     expect(names).toHaveTextContent('Leave a box blank to put your own name, Meera Iyer')
 
-    await user.type(screen.getByLabelText('Ticket 1 of 3 — Garden Seating'), 'Asha Patel')
-    await user.type(screen.getByLabelText('Ticket 3 of 3 — Garden Seating'), '  Ravi Patel ')
+    await user.type(screen.getByLabelText('Ticket 1 of 3: Garden Seating'), 'Asha Patel')
+    await user.type(screen.getByLabelText('Ticket 3 of 3: Garden Seating'), '  Ravi Patel ')
 
     await user.click(screen.getByRole('button', { name: /^Pay / }))
     await screen.findByRole('heading', { name: 'Booked' })
@@ -1003,7 +1003,7 @@ describe('the server’s quote, promo codes and guests’ names', () => {
 
     await holdGarden(user)
 
-    const box = screen.getByLabelText('Ticket 1 of 1 — Garden Seating')
+    const box = screen.getByLabelText('Ticket 1 of 1: Garden Seating')
     await user.type(box, 'asha@example.com')
 
     expect(box).toHaveAttribute('aria-invalid', 'true')
@@ -1017,7 +1017,7 @@ describe('the server’s quote, promo codes and guests’ names', () => {
     const user = renderBasket({ reserve: vi.fn().mockResolvedValue(HOLDS), placeOrder })
 
     await holdGarden(user, 2)
-    await user.type(screen.getByLabelText('Ticket 2 of 2 — Garden Seating'), 'asha@example.com')
+    await user.type(screen.getByLabelText('Ticket 2 of 2: Garden Seating'), 'asha@example.com')
     expect(screen.getByRole('button', { name: /^Pay / })).toBeDisabled()
 
     // One fewer: the second box, and what was typed in it, is gone from the page.
@@ -1025,7 +1025,7 @@ describe('the server’s quote, promo codes and guests’ names', () => {
     await user.click(screen.getByRole('button', { name: 'Reserve tickets' }))
     await screen.findByText('Tickets held')
 
-    expect(screen.queryByLabelText('Ticket 2 of 2 — Garden Seating')).toBeNull()
+    expect(screen.queryByLabelText('Ticket 2 of 2: Garden Seating')).toBeNull()
     expect(screen.queryByText('One of the names needs changing before you can pay.')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: /^Pay / }))
@@ -1284,7 +1284,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Pay booking fee $3.31 (simulated)' }))
-    await screen.findByRole('heading', { name: 'Booked — pay at the door' })
+    await screen.findByRole('heading', { name: 'Booked, pay at the door' })
 
     expect(placeOrder.mock.calls[0][0]).toMatchObject({
       paymentMethod: 'AT_VENUE',
@@ -1293,7 +1293,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     })
   })
 
-  it('reads "Book now — pay … at the door" when nothing is paid online', async () => {
+  it('reads "Book now, pay … at the door" when nothing is paid online', async () => {
     const user = renderVenueBasket({
       quote: vi.fn(async (request) =>
         venueQuote({ ...request, referralCode: 'PARTNER-2026' }, { referral: null }),
@@ -1304,7 +1304,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     await user.click(screen.getByRole('radio', { name: 'Pay at the venue' }))
 
     expect(
-      await screen.findByRole('button', { name: 'Book now — pay $40.00 at the door' }),
+      await screen.findByRole('button', { name: 'Book now, pay $40.00 at the door' }),
     ).toBeInTheDocument()
     expect(screen.getByTestId('summary-online')).toHaveTextContent('Nothing to pay online')
   })

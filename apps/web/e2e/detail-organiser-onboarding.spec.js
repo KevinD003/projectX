@@ -159,7 +159,7 @@ const ADMIN_RAIL = Object.freeze([
 
 /** The one sentence every unusable organiser code is refused with. */
 const UNUSABLE =
-  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address — sign in with the address the invitation was sent to.'
+  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address. Sign in with the address the invitation was sent to.'
 
 /** What the old self-service route says now, to anybody. */
 const INVITATION_REQUIRED =

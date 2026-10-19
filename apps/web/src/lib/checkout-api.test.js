@@ -170,7 +170,7 @@ describe('the Pay button', () => {
     ).toBe('Pay booking fee $3.31 (simulated)')
     expect(
       payButtonLabel(quote({ paymentMethod: AT_VENUE, totalCents: 0, venueDueCents: 4000 })),
-    ).toBe('Book now — pay $40.00 at the door')
+    ).toBe('Book now, pay $40.00 at the door')
   })
 
   it('splits what is paid online from what is paid at the door', () => {

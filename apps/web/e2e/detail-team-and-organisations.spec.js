@@ -215,7 +215,7 @@ async function typeCode(page, code) {
 
 /** The one sentence every unusable code is refused with, whatever the reason. */
 const UNUSABLE =
-  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was issued to a different email address — sign in with the address the invitation was sent to.'
+  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was issued to a different email address. Sign in with the address the invitation was sent to.'
 
 test.describe.serial('an organisation, its team and the platform roles above it', () => {
   test.beforeAll(async ({ browser }) => {

@@ -90,7 +90,7 @@ export const metadata = { title: 'My tickets', robots: { index: false, follow: f
  * application code anywhere — see `REACHABLE_STATUSES` for the audit — so
  * anything not in that table renders as its raw value, which is what a demo
  * database's seeded `VOID` gets. A ticket withdrawn because its night was
- * cancelled or its event deleted (`CANCELLED`) reads "Withdrawn — this ticket
+ * cancelled or its event deleted (`CANCELLED`) reads "Withdrawn: this ticket
  * no longer works at the door". `ticketChip` reads that table,
  * and puts a ticket's door payment first when it says more (SPEC3 §12.7).
  *
