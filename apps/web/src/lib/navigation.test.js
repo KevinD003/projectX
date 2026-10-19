@@ -97,6 +97,7 @@ const AREA_OF = Object.freeze({
   '/moderation/websites': 'moderation',
   '/privacy': 'privacy',
   '/retention': 'retention',
+  '/admin': 'admin',
   '/admin/organizer-invitations': 'admin',
   '/admin/events': 'admin',
   '/admin/referral-codes': 'admin',
@@ -296,7 +297,10 @@ describe('workspace offers, by role', () => {
       }),
     )
 
+    // The platform's own doors first, for a platform administrator.
     expect(items).toEqual([
+      '/admin',
+      '/admin/users',
       '/organizer',
       '/organizer/events',
       '/organizer/venues',
@@ -305,7 +309,6 @@ describe('workspace offers, by role', () => {
       '/retention',
       '/moderation/organizations',
       '/moderation/pictures',
-      '/admin/users',
     ])
   })
 
@@ -349,17 +352,46 @@ describe('workspace offers, by role', () => {
     }
   })
 
-  it('lists organiser invitations before people and roles, in trust and safety', () => {
-    const trust = workspaceGroups(platform('SUPER_ADMIN')).find((group) => group.id === 'trust')
-    const hrefs = trust.items.map((item) => item.href)
+  it('files the platform’s own doors under Platform, first in a platform administrator’s rail', () => {
+    for (const role of ['ADMIN', 'SUPER_ADMIN']) {
+      const groups = workspaceGroups(platform(role))
 
-    expect(hrefs.indexOf('/admin/organizer-invitations')).toBeGreaterThan(-1)
-    expect(hrefs.indexOf('/admin/organizer-invitations')).toBeLessThan(
-      hrefs.indexOf('/admin/users'),
-    )
-    expect(trust.items.find((item) => item.href === '/admin/organizer-invitations').label).toBe(
-      'Organiser invitations',
-    )
+      expect(groups[0].id, role).toBe('platform')
+      expect(groups[0].label, role).toBe('Platform')
+      expect(
+        groups[0].items.map((item) => [item.href, item.label]),
+        role,
+      ).toEqual([
+        ['/admin', 'Platform overview'],
+        ['/admin/events', 'All events'],
+        ['/admin/imports', 'Imports'],
+        ['/admin/users', 'People and roles'],
+        ['/admin/organizer-invitations', 'Organiser invitations'],
+        ['/admin/referral-codes', 'Referral codes'],
+        ['/admin/fee-refunds', 'Booking fee refunds'],
+        ['/moderation/websites', 'Website links'],
+      ])
+      // Trust and safety keeps review and the records, and nothing of the platform's.
+      expect(
+        groups.find((group) => group.id === 'trust').items.map((item) => item.href),
+        role,
+      ).toEqual([
+        '/moderation/events',
+        '/privacy',
+        '/retention',
+        '/moderation/organizations',
+        '/moderation/pictures',
+      ])
+      expect(workspaceHome(platform(role)), role).toBe('/admin')
+    }
+  })
+
+  it('keeps the Platform group last for somebody it does not lead for', () => {
+    const groups = workspaceGroups(platform('FINANCE_ADMIN'))
+
+    expect(groups.at(-1).id).toBe('platform')
+    expect(groups.at(-1).items.map((item) => item.href)).toEqual(['/admin', '/admin/fee-refunds'])
+    expect(workspaceHome(platform('FINANCE_ADMIN'))).not.toBe('/admin')
   })
 
   it('offers website links to a platform administrator and a super administrator, never a moderator', () => {
@@ -373,9 +405,11 @@ describe('workspace offers, by role', () => {
       expect(offered(member(role)), role).not.toContain('/moderation/websites')
     }
 
-    const trust = workspaceGroups(platform('ADMIN')).find((group) => group.id === 'trust')
+    const platformGroup = workspaceGroups(platform('ADMIN')).find(
+      (group) => group.id === 'platform',
+    )
 
-    expect(trust.items.find((item) => item.href === '/moderation/websites').label).toBe(
+    expect(platformGroup.items.find((item) => item.href === '/moderation/websites').label).toBe(
       'Website links',
     )
   })
@@ -418,9 +452,13 @@ describe('workspace offers, by role', () => {
       expect(offered(member(role)), role).not.toContain('/admin/events')
     }
 
-    const trust = workspaceGroups(platform('ADMIN')).find((group) => group.id === 'trust')
+    const platformGroup = workspaceGroups(platform('ADMIN')).find(
+      (group) => group.id === 'platform',
+    )
 
-    expect(trust.items.find((item) => item.href === '/admin/events').label).toBe('All events')
+    expect(platformGroup.items.find((item) => item.href === '/admin/events').label).toBe(
+      'All events',
+    )
   })
 
   it('offers the imports to a platform administrator and a super administrator alone', () => {
@@ -436,9 +474,11 @@ describe('workspace offers, by role', () => {
 
     expect(offered(platform('MODERATOR'))).not.toContain('/admin/imports')
 
-    const trust = workspaceGroups(platform('ADMIN')).find((group) => group.id === 'trust')
+    const platformGroup = workspaceGroups(platform('ADMIN')).find(
+      (group) => group.id === 'platform',
+    )
 
-    expect(trust.items.find((item) => item.href === '/admin/imports').label).toBe('Imports')
+    expect(platformGroup.items.find((item) => item.href === '/admin/imports').label).toBe('Imports')
   })
 
   it('offers referral codes to a platform administrator and a super administrator alone', () => {
@@ -452,9 +492,11 @@ describe('workspace offers, by role', () => {
       expect(offered(member(role)), role).not.toContain('/admin/referral-codes')
     }
 
-    const trust = workspaceGroups(platform('ADMIN')).find((group) => group.id === 'trust')
+    const platformGroup = workspaceGroups(platform('ADMIN')).find(
+      (group) => group.id === 'platform',
+    )
 
-    expect(trust.items.find((item) => item.href === '/admin/referral-codes').label).toBe(
+    expect(platformGroup.items.find((item) => item.href === '/admin/referral-codes').label).toBe(
       'Referral codes',
     )
   })
@@ -470,10 +512,12 @@ describe('workspace offers, by role', () => {
       expect(offered(member(role)), role).not.toContain('/admin/fee-refunds')
     }
 
-    const trust = workspaceGroups(platform('FINANCE_ADMIN')).find((group) => group.id === 'trust')
+    const platformGroup = workspaceGroups(platform('FINANCE_ADMIN')).find(
+      (group) => group.id === 'platform',
+    )
 
-    expect(trust.items.map((item) => item.href)).toEqual(['/admin/fee-refunds'])
-    expect(trust.items[0].label).toBe('Booking fee refunds')
+    expect(platformGroup.items.map((item) => item.href)).toEqual(['/admin', '/admin/fee-refunds'])
+    expect(platformGroup.items[1].label).toBe('Booking fee refunds')
   })
 
   it('offers the pictures waiting to whoever moderation admits, and to nobody else', () => {

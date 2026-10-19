@@ -96,9 +96,79 @@ export function accountItems(session) {
  * (see `lib/areas.js`), or by the capability its page asks for, so the rail
  * never offers a door the shell will then refuse.
  *
- * @type {ReadonlyArray<{id: string, label: string, destinations: ReadonlyArray<{href: string, label: string, offered: function(object|null): boolean}>}>}
+ * @type {ReadonlyArray<{id: string, label: string, leads?: function(object|null): boolean, destinations: ReadonlyArray<{href: string, label: string, offered: function(object|null): boolean}>}>}
  */
 export const WORKSPACE_GROUPS = Object.freeze([
+  {
+    id: 'platform',
+    label: 'Platform',
+    // First in the rail for a platform administrator or a super administrator
+    // (`platform:admin`), whose work it is; after the rest for anybody else
+    // it is offered to, such as a finance administrator with fee refunds.
+    leads: (session) => sessionCan(session, 'platform:admin'),
+    destinations: [
+      {
+        href: '/admin',
+        label: 'Platform overview',
+        // What needs the team: the queues the overview counts.
+        offered: (session) => admits(session, 'admin'),
+      },
+      {
+        href: '/admin/events',
+        label: 'All events',
+        // Platform administrators and super administrators: every
+        // organisation's events, to edit once posted, delete or restore.
+        offered: (session) =>
+          sessionCan(session, 'event:platform_edit') && admits(session, 'admin'),
+      },
+      {
+        href: '/admin/imports',
+        label: 'Imports',
+        // Platform administrators and super administrators: events from source
+        // listings, brought here for review.
+        offered: (session) => sessionCan(session, 'event:import') && admits(session, 'admin'),
+      },
+      {
+        href: '/admin/users',
+        label: 'People and roles',
+        // Platform administrators and super administrators (`platform:admin`);
+        // the page draws the platform-role change for super administrators
+        // alone (ADR 0018).
+        offered: (session) => sessionCan(session, 'platform:admin') && admits(session, 'admin'),
+      },
+      {
+        href: '/admin/organizer-invitations',
+        label: 'Organiser invitations',
+        // Platform administrators and super administrators: the team at
+        // The Desi Events is who invites organisers.
+        offered: (session) => sessionCan(session, 'organizer:invite') && admits(session, 'admin'),
+      },
+      {
+        href: '/admin/referral-codes',
+        label: 'Referral codes',
+        // Platform administrators and super administrators: codes that
+        // remove the booking fee from one order.
+        offered: (session) =>
+          sessionCan(session, 'referral_code:manage') && admits(session, 'admin'),
+      },
+      {
+        href: '/admin/fee-refunds',
+        label: 'Booking fee refunds',
+        // Platform administrators, finance administrators and super
+        // administrators: refunding one order's booking fee by hand.
+        offered: (session) =>
+          sessionCan(session, 'platform_fee:refund') && admits(session, 'admin'),
+      },
+      {
+        href: '/moderation/websites',
+        label: 'Website links',
+        // Platform administrators and super administrators turn an event's
+        // website link on or off; a moderator does not.
+        offered: (session) =>
+          admits(session, 'moderation') && sessionCan(session, 'website_redirect:manage'),
+      },
+    ],
+  },
   {
     id: 'events',
     label: 'Events and venues',
@@ -215,66 +285,18 @@ export const WORKSPACE_GROUPS = Object.freeze([
         // by somebody other than its uploader.
         offered: (session) => admits(session, 'moderation'),
       },
-      {
-        href: '/moderation/websites',
-        label: 'Website links',
-        // Platform administrators and super administrators turn an event's
-        // website link on or off; a moderator does not.
-        offered: (session) =>
-          admits(session, 'moderation') && sessionCan(session, 'website_redirect:manage'),
-      },
-      {
-        href: '/admin/organizer-invitations',
-        label: 'Organiser invitations',
-        // Platform administrators and super administrators: the team at
-        // The Desi Events is who invites organisers.
-        offered: (session) => sessionCan(session, 'organizer:invite') && admits(session, 'admin'),
-      },
-      {
-        href: '/admin/events',
-        label: 'All events',
-        // Platform administrators and super administrators: every
-        // organisation's events, to edit once posted, delete or restore.
-        offered: (session) =>
-          sessionCan(session, 'event:platform_edit') && admits(session, 'admin'),
-      },
-      {
-        href: '/admin/referral-codes',
-        label: 'Referral codes',
-        // Platform administrators and super administrators: codes that
-        // remove the booking fee from one order.
-        offered: (session) =>
-          sessionCan(session, 'referral_code:manage') && admits(session, 'admin'),
-      },
-      {
-        href: '/admin/fee-refunds',
-        label: 'Booking fee refunds',
-        // Platform administrators, finance administrators and super
-        // administrators: refunding one order's booking fee by hand.
-        offered: (session) =>
-          sessionCan(session, 'platform_fee:refund') && admits(session, 'admin'),
-      },
-      {
-        href: '/admin/imports',
-        label: 'Imports',
-        // Platform administrators and super administrators: events from source
-        // listings, brought here for review.
-        offered: (session) => sessionCan(session, 'event:import') && admits(session, 'admin'),
-      },
-      {
-        href: '/admin/users',
-        label: 'People and roles',
-        // Platform administrators and super administrators (`platform:admin`);
-        // the page draws the platform-role change for super administrators
-        // alone (ADR 0018).
-        offered: (session) => sessionCan(session, 'platform:admin') && admits(session, 'admin'),
-      },
     ],
   },
 ])
 
+/** The groups by id, for their ordering rule. */
+const WORKSPACE_GROUPS_BY_ID = Object.freeze(
+  Object.fromEntries(WORKSPACE_GROUPS.map((group) => [group.id, group])),
+)
+
 /**
- * The workspace groups this session is offered, empty ones dropped.
+ * The workspace groups this session is offered, empty ones dropped, the
+ * platform's first for a platform administrator.
  *
  * @param {object|null} session The session payload.
  * @returns {NavGroup[]} The groups for the workspace rail.
@@ -282,13 +304,22 @@ export const WORKSPACE_GROUPS = Object.freeze([
 export function workspaceGroups(session) {
   if (!session) return []
 
-  return WORKSPACE_GROUPS.map((group) => ({
+  const groups = WORKSPACE_GROUPS.map((group) => ({
     id: group.id,
     label: group.label,
+    leads: group.leads?.(session) === true,
     items: group.destinations
       .filter((destination) => destination.offered(session))
       .map(({ href, label }) => ({ href, label })),
   })).filter((group) => group.items.length > 0)
+
+  // A group that leads for this session comes first; the rest keep their
+  // order, and a group that leads for somebody else goes last.
+  const leading = groups.filter((group) => group.leads)
+  const others = groups.filter((group) => !group.leads && !WORKSPACE_GROUPS_BY_ID[group.id].leads)
+  const trailing = groups.filter((group) => !group.leads && WORKSPACE_GROUPS_BY_ID[group.id].leads)
+
+  return [...leading, ...others, ...trailing].map(({ id, label, items }) => ({ id, label, items }))
 }
 
 /**

@@ -119,8 +119,9 @@ const ids = () => world()
 const names = () => onboardingNames(ids().tag)
 
 /**
- * What a platform administrator's rail offers, in order (ADR 0018): everything
- * a super administrator's does — the workspace's platform doors, Check-in and
+ * What a platform administrator's rail offers, in order (ADR 0018): the
+ * Platform group first, then everything a super administrator's does — the
+ * workspace's platform doors, Check-in and
  * the imported events' door team among them, the money, privacy and retention,
  * review, inviting organisers, every organisation's events, imports and People
  * and roles — though not the platform-role change on that page, which is drawn
@@ -132,6 +133,18 @@ const names = () => onboardingNames(ids().tag)
  * @type {ReadonlyArray<string>}
  */
 const ADMIN_RAIL = Object.freeze([
+  // The platform's own doors come first, under Platform, for a platform
+  // administrator: its overview, then every organisation's events, imports,
+  // People and roles, inviting organisers, and (SPEC3 §12.10) referral codes
+  // and booking fee refunds, and website links.
+  'Platform overview',
+  'All events',
+  'Imports',
+  'People and roles',
+  'Organiser invitations',
+  'Referral codes',
+  'Booking fee refunds',
+  'Website links',
   'Overview',
   'Events',
   'Venues',
@@ -147,14 +160,6 @@ const ADMIN_RAIL = Object.freeze([
   'Retention',
   'Organisation checks',
   'Pictures waiting',
-  'Website links',
-  'Organiser invitations',
-  'All events',
-  // SPEC3 §12.10: referral codes and booking fee refunds, for the team at The Desi Events.
-  'Referral codes',
-  'Booking fee refunds',
-  'Imports',
-  'People and roles',
 ])
 
 /** The one sentence every unusable organiser code is refused with. */

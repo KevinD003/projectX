@@ -26,6 +26,7 @@ const {
   RailProvider,
   RailToggle,
   WorkspaceRail,
+  revealCurrent,
 } = await import('./workspace-nav.jsx')
 
 /** Two groups, as `workspaceGroups` hands them over. */
@@ -97,6 +98,69 @@ describe('the rail', () => {
       expect(icon).not.toBeNull()
       expect(icon.getAttribute('aria-hidden')).toBe('true')
     }
+  })
+})
+
+describe('the current entry, below the rail’s fold', () => {
+  /**
+   * A scrolling list and its current entry, measured as a browser would.
+   *
+   * @param {{top: number, bottom: number}} entry Where the entry is drawn.
+   * @returns {HTMLElement} The list.
+   */
+  function scrollerWith(entry) {
+    const scroller = document.createElement('div')
+    const link = document.createElement('a')
+
+    link.setAttribute('aria-current', 'page')
+    scroller.append(link)
+    scroller.getBoundingClientRect = () => ({ top: 100, bottom: 700, height: 600 })
+    link.getBoundingClientRect = () => ({ ...entry, height: entry.bottom - entry.top })
+    scroller.scrollTop = 0
+
+    return scroller
+  }
+
+  it('is scrolled into the rail’s view, with room to spare, and nothing else moves', () => {
+    const scroller = scrollerWith({ top: 900, bottom: 940 })
+    const scrollIntoView = vi.fn()
+
+    scroller.querySelector('a').scrollIntoView = scrollIntoView
+    revealCurrent(scroller)
+
+    expect(scroller.scrollTop).toBe(940 - 700 + 16)
+    expect(scrollIntoView).not.toHaveBeenCalled()
+  })
+
+  it('is scrolled back down to when it sits above the view', () => {
+    const scroller = scrollerWith({ top: 40, bottom: 80 })
+
+    scroller.scrollTop = 200
+    revealCurrent(scroller)
+
+    expect(scroller.scrollTop).toBe(200 - (100 - 40 + 16))
+  })
+
+  it('leaves an entry already in view, and a rail with no current entry, alone', () => {
+    const inView = scrollerWith({ top: 300, bottom: 340 })
+
+    revealCurrent(inView)
+    expect(inView.scrollTop).toBe(0)
+
+    const none = document.createElement('div')
+
+    expect(() => revealCurrent(none)).not.toThrow()
+    expect(() => revealCurrent(null)).not.toThrow()
+  })
+
+  it('is asked for when the rail draws with a current entry', () => {
+    const scrollTop = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+
+    drawRail()
+
+    // The rail measured itself to find its current entry.
+    expect(scrollTop).toHaveBeenCalled()
+    scrollTop.mockRestore()
   })
 })
 
