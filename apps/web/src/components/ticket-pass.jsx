@@ -141,6 +141,7 @@ export function TicketPass({ ticketId }) {
   const refuse = standing?.refuse
   const showButton = useRef(null)
   const hideButton = useRef(null)
+  const refusal = useRef(null)
   // Set when the holder has just asked to see the pass, so focus moves to the
   // control that takes it away once it is drawn — not on every re-render.
   const justShown = useRef(false)
@@ -159,6 +160,11 @@ export function TicketPass({ ticketId }) {
       showButton.current?.focus()
     }
   }, [drawing])
+
+  // The button is gone once the pass is refused; its refusal takes focus.
+  useEffect(() => {
+    if (refused) refusal.current?.focus()
+  }, [refused])
 
   const hide = useCallback(() => {
     justHidden.current = true
@@ -299,9 +305,13 @@ export function TicketPass({ ticketId }) {
       )}
 
       {error ? (
-        <Alert variant="info" className={refused ? '' : 'mt-3'}>
-          {error}
-        </Alert>
+        // A refused pass takes the place of the button that asked for it, so
+        // focus goes to the sentence that says why, not to the page.
+        <div ref={refusal} tabIndex={refused ? -1 : undefined} data-slot="pass-refusal">
+          <Alert variant="info" className={refused ? '' : 'mt-3'}>
+            {error}
+          </Alert>
+        </div>
       ) : null}
     </div>
   )

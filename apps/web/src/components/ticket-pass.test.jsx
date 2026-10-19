@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -195,6 +195,39 @@ describe('TicketPass refused for good (a 409)', () => {
 
     expect(await screen.findByText('This ticket has no pass.')).toBeInTheDocument()
     expect(screen.getByRole('status')).toBeTruthy()
+  })
+
+  it('moves focus to the refusal that took the button’s place, not to the page', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(
+      answer(409, { error: { code: 'CONFLICT', message: 'This ticket has no pass.' } }),
+    )
+    render(<TicketPass ticketId="ticket0000000000000000001" />)
+
+    await user.click(screen.getByRole('button', { name: /show my entry pass/iu }))
+    await screen.findByText('This ticket has no pass.')
+
+    const refusal = document.querySelector('[data-slot="pass-refusal"]')
+
+    expect(refusal).toHaveAttribute('tabindex', '-1')
+    expect(refusal).toHaveFocus()
+    expect(refusal).toHaveTextContent('This ticket has no pass.')
+  })
+
+  it('leaves focus on the button for a refusal that may pass on a retry', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(answer(503, {}))
+    render(<TicketPass ticketId="ticket0000000000000000001" />)
+
+    const button = screen.getByRole('button', { name: /show my entry pass/iu })
+
+    await user.click(button)
+    await waitFor(() => expect(document.querySelector('[data-slot="pass-refusal"]')).not.toBeNull())
+
+    expect(document.querySelector('[data-slot="pass-refusal"]')).not.toHaveAttribute('tabindex')
+    expect(screen.getByRole('button', { name: /show my entry pass/iu })).toBeInTheDocument()
   })
 })
 
