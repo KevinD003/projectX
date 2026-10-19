@@ -337,7 +337,7 @@ describe('a ticket of a booking paid at the venue', () => {
         },
         'USD',
       ),
-    ).toEqual({ label: 'Cancelled — not paid', tone: 'neutral' })
+    ).toEqual({ label: 'Cancelled, not paid', tone: 'neutral' })
 
     // The amount is the API's, read from the ticket its holder has now, not
     // the buyer's row's own due.

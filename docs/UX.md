@@ -831,7 +831,7 @@ ADRs 0016 and 0017. What each screen says, and the rules behind it.
 - **The order page** derives its words from the tickets: booked and to pay at
   the door, paid at the door, passed on ("Passed on — the new holder pays at the
   door", and per row "Passed on — its new holder pays {amount} at the door"
-  from the API's own figure), cancelled ("Cancelled — not paid at the door",
+  from the API's own figure), cancelled ("Cancelled, not paid at the door",
   with who cancelled, the reason, and the booking fee kept, "None of the
   booking fee you paid online is kept for them" when a fee was paid online but
   none of it is kept (refunded earlier, say), or "Nothing was paid online" only
@@ -847,7 +847,7 @@ ADRs 0016 and 0017. What each screen says, and the rules behind it.
   ticket that owes ("Event cancelled — nothing to pay" once its event is
   cancelled or deleted), and "Withdrawn — this ticket no longer works at the door"
   on a withdrawn one, never the raw word "CANCELLED". A ticket cancelled unpaid
-  shows "Cancelled — not paid", who cancelled it and when (never by name), and
+  shows "Cancelled, not paid", who cancelled it and when (never by name), and
   "Reason given: “{reason}”" — whoever holds it, so somebody it was passed to,
   who has no order page, reads the reason there (updated 2026-10-13). A holder
   who paid at the door for a passed-on ticket is told on its page that the
@@ -865,7 +865,7 @@ The payment card says how much to take for the ticket presented, and the
 button "Payment taken: {amount} — admit" records it and lets the ticket in in
 one step; the result says "Payment recorded: {amount}", and only when the
 lookup said the ticket owed. Group passes total the ticked tickets in "Payment
-to take". A ticket cancelled unpaid shows "Cancelled — not paid".
+to take". A ticket cancelled unpaid shows "Cancelled, not paid".
 `docs/CHECK_IN.md`, "Paying at the door — 2026-10-09", has the rest. The door's
 "Recent" list shows the times of lookups made on that device during the visit,
 in the device's own time zone; it is never saved, and the stewards are at the

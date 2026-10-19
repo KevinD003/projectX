@@ -518,7 +518,7 @@ describe('a ticket booked to pay at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', 
       { status: 'REVOKED' },
     )
 
-    expect(ticketChip(cancelled)).toEqual({ label: 'Cancelled — not paid', tone: 'neutral' })
+    expect(ticketChip(cancelled)).toEqual({ label: 'Cancelled, not paid', tone: 'neutral' })
     // Whoever holds it reads the reason here: somebody it was passed to has no
     // order page to read it on (SPEC3-XI XU10).
     expect(venuePaymentNotes(cancelled, 'UTC')).toEqual([

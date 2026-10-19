@@ -385,7 +385,7 @@ describe('tickets booked to pay at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', (
       }),
     ])
 
-    expect(screen.getByText('Cancelled — not paid')).toBeInTheDocument()
+    expect(screen.getByText('Cancelled, not paid')).toBeInTheDocument()
     expect(screen.getAllByText(`Reason given: “${reason}”`)).toHaveLength(1)
   })
 

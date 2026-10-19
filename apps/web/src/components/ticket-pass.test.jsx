@@ -267,7 +267,7 @@ describe('VenuePaymentNote (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
       />,
     )
 
-    expect(screen.getByText('Cancelled — not paid')).toHaveAttribute('data-tone', 'neutral')
+    expect(screen.getByText('Cancelled, not paid')).toHaveAttribute('data-tone', 'neutral')
     expect(
       screen.getByText(
         'The Desi Events team cancelled this ticket on Thu, Oct 8, 2026 because it had not been paid for. You no longer owe $40.00 for it.',

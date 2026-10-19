@@ -1665,7 +1665,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
       .getByRole('listitem')
       .filter({ hasText: reference })
       .filter({ has: buyer1.locator('h3 a[href^="/tickets/"]') })
-      .filter({ hasText: 'Cancelled — not paid' })
+      .filter({ hasText: 'Cancelled, not paid' })
 
     await expect(cancelledCard).toHaveCount(1)
     // Its holder reads why, as the organiser gave it, and never the internal
@@ -1681,7 +1681,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     await openDoor(scanner, twoNights.title, /^Night 1 · /u)
     await typeCode(scanner, cancelledTicket.code)
-    await expect(scanner.getByRole('heading', { name: 'Cancelled — not paid' })).toBeVisible()
+    await expect(scanner.getByRole('heading', { name: 'Cancelled, not paid' })).toBeVisible()
     await expect(scanner.locator('main')).toContainText(
       "This ticket was cancelled because it had not been paid for. Don't let it in.",
     )

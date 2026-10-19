@@ -181,7 +181,7 @@ describe('the night a door starts on', () => {
 
 describe('money at the door (SPEC3 §12.8, SPEC3-XI §12.8)', () => {
   it('names a ticket cancelled unpaid, in a heading and a sentence of its own', () => {
-    expect(refusalHeading('UNPAID_CANCELLED')).toBe('Cancelled — not paid')
+    expect(refusalHeading('UNPAID_CANCELLED')).toBe('Cancelled, not paid')
     expect(refusalSentence('UNPAID_CANCELLED')).toBe(
       "This ticket was cancelled because it had not been paid for. Don't let it in.",
     )

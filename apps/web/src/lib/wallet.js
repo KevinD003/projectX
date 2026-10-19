@@ -25,7 +25,7 @@
  * A ticket that still owes its price reads "Pay at the door: {amount}" instead
  * of "Ready to use", whoever holds it: what is due stays with the ticket when it
  * is passed on, and it is offered on like any other ticket. One cancelled
- * because nobody paid for it reads "Cancelled — not paid", with who cancelled
+ * because nobody paid for it reads "Cancelled, not paid", with who cancelled
  * it, when and the reason they gave. A holder who paid at the door for a ticket later refunded or
  * withdrawn is told that money is with the organiser. Every figure comes from
  * the ticket's own `venuePayment`, which the server writes.
@@ -163,7 +163,7 @@ export function owesAtDoor(ticket) {
 /**
  * The chip for a ticket booked to pay at the door, when it says more than the
  * ticket's status: "Pay at the door: {amount}" in place of "Ready to use", and
- * "Cancelled — not paid" for one cancelled because it was not paid for.
+ * "Cancelled, not paid" for one cancelled because it was not paid for.
  *
  * @param {object} ticket A ticket with `status` and `venuePayment`.
  * @returns {{label: string, tone: string}|null} The chip, or null when the status word stands.
@@ -172,7 +172,7 @@ export function venuePaymentChip(ticket) {
   const venue = ticket?.venuePayment ?? null
 
   if (!venue) return null
-  if (venue.cancelled) return { label: 'Cancelled — not paid', tone: 'neutral' }
+  if (venue.cancelled) return { label: 'Cancelled, not paid', tone: 'neutral' }
 
   if (!venue.paid && OWING_STATUSES.has(ticket.status) && eventCalledOff(ticket)) {
     return { label: 'Event cancelled, nothing to pay', tone: 'neutral' }
