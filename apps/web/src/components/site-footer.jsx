@@ -124,11 +124,91 @@ function LinkColumn({ id, title, links }) {
 }
 
 /**
+ * How to reach the team: every channel, named for where it goes, and the
+ * contact page. The email address is wider than a narrow column, so the row
+ * wraps at any width rather than sitting in a grid cell.
+ *
+ * @returns {JSX.Element} The heading and the row.
+ */
+function ContactRow() {
+  return (
+    <div>
+      <h2 id="footer-contact" className={COLUMN_HEADING}>
+        Contact
+      </h2>
+      <ul aria-labelledby="footer-contact" className="flex flex-wrap gap-x-6 gap-y-0">
+        {CONTACT_CHANNELS.map((channel) => (
+          <li key={channel.id} className="min-w-0">
+            {/* Same tab, as every other footer link: these are the
+                team's own pages and the visitor's own apps. */}
+            <a
+              href={channel.href}
+              aria-label={channel.label}
+              className={`${FOOTER_LINK} [overflow-wrap:anywhere]`}
+            >
+              {channel.text}
+            </a>
+          </li>
+        ))}
+        <li>
+          <Link href="/contact" className={FOOTER_LINK}>
+            Contact page
+          </Link>
+        </li>
+      </ul>
+    </div>
+  )
+}
+
+/**
+ * The compact footer, for a page somebody is using rather than browsing:
+ * their tickets and account, signing in, a step of buying. The logo, how to
+ * reach the team, the simulated-payment line and what the site does not do,
+ * on the same purple plate, without the tagline, the catalogue's ways in,
+ * the organisers' note or the cities.
+ *
+ * @returns {JSX.Element} The footer.
+ */
+function CompactFooter() {
+  return (
+    <footer
+      data-footer="compact"
+      className="mt-16 bg-surface-inverse text-ink-inverse-muted [view-transition-name:site-footer]"
+    >
+      <div className="mx-auto max-w-bleed px-4 py-8 sm:px-6 lg:px-10">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-12">
+          <Link href="/" className="inline-flex min-h-11 w-fit items-center rounded-control">
+            <BrandLogo variant="dark" className="h-10 w-auto" />
+          </Link>
+          <ContactRow />
+        </div>
+        <div className="mt-6 flex flex-col gap-1 border-t border-ink-inverse/15 pt-5 md:flex-row md:items-center md:justify-between md:gap-10">
+          <p className="flex items-center gap-2.5 text-label font-bold text-ink-inverse">
+            <Icon name="shield" className="h-5 w-5 shrink-0 text-accent-inverse" />
+            {SIMULATED_PAYMENTS}
+          </p>
+          <Link
+            href="/limitations"
+            className="inline-flex min-h-11 w-fit items-center rounded-sm text-label font-bold text-accent-inverse underline decoration-1 underline-offset-4 hover:decoration-2"
+          >
+            What this site does not do
+          </Link>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+/**
  * The global site footer.
  *
+ * @param {object} [props] Component props.
+ * @param {boolean} [props.compact] The compact footer, for a page somebody is using.
  * @returns {JSX.Element} The rendered footer.
  */
-export function SiteFooter() {
+export function SiteFooter({ compact = false } = {}) {
+  if (compact) return <CompactFooter />
+
   const categories = FOOTER_CATEGORIES.map((value) => ({
     href: buildEventsHref({ category: value }),
     label: categoryLabel(value),
@@ -197,33 +277,7 @@ export function SiteFooter() {
             </Link>
           </div>
 
-          {/* The email address is wider than a narrow column, so the row
-              wraps at any width rather than sitting in a grid cell. */}
-          <div>
-            <h2 id="footer-contact" className={COLUMN_HEADING}>
-              Contact
-            </h2>
-            <ul aria-labelledby="footer-contact" className="flex flex-wrap gap-x-6 gap-y-0">
-              {CONTACT_CHANNELS.map((channel) => (
-                <li key={channel.id} className="min-w-0">
-                  {/* Same tab, as every other footer link: these are the
-                      team's own pages and the visitor's own apps. */}
-                  <a
-                    href={channel.href}
-                    aria-label={channel.label}
-                    className={`${FOOTER_LINK} [overflow-wrap:anywhere]`}
-                  >
-                    {channel.text}
-                  </a>
-                </li>
-              ))}
-              <li>
-                <Link href="/contact" className={FOOTER_LINK}>
-                  Contact page
-                </Link>
-              </li>
-            </ul>
-          </div>
+          <ContactRow />
         </div>
 
         <nav aria-labelledby="footer-cities" className="mt-10">

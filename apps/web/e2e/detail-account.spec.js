@@ -848,11 +848,13 @@ test.describe('what this build cannot do', () => {
     await owner.goto('/account/privacy')
     await expect(pageHeading(owner, 'Privacy')).toBeVisible()
 
-    // Reached from the footer every page carries: "The full list", under the
-    // footer's heading "What this site does not do".
+    // Reached from the footer every page carries. An account page ends with
+    // the compact footer, whose link says it in full: "What this site does
+    // not do".
+    await expect(owner.getByRole('contentinfo')).toHaveAttribute('data-footer', 'compact')
     await owner
       .getByRole('contentinfo')
-      .getByRole('link', { name: 'The full list', exact: true })
+      .getByRole('link', { name: 'What this site does not do', exact: true })
       .click()
 
     await expect(owner).toHaveURL((url) => url.pathname === '/limitations')
