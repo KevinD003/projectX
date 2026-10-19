@@ -9,6 +9,8 @@ const { readSession } = await import('../../../lib/session.js')
 const {
   default: AdminEventsPage,
   DELETED_STATUS,
+  EVENT_COLUMNS,
+  EVENT_TABLE,
   INTRODUCTION,
   NOT_FOR_THIS_ACCOUNT,
   RESTORE_NOTE,
@@ -330,5 +332,50 @@ describe('the booking fee and paying at the venue in the list (SPEC3 §7.3)', ()
     expect(rowOf('Own fee night')).toHaveTextContent('3.00% + $1.49')
     expect(rowOf('Own fee night')).toHaveTextContent('On, up to 50 unpaid')
     expect(rowOf('Free fee night')).toHaveTextContent('No booking fee')
+  })
+
+  it('lays the list out in fixed columns from xl, every heading on its own, and as records below', async () => {
+    await renderPage()
+
+    const table = screen.getByRole('table')
+    const headings = within(table)
+      .getAllByRole('columnheader')
+      .map((heading) => heading.textContent)
+
+    // The old layout let nine headings share an auto-sized table, so at 1440
+    // "Pictures waiting" ran into "Booking fee" and the last column was cut.
+    expect(headings).toEqual(EVENT_COLUMNS.map((column) => column.heading))
+    expect(table).toHaveClass('xl:table', 'xl:table-fixed', 'block')
+    for (const column of EVENT_COLUMNS.slice(1)) {
+      expect(within(table).getByRole('columnheader', { name: column.heading })).toHaveClass(
+        column.width,
+      )
+    }
+    expect(table.closest('div')).toHaveClass(...EVENT_TABLE.frame.split(' '))
+    expect(within(table).getByRole('columnheader', { name: 'Paid orders' })).toHaveClass(
+      'text-right',
+    )
+  })
+
+  it('says the state as a word with its glyph, and the start as a day over a time', async () => {
+    await renderPage()
+
+    const [, first] = within(screen.getByRole('table')).getAllByRole('row')
+    const state = first.querySelector('[data-slot="status-word"]')
+    const starts = first.querySelector('time[datetime="2026-10-17T23:30:00.000Z"]')
+
+    expect(state).toHaveTextContent('State: On sale')
+    expect(state.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    expect([...starts.children].map((line) => line.textContent)).toEqual([
+      'Oct 17, 2026',
+      '11:30 PM UTC',
+    ])
+  })
+
+  it('opens without an eyebrow, the title and introduction in the page header', async () => {
+    await renderPage()
+
+    expect(screen.getByRole('heading', { level: 1, name: 'All events' })).toBeInTheDocument()
+    expect(screen.queryByText('Workspace · Platform administration')).not.toBeInTheDocument()
   })
 })
