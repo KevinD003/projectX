@@ -1,6 +1,6 @@
 /**
- * The listing: a night band with the page's heading, the filter bar over its
- * edge, a sentence that says what matched, the cards, and the pages.
+ * The listing: the page's heading, the filter bar under it, a sentence that
+ * says what matched, the poster wall, and the pages.
  *
  * @module app/events/page.test
  */
@@ -25,7 +25,7 @@ vi.mock('../../components/traffic-scope.jsx', () => ({
 
 const { loadCatalogueFacets, loadEventList } = await import('../../lib/api.js')
 const { sampleEventSummaries } = await import('../../lib/sample-data.js')
-const { default: EventsPage, metadata } = await import('./page.jsx')
+const { default: EventsPage, generateMetadata } = await import('./page.jsx')
 
 /**
  * Render the listing for a query and a page of results.
@@ -188,19 +188,51 @@ describe('the listing', () => {
     expect(screen.queryByText('Showing our sample programme')).toBeNull()
   })
 
-  it('keeps its posters fan out of the reading order: the cards carry the names', async () => {
+  it('names one poster per card, and puts nothing else on the wall', async () => {
     const container = await draw({ events: sampleEventSummaries().slice(0, 3) })
 
     const images = screen.getAllByRole('img')
 
-    // One named poster per card, and the three in the fan are hidden.
+    // One named poster per card, and no decorative fan of posters above the
+    // results: the wall is the page's one place for them.
     expect(images).toHaveLength(3)
-    expect(container.querySelectorAll('[data-slot="poster"]')).toHaveLength(6)
+    expect(container.querySelectorAll('[data-slot="poster"]')).toHaveLength(3)
+    expect(
+      within(screen.getByRole('list', { name: 'Matching events' })).getAllByRole('img'),
+    ).toHaveLength(3)
   })
 
-  it('describes the catalogue as it is now', () => {
+  it('describes the whole catalogue, not one kind of night', async () => {
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({}) })
+
     expect(metadata.title).toBe('All events')
-    expect(metadata.description).toMatch(/garba/i)
+    expect(metadata.description).toBe(
+      'Concerts, comedy, garba, Durga Puja, Diwali melas, Bollywood nights and more across the USA and Canada. Filter by category, state or province, city, date, language or price, or search.',
+    )
+  })
+
+  it('is canonical at /events, and indexed only when nothing is chosen', async () => {
+    const plain = await generateMetadata({ searchParams: Promise.resolve({}) })
+
+    expect(plain.alternates).toEqual({ canonical: '/events' })
+    expect(plain.robots).toBeUndefined()
+
+    for (const query of [
+      { category: 'COMEDY' },
+      { q: 'garba' },
+      { page: '2' },
+      { city: ['Edison'] },
+    ]) {
+      const view = await generateMetadata({ searchParams: Promise.resolve(query) })
+
+      expect(view.alternates).toEqual({ canonical: '/events' })
+      expect(view.robots).toEqual({ index: false, follow: true })
+    }
+
+    // An empty value chooses nothing: `/events?q=` is the listing itself.
+    const empty = await generateMetadata({ searchParams: Promise.resolve({ q: '  ' }) })
+
+    expect(empty.robots).toBeUndefined()
   })
 })
 
