@@ -167,7 +167,7 @@ describe('the account search', () => {
     const ben = screen.getByRole('article', { name: 'Ben' })
 
     expect(within(ben).getByText('Support')).toBeVisible()
-    expect(within(ben).getByText(/this role cannot work until it is/u)).toBeVisible()
+    expect(within(ben).getByText('Not set up. This role cannot work until it is.')).toBeVisible()
     expect(within(ben).getByText('None.')).toBeVisible()
   })
 
@@ -306,5 +306,15 @@ describe('the account search', () => {
 
     expect(refusal).not.toBeNull()
     await waitFor(() => expect(refusal).toHaveFocus())
+  })
+})
+
+describe('how an account reads', () => {
+  it('marks a super administrator gold, another privileged role in the info tone, the rest neutral', async () => {
+    const { roleBadgeVariant } = await import('./user-search.jsx')
+
+    expect(roleBadgeVariant('SUPER_ADMIN')).toBe('highlight')
+    expect(roleBadgeVariant('MODERATOR')).toBe('info')
+    expect(roleBadgeVariant('ATTENDEE')).toBe('neutral')
   })
 })

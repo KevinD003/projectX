@@ -16,6 +16,13 @@
  * that has none, that the account will be asked to set one up before it can do
  * anything in that role.
  *
+ * ## Gold, because it is the super administrator's
+ *
+ * The control is drawn with the gold rule and the gold "Super administrators
+ * only" mark the workspace bar gives a super administrator, so the one tool
+ * on the page that only they hold is told apart from the membership controls
+ * beside it before anybody reads a word. The words are there too.
+ *
  * ## The caller's own account
  *
  * Offered disabled, with the reason beside it. The API refuses it as well; the
@@ -35,7 +42,7 @@ import { useId, useRef, useState } from 'react'
 
 import { useFocusAfterRender } from '../../../components/focus-after-render.jsx'
 import { StepUpPrompt } from '../../../components/step-up-prompt.jsx'
-import { Alert, Button, FormField, Select, Textarea } from '../../../components/ui.jsx'
+import { Alert, Button, FormField, Icon, Select, Textarea } from '../../../components/ui.jsx'
 import { apiFetch } from '../../../lib/api-fetch.js'
 import { describeApiRefusal, parseRetryAfter, refusalSentence } from '../../../lib/refusal.js'
 import {
@@ -165,8 +172,14 @@ export function PlatformRoleChange({ account, onChanged }) {
   }
 
   return (
-    <div>
-      <h3 className="text-sm font-semibold text-ink">Platform role</h3>
+    <div data-authority="super" className="border-l-4 border-highlight pl-4">
+      <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
+        Platform role{' '}
+        <span className="inline-flex items-center gap-1 rounded-full bg-highlight px-2 py-0.5 text-micro font-bold text-highlight-ink">
+          <Icon name="star" className="h-3.5 w-3.5" />
+          Super administrators only
+        </span>
+      </h3>
       <p role="status" aria-live="polite" className="text-sm text-ink-muted">
         {outcome}
       </p>
