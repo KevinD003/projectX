@@ -166,6 +166,37 @@ export function formatTimeZoneLabel(event, locale = DEFAULT_LOCALE) {
 }
 
 /**
+ * A zone in the words a person uses, "Eastern Time (EDT)", rather than the
+ * database's `America/New_York`: the zone's everyday name and, where it has
+ * letters of its own, its abbreviation on the day. The abbreviation is
+ * seasonal, so it is read at the moment given, an event's start where there
+ * is one. The database's name only when the runtime cannot name the zone.
+ *
+ * @param {string|null|undefined} timeZone An IANA zone.
+ * @param {Date|string|number} [at] The moment to name it at; now by default.
+ * @returns {string|null} Its name, or null when there is no zone.
+ */
+export function zoneWords(timeZone, at = new Date()) {
+  if (typeof timeZone !== 'string' || timeZone === '') return null
+
+  const moment = toDate(at) ?? new Date()
+
+  try {
+    const name = (style) =>
+      new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: style })
+        .formatToParts(moment)
+        .find((part) => part.type === 'timeZoneName')?.value
+
+    const long = name('longGeneric')
+    const short = name('short')
+
+    return long ? `${long}${short && !short.startsWith('GMT') ? ` (${short})` : ''}` : timeZone
+  } catch {
+    return timeZone
+  }
+}
+
+/**
  * A zone `Intl` can format in, or UTC for one it does not know.
  *
  * @param {string|null|undefined} timeZone Candidate IANA zone.

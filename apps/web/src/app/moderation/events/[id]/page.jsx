@@ -31,11 +31,17 @@ import { ReadRefusal } from '../../../../components/read-refusal.jsx'
 import { Alert, Badge, Card, CardBody } from '../../../../components/ui.jsx'
 import { ModerationDecision } from '../../../../components/moderation-decision.jsx'
 import { ModerationMediaReview } from '../../../../components/moderation-media-review.jsx'
+import { twelveHour } from '../../../../components/event-content.jsx'
 import { RichText } from '../../../../components/rich-text.jsx'
 import { WebsiteRedirectPanel } from '../../../../components/website-redirect-panel.jsx'
 import { accessibilityLabel, mergedAccessibility } from '../../../../lib/accessibility.js'
 import { sessionCan } from '../../../../lib/capabilities.js'
-import { formatEventDate, formatEventTime, formatVenueAddress } from '../../../../lib/format.js'
+import {
+  formatEventDate,
+  formatEventTime,
+  formatVenueAddress,
+  zoneWords,
+} from '../../../../lib/format.js'
 import { mediaReadFailure } from '../../../../lib/media.js'
 import { statusReading } from '../../../../lib/event-status.js'
 import { SOCIAL_NETWORK_LABELS, SOCIAL_NETWORKS } from '../../../../lib/event-content.js'
@@ -249,7 +255,8 @@ export default async function ReviewEventPage({ params }) {
                     <dt className="font-medium text-ink">When</dt>
                     <dd className="text-ink-muted">
                       {formatEventDate(event.startsAt, event.timezone)} ·{' '}
-                      {formatEventTime(event.startsAt, event.timezone)} ({event.timezone})
+                      {formatEventTime(event.startsAt, event.timezone)},{' '}
+                      {zoneWords(event.timezone, event.startsAt)}
                     </dd>
                   </div>
                   <div>
@@ -297,7 +304,7 @@ export default async function ReviewEventPage({ params }) {
                         <ul className="space-y-1">
                           {event.runningOrder.map((item, index) => (
                             <li key={`${item.time}-${index}`}>
-                              {item.time} {item.title}
+                              {twelveHour(item.time)} {item.title}
                               {item.note ? ` (${item.note})` : ''}
                             </li>
                           ))}

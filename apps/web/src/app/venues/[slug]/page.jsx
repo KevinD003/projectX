@@ -40,6 +40,7 @@ import {
   formatVenueAddress,
   toDateTimeAttribute,
   toParagraphs,
+  zoneWords,
 } from '../../../lib/format.js'
 
 export const dynamic = 'force-dynamic'
@@ -116,30 +117,6 @@ function placeStructuredData(venue) {
   }
 
   return data
-}
-
-/**
- * A zone in the words a person uses, "Eastern Time (EDT)", rather than the
- * database's `America/New_York`; the database's name only when the runtime
- * cannot name it.
- *
- * @param {string} timeZone An IANA zone.
- * @returns {string} Its name.
- */
-function zoneWords(timeZone) {
-  try {
-    const name = (style) =>
-      new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: style })
-        .formatToParts(new Date())
-        .find((part) => part.type === 'timeZoneName')?.value
-
-    const long = name('longGeneric')
-    const short = name('short')
-
-    return long ? `${long}${short && !short.startsWith('GMT') ? ` (${short})` : ''}` : timeZone
-  } catch {
-    return timeZone
-  }
 }
 
 /**

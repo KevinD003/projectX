@@ -232,6 +232,26 @@ describe('what the listing says, as the moderator reads it', () => {
     expect(screen.queryByText('(https://banyan.example/faq)')).not.toBeInTheDocument()
   })
 
+  it('says when in the zone’s words and 12-hour times, as the public page does', async () => {
+    getEventMedia.mockResolvedValue({ data: [], meta: { revision: 6 } })
+    getOrganizerEvent.mockResolvedValue({
+      ...EVENT,
+      runningOrder: [
+        { time: '19:00', title: 'Doors open', note: null },
+        { time: '20:15', title: 'Qawwali', note: null },
+      ],
+    })
+
+    await renderPage()
+
+    const when = screen.getByText('When').nextElementSibling
+
+    expect(when.textContent).toMatch(/^Sun, Nov 1, 2026 · 6:30 PM, Eastern Time \(EST\)$/u)
+    expect(screen.getByText('7:00 PM Doors open')).toBeInTheDocument()
+    expect(screen.getByText('8:15 PM Qawwali')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/America\/New_York|\b19:00\b/u)
+  })
+
   it('flags hidden and complimentary ticket types', async () => {
     getEventMedia.mockResolvedValue({ data: [], meta: { revision: 6 } })
     getEventTicketTypes.mockResolvedValue({

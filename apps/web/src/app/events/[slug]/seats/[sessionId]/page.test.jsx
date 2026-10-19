@@ -169,7 +169,7 @@ describe('the seat page for a night of this event', () => {
     )
     expect(screen.getByText(/Night 1 · Sat, Oct 3 · 7:30 PM/u)).toBeInTheDocument()
     expect(
-      screen.getByText('All times are the local time at the venue (America/New_York).'),
+      screen.getByText('All times are Eastern Time (EDT), the local time at the venue.'),
     ).toBeInTheDocument()
     expect(loadSeatMap).toHaveBeenCalledWith('snnightonexxx')
   })
