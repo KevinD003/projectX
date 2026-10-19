@@ -14,6 +14,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('../../lib/api.js', () => ({
   loadEventList: vi.fn(),
   loadCatalogueFacets: vi.fn(),
+  OVERVIEW_LOOKBACK_MS: 24 * 60 * 60 * 1000,
 }))
 // The visit counting reads the session, which only a request has; it is
 // tested on its own (`components/traffic-scope.test.jsx`). Here it is a marker.
@@ -274,6 +275,77 @@ const PLACES = Object.freeze({
     },
   ],
   languages: [{ value: 'Hindi', count: 4 }],
+})
+
+describe('where the listing starts', () => {
+  const NOW = new Date('2026-10-19T16:00:00.000Z')
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('reads from a day before now when no date is chosen, so finished nights do not lead', async () => {
+    await draw()
+
+    expect(loadEventList).toHaveBeenCalledTimes(1)
+    expect(loadEventList.mock.calls[0][0]).toEqual({
+      category: '',
+      region: '',
+      city: '',
+      q: '',
+      language: '',
+      when: '',
+      from: '',
+      to: '',
+      format: '',
+      free: false,
+      onSale: false,
+      page: 1,
+      perPage: 12,
+      startsAfter: '2026-10-18T16:00:00.000Z',
+    })
+  })
+
+  it('keeps the window with the other filters, and on a later page', async () => {
+    await draw({ query: { category: 'COMEDY', page: '3' } })
+
+    expect(loadEventList).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        category: 'COMEDY',
+        page: 3,
+        startsAfter: '2026-10-18T16:00:00.000Z',
+      }),
+    )
+  })
+
+  it.each([[{ when: 'weekend' }], [{ when: 'dates', from: '2026-10-01', to: '2026-10-31' }]])(
+    'leaves a chosen day or span as the visitor set it: %o',
+    async (query) => {
+      await draw({ query })
+
+      expect(loadEventList.mock.calls[0][0]).not.toHaveProperty('startsAfter')
+      expect(loadEventList.mock.calls[0][0]).toMatchObject(query)
+    },
+  )
+
+  it('keeps the window out of the links it writes', async () => {
+    await draw({
+      pagination: {
+        page: 1,
+        perPage: 12,
+        total: 30,
+        totalPages: 3,
+        hasNextPage: true,
+        hasPreviousPage: false,
+      },
+    })
+
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.getAttribute('href') ?? '').not.toMatch(/startsAfter/u)
+    }
+  })
 })
 
 describe('state, then city', () => {
