@@ -1199,29 +1199,51 @@ export function EventEditor({
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[14rem_1fr] lg:items-start">
         {/* Real buttons in a list: tab reaches them, Enter and Space work, and
             `aria-current` says which one you are on without relying on colour. */}
-        <nav aria-label="Editor steps" className="lg:sticky lg:top-24">
-          <ol className="flex flex-wrap gap-2 lg:flex-col">
-            {STEPS.map((entry, index) => (
-              <li key={entry.id}>
-                <button
-                  type="button"
-                  onClick={() => setStep(entry.id)}
-                  aria-current={step === entry.id ? 'step' : undefined}
-                  className={`flex min-h-11 w-full items-center rounded-control px-3 text-left text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
-                    step === entry.id
-                      ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
-                      : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
-                  }`}
+        {/* A stepper: a numbered marker per step, joined by a rule on a wide
+            screen, and a row that scrolls sideways inside itself on a phone
+            rather than wrapping into nine pills. The number is drawn in the
+            marker and said once, in words, as "Step 3" before the title, so
+            the button's name reads "Step 3 Sessions" with the space a reader
+            needs, and the marker's figure is not read twice. */}
+        <nav
+          aria-label="Editor steps"
+          className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:sticky lg:top-[calc(var(--chrome-top)+5.5rem)] lg:overflow-visible"
+        >
+          <ol className="flex gap-1 lg:flex-col lg:gap-0">
+            {STEPS.map((entry, index) => {
+              const current = step === entry.id
+
+              return (
+                <li
+                  key={entry.id}
+                  className="relative shrink-0 lg:before:absolute lg:before:top-9 lg:before:bottom-[-0.5rem] lg:before:left-[1.4375rem] lg:before:w-0.5 lg:before:bg-line lg:last:before:hidden"
                 >
-                  {/* Full opacity, not 70%. Dimming inherited text to 70% on
-                      the slate-100 step background lands at 4.14:1, and AA asks
-                      for 4.5:1 at 12px. The step number is small enough already
-                      without also being faint. */}
-                  <span className="text-xs">Step {index + 1}</span>
-                  <span className="block">{entry.title}</span>
-                </button>
-              </li>
-            ))}
+                  <button
+                    type="button"
+                    onClick={() => setStep(entry.id)}
+                    aria-current={current ? 'step' : undefined}
+                    className={`group relative flex min-h-11 w-full items-center gap-2.5 rounded-control py-1.5 pr-3 pl-2 text-left text-sm whitespace-nowrap transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus lg:whitespace-normal ${
+                      current
+                        ? 'bg-surface-subtle font-semibold text-ink'
+                        : 'font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
+                    }`}
+                  >
+                    <span className="sr-only">Step {index + 1}</span>{' '}
+                    <span
+                      aria-hidden="true"
+                      className={`relative z-10 grid size-7 shrink-0 place-items-center rounded-full text-caption font-semibold tabular-nums ${
+                        current
+                          ? 'bg-action-primary text-action-primary-ink'
+                          : 'border border-line-strong bg-surface-raised text-ink-muted group-hover:text-ink'
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="min-w-0">{entry.title}</span>
+                  </button>
+                </li>
+              )
+            })}
           </ol>
         </nav>
 
