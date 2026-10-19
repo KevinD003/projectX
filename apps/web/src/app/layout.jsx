@@ -7,6 +7,7 @@
 import './globals.css'
 
 import { MotionProvider } from '../components/motion.jsx'
+import { NavigationMark } from '../components/navigation-mark.jsx'
 import { RegisterSync } from '../components/register-sync.jsx'
 import { Toaster } from '../components/ui.jsx'
 import { ViewTransitionGuard } from '../components/view-transition-guard.jsx'
@@ -113,6 +114,7 @@ export default async function RootLayout({ children }) {
         data-register={register === 'courtyard' ? 'courtyard' : undefined}
       >
         <RegisterSync />
+        <NavigationMark />
         <ViewTransitionGuard />
         <MotionProvider>
           <a className="skip-link" href="#main-content">
