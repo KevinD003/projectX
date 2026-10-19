@@ -122,6 +122,19 @@ describe('AsOf', () => {
     expect(container.querySelector('time')).toHaveAttribute('dateTime', '2026-09-16T12:00:00.000Z')
   })
 
+  it('says the time in words, never as a raw timestamp', () => {
+    const { container } = render(<AsOf asOf="2026-09-16T12:00:00.000Z" />)
+
+    expect(container.querySelector('time').textContent).toMatch(/^Sep 16, 2026, 12:00\sPM UTC$/u)
+    expect(container.textContent).not.toContain('2026-09-16T12')
+  })
+
+  it('shows a value it cannot read as it came', () => {
+    const { container } = render(<AsOf asOf="just now" />)
+
+    expect(container.querySelector('time').textContent).toBe('just now')
+  })
+
   it('warns that the page does not refresh itself', () => {
     render(<AsOf asOf="2026-09-16T12:00:00.000Z" />)
 

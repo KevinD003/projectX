@@ -97,7 +97,7 @@ import {
  * roles that do are not on offer, and why.
  */
 export const POSTING_ROLES_HINT =
-  'Roles that create or publish events — event manager, manager and administrator — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person in one of those roles.'
+  'Roles that create or publish events (event manager, manager and administrator) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person in one of those roles.'
 
 /**
  * What withdrawing and reissuing say about the code, per delivery mode.
