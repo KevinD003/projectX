@@ -27,7 +27,6 @@ import Link from 'next/link'
 import { Badge } from '../../../components/ui.jsx'
 import { ArrowRightIcon, CheckIcon, ClockIcon, PinIcon } from '../../../components/icons.jsx'
 import { JsonLd } from '../../../components/json-ld.jsx'
-import { Reveal } from '../../../components/motion.jsx'
 import { NotFoundView } from '../../../components/not-found-view.jsx'
 import { Breadcrumbs } from '../../../components/page-state.jsx'
 import { PageHero } from '../../../components/page-hero.jsx'
@@ -120,6 +119,30 @@ function placeStructuredData(venue) {
 }
 
 /**
+ * A zone in the words a person uses, "Eastern Time (EDT)", rather than the
+ * database's `America/New_York`; the database's name only when the runtime
+ * cannot name it.
+ *
+ * @param {string} timeZone An IANA zone.
+ * @returns {string} Its name.
+ */
+function zoneWords(timeZone) {
+  try {
+    const name = (style) =>
+      new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: style })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value
+
+    const long = name('longGeneric')
+    const short = name('short')
+
+    return long ? `${long}${short && !short.startsWith('GMT') ? ` (${short})` : ''}` : timeZone
+  } catch {
+    return timeZone
+  }
+}
+
+/**
  * @typedef {object} VenuePageProps
  * @property {Promise<{slug: string}>} params The resolved route parameters.
  */
@@ -153,9 +176,12 @@ export default async function VenuePage({ params }) {
 
       <PageHero
         headingId="venue-heading"
+        tone="plate"
+        size="display"
         breadcrumbs={
           <Breadcrumbs
             tone="inverse"
+            structured
             trail={[
               { href: '/', label: 'Home' },
               { href: '/venues', label: 'Venues' },
@@ -163,7 +189,6 @@ export default async function VenuePage({ params }) {
             ]}
           />
         }
-        eyebrow="Venue"
         title={venue.name}
         lead={locality}
       >
@@ -188,7 +213,7 @@ export default async function VenuePage({ params }) {
           <div className="min-w-0 space-y-14">
             {about.length > 0 ? (
               <section aria-labelledby="about-heading">
-                <h2 id="about-heading" className="text-h2 font-semibold text-ink">
+                <h2 id="about-heading" className="text-h2 text-ink">
                   About
                 </h2>
                 <div className="mt-4 space-y-4 text-body text-ink-muted">
@@ -199,8 +224,8 @@ export default async function VenuePage({ params }) {
               </section>
             ) : null}
 
-            <Reveal as="section" aria-labelledby="access-heading">
-              <h2 id="access-heading" className="text-h2 font-semibold text-ink">
+            <section aria-labelledby="access-heading">
+              <h2 id="access-heading" className="text-h2 text-ink">
                 Accessibility
               </h2>
               {features.length === 0 && !note ? (
@@ -228,40 +253,40 @@ export default async function VenuePage({ params }) {
                   {note ? <p className="mt-4 text-ink-muted">{note}</p> : null}
                 </>
               )}
-            </Reveal>
+            </section>
 
-            <Reveal as="section" aria-labelledby="whats-on-heading">
-              <h2 id="whats-on-heading" className="text-h2 font-semibold text-ink">
+            <section aria-labelledby="whats-on-heading">
+              <h2 id="whats-on-heading" className="text-h2 text-ink">
                 What&rsquo;s on
               </h2>
               {venue.upcomingEvents.length === 0 ? (
                 <p className="mt-4 text-ink-muted">No upcoming events are listed here.</p>
               ) : (
-                <ul className="mt-5 overflow-hidden rounded-card bg-surface-raised shadow-card">
+                <ul className="mt-5 border-t-2 border-ink">
                   {venue.upcomingEvents.map((event) => {
                     const leaf = calendarLeaf({ ...event, timezone: venue.timezone })
 
                     return (
-                      <li key={event.slug} className="border-b border-line last:border-b-0">
+                      <li key={event.slug} className="border-b border-line">
                         <Link
                           href={`/events/${event.slug}`}
-                          className="group flex items-center gap-4 px-5 py-4 transition-colors duration-(--duration-fast) hover:bg-surface-subtle"
+                          className="group flex items-center gap-4 py-4"
                         >
                           {leaf ? (
                             <span
                               aria-hidden="true"
-                              className="flex h-14 w-13 shrink-0 flex-col items-center justify-center rounded-control bg-surface-subtle group-hover:bg-surface-raised"
+                              className="flex w-12 shrink-0 flex-col leading-none"
                             >
-                              <span className="text-[0.6875rem] font-bold tracking-eyebrow text-accent-strong uppercase">
+                              <span className="text-caption font-bold tracking-caps text-accent-strong uppercase">
                                 {leaf.month}
                               </span>
-                              <span className="font-display text-xl leading-6 font-bold text-ink">
+                              <span className="mt-1 font-display text-h2 leading-[0.9] font-extrabold text-ink tabular-nums [font-stretch:75%]">
                                 {leaf.day}
                               </span>
                             </span>
                           ) : null}
                           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <span className="font-bold text-ink group-hover:text-accent-strong">
+                            <span className="font-display text-title font-bold text-ink group-hover:text-accent-strong group-hover:underline group-hover:underline-offset-4">
                               {event.title}
                             </span>
                             <span className="text-sm text-ink-muted">
@@ -287,18 +312,14 @@ export default async function VenuePage({ params }) {
                   })}
                 </ul>
               )}
-            </Reveal>
+            </section>
 
             {policies.length > 0 ? (
-              <Reveal
-                as="section"
-                aria-labelledby="rules-heading"
-                className="rounded-card bg-surface-subtle p-6 sm:p-8"
-              >
-                <h2 id="rules-heading" className="text-h2 font-semibold text-ink">
+              <section aria-labelledby="rules-heading">
+                <h2 id="rules-heading" className="text-h2 text-ink">
                   House rules
                 </h2>
-                <div className="mt-4 space-y-4 text-ink">
+                <div className="mt-5 space-y-4 border-t-2 border-ink pt-5 text-ink">
                   {policies.map((paragraph) => (
                     <p key={paragraph.slice(0, 48)}>{paragraph}</p>
                   ))}
@@ -307,14 +328,14 @@ export default async function VenuePage({ params }) {
                   The rules attached to your order when you paid are the ones that govern it. A
                   later edit here does not change what you agreed to.
                 </p>
-              </Reveal>
+              </section>
             ) : null}
           </div>
 
-          <section aria-labelledby="where-heading" className="lg:sticky lg:top-28 lg:self-start">
-            <section className="overflow-hidden rounded-card bg-surface-raised shadow-card">
-              <div className="p-6">
-                <h2 id="where-heading" className="text-h3 font-semibold text-ink">
+          <section aria-labelledby="where-heading" className="lg:sticky lg:top-24 lg:self-start">
+            <section className="border-t-2 border-ink">
+              <div className="pt-5">
+                <h2 id="where-heading" className="text-h3 text-ink">
                   Where it is
                 </h2>
                 <address className="mt-3 flex gap-3 text-ink-muted not-italic">
@@ -330,8 +351,8 @@ export default async function VenuePage({ params }) {
                 <p className="mt-4 flex gap-3 text-sm text-ink-muted">
                   <ClockIcon className="mt-0.5 h-4.5 w-4.5 text-accent-strong" />
                   <span>
-                    All times on this page are {venue.timezone} — the local time at the venue, not
-                    yours.
+                    All times on this page are {zoneWords(venue.timezone)}, the local time at the
+                    venue, not yours.
                   </span>
                 </p>
                 {venue.capacity ? (

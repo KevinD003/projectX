@@ -30,7 +30,6 @@ import Link from 'next/link'
 
 import { ArrowRightIcon, CategoryIcon } from '../../components/icons.jsx'
 import { SECONDARY_LINK } from '../../components/link-classes.js'
-import { HoverLift, Stagger, StaggerItem } from '../../components/motion.jsx'
 import { PageHero } from '../../components/page-hero.jsx'
 import { SampleDataNotice } from '../../components/sample-data-notice.jsx'
 import { loadCatalogueFacets } from '../../lib/api.js'
@@ -41,7 +40,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Categories',
   description:
-    'Garba and dandiya, workshops, live music, melas and more — every kind of event on The Desi Events, with how many are listed in each.',
+    'Live music, comedy, garba and dandiya, Bollywood nights, melas, theatre, workshops and more: every kind of event on The Desi Events, with how many are listed in each.',
 }
 
 /**
@@ -57,12 +56,11 @@ export default async function CategoriesPage() {
     <div>
       <PageHero
         headingId="categories-heading"
-        eyebrow="Categories"
         title="Browse by category"
-        lead="From an open-floor garba night to a mela that takes a whole weekend. The number on each is how many events are listed in it."
+        lead="From a stand-up set to a mela that takes the whole weekend. The number beside each is how many events are listed in it."
       />
 
-      <div className="mx-auto max-w-content px-4 pt-10 sm:px-6">
+      <div className="mx-auto max-w-content px-4 pt-2 pb-20 sm:px-6 lg:pb-28">
         <SampleDataNotice show={usedFallback} className="mb-6" />
 
         {countsKnown ? null : (
@@ -72,47 +70,49 @@ export default async function CategoriesPage() {
           </p>
         )}
 
-        <Stagger
-          as="ul"
+        <ul
           aria-label="Event categories"
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3"
+          className="grid grid-cols-1 border-t-2 border-ink md:grid-cols-2 md:gap-x-12"
         >
           {categories.map((category) => {
             const count = categoryCountLabel(category.count)
+            const empty = category.count === 0
 
             return (
-              <StaggerItem as="li" key={category.value} className="flex">
-                <HoverLift className="group flex w-full">
-                  <Link
-                    href={category.href}
-                    className="flex min-h-11 w-full items-start gap-4 rounded-card bg-surface-raised p-5 shadow-card transition-shadow duration-(--duration-base) ease-standard group-data-lifted:shadow-card-hover hover:shadow-card-hover sm:p-6"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-strong"
+              <li key={category.value} className="border-b border-line">
+                <Link
+                  href={category.href}
+                  className="group grid min-h-11 grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-x-4 py-5"
+                >
+                  <CategoryIcon
+                    category={category.value}
+                    className={`mt-1 h-7 w-7 ${empty ? 'text-ink-subtle' : 'text-accent-strong'}`}
+                  />
+                  <div className="min-w-0">
+                    <h2
+                      className={`text-ink transition-[color,font-stretch] duration-(--duration-base) ease-out group-hover:text-accent-strong motion-safe:pointer-fine:group-hover:[font-stretch:100%] ${
+                        empty ? 'text-h3 text-ink-muted' : 'text-h2'
+                      }`}
                     >
-                      <CategoryIcon category={category.value} className="h-6 w-6" />
-                    </span>
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <h2 className="text-h3 font-semibold text-ink transition-colors duration-(--duration-fast) group-hover:text-accent-strong">
-                        {category.label}
-                      </h2>
-                      <p className="text-sm text-ink-muted">{category.blurb}</p>
-                      {count ? (
-                        <p
-                          data-testid="category-count"
-                          className="mt-2 text-sm font-bold text-accent-strong"
-                        >
-                          {count}
-                        </p>
-                      ) : null}
-                    </div>
-                  </Link>
-                </HoverLift>
-              </StaggerItem>
+                      {category.label}
+                    </h2>
+                    <p className="mt-1 text-label text-ink-muted">{category.blurb}</p>
+                  </div>
+                  {count ? (
+                    <p
+                      data-testid="category-count"
+                      className={`mt-1 text-right text-label font-bold tabular-nums ${
+                        empty ? 'max-w-28 font-semibold text-ink-subtle' : 'text-accent-strong'
+                      }`}
+                    >
+                      {count}
+                    </p>
+                  ) : null}
+                </Link>
+              </li>
             )
           })}
-        </Stagger>
+        </ul>
 
         <p className="mt-12">
           <Link href="/events" className={SECONDARY_LINK}>
