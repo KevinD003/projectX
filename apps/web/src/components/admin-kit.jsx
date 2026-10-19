@@ -14,6 +14,8 @@
  *   works without JavaScript and can be bookmarked.
  * - `Instant`: a moment on two short lines, the day over the time, so a date
  *   in a table column never wraps into four ragged lines.
+ * - `EmailText`: an email address that wraps before its `@` and its dots, the
+ *   places a person would break it, rather than mid-word.
  *
  * Server-renderable; no hooks.
  *
@@ -166,5 +168,54 @@ export function Instant({ value, timeZone = 'UTC', fallback = '' }) {
       <span className="block whitespace-nowrap">{day}</span>
       <span className="block text-xs whitespace-nowrap text-ink-muted">{time}</span>
     </time>
+  )
+}
+
+/**
+ * @typedef {object} EmailTextProps
+ * @property {string|null|undefined} address The address.
+ * @property {string} [fallback] What to draw when there is none.
+ */
+
+/**
+ * An email address that wraps where a reader expects it to.
+ *
+ * `break-all` in a narrow column split "new-organiser@desi-event.example"
+ * anywhere it ran out of room ("new-organiser@desi-e / vent.example"). This
+ * offers a break just before the `@` and before each dot of the domain, and
+ * only lets a part break inside itself when it is wider than its column on
+ * its own (`break-words`, which, unlike `wrap-anywhere`, leaves a table
+ * column at least as wide as the longest whole part). `<wbr>` adds a break opportunity and nothing else, so the address
+ * is one run of text to a screen reader and to copy and paste.
+ *
+ * @param {EmailTextProps} props Component props.
+ * @returns {JSX.Element} The address.
+ */
+export function EmailText({ address, fallback = 'Not shown' }) {
+  if (typeof address !== 'string' || address.trim() === '') {
+    return <span className="text-ink-muted">{fallback}</span>
+  }
+
+  const at = address.lastIndexOf('@')
+
+  if (at <= 0) return <span className="break-words">{address}</span>
+
+  const domain = address.slice(at + 1).split('.')
+
+  return (
+    <span data-slot="email" className="break-words">
+      {address.slice(0, at)}
+      <wbr />@
+      {domain.map((part, index) => (
+        <span key={`${index}-${part}`}>
+          {index > 0 ? (
+            <>
+              <wbr />.
+            </>
+          ) : null}
+          {part}
+        </span>
+      ))}
+    </span>
   )
 }

@@ -15,6 +15,7 @@
  */
 
 import { RefusalNotice } from '../../../components/read-refusal.jsx'
+import { PageHeader } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
 import { readSession } from '../../../lib/session.js'
 import { FeeRefundForm } from './fee-refund-form.jsx'
@@ -36,10 +37,9 @@ export default async function FeeRefundsPage() {
 
   return (
     <div>
-      <h1 className="text-h2 font-semibold text-ink">Booking fee refunds</h1>
+      <PageHeader title="Booking fee refunds" description={allowed ? INTRODUCTION : undefined} />
       {allowed ? (
         <>
-          <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>
           <FeeRefundForm canReadRefunds={canReadRefunds} />
         </>
       ) : (
