@@ -58,4 +58,18 @@ describe('currentHref', () => {
 
     expect(current).toHaveLength(1)
   })
+
+  it('files a seating map version under Venues, not under the Overview it shares a prefix with', () => {
+    const rail = [
+      { href: '/organizer' },
+      { href: '/organizer/events' },
+      { href: '/organizer/venues' },
+    ]
+
+    expect(currentHref(rail, '/organizer/map-versions/cmv123')).toBe('/organizer/venues')
+    expect(currentHref(rail, '/organizer/map-versions')).toBe('/organizer/venues')
+    // A path that only starts with the same letters is not filed there.
+    expect(currentHref(rail, '/organizer/map-versionsx')).toBe('/organizer')
+    expect(currentHref(rail, '/organizer')).toBe('/organizer')
+  })
 })
