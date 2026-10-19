@@ -584,9 +584,14 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     const heldNotice = buyer.getByRole('status').filter({ hasText: 'Tickets held' })
 
     await expect(heldNotice).toContainText(`Held for you until ${until}.`)
-    await expect(heldNotice).toContainText(
-      'Payment on this site is simulated: you will not be asked for a card, and no money moves.',
+    await expect(heldNotice).toContainText('Give each ticket a name below if you like, then pay.')
+    // That payments are simulated is said once on the screen, at the head of
+    // the summary beside the money, not again in the held notice.
+    await expect(heldNotice).not.toContainText(/simulated|no money/u)
+    await expect(summary.getByTestId('payment-mode-notice')).toContainText(
+      'You will not be asked for a card, no money moves',
     )
+    await expect(buyer.getByTestId('payment-mode-notice')).toHaveCount(1)
 
     // The hold is real: the API counts it against what anybody else can buy.
     expect((await liveTier(buyer.request, alphaEventId)).availableQuantity).toBe(
