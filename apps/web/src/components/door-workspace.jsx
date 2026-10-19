@@ -658,7 +658,7 @@ export function DoorWorkspace({ events, platform = false, venuePaymentsFor = [] 
               Event
             </h2>
             {events.length === 1 ? (
-              <div className="mt-2 rounded-[4px] bg-surface-raised px-4 py-3 text-sm">
+              <div className="mt-2 rounded-plate bg-surface-raised px-4 py-3 text-sm">
                 <p className="font-display text-h3 break-words text-ink">{events[0].event.title}</p>
                 {platform && events[0].organization?.name ? (
                   <p className="mt-1 break-words text-ink-muted">{events[0].organization.name}</p>
@@ -830,7 +830,7 @@ export function DoorWorkspace({ events, platform = false, venuePaymentsFor = [] 
           {!answered ? (
             <div
               data-slot="door-waiting"
-              className="hidden rounded-[4px] bg-surface-sunken px-5 py-8 text-ink-muted lg:block"
+              className="hidden rounded-plate bg-surface-sunken px-5 py-8 text-ink-muted lg:block"
             >
               <p className="font-display text-h3 text-ink">Waiting for a ticket</p>
               <p className="mt-2 text-sm">
@@ -987,7 +987,7 @@ function VerdictBand({ tone, headingId, headingRef, children, name, detail }) {
     <div
       data-slot="door-verdict"
       data-verdict={tone}
-      className={`door-verdict -mx-4 px-4 py-5 sm:mx-0 sm:rounded-[4px] sm:px-6 sm:py-6 ${verdict.className}`}
+      className={`door-verdict -mx-4 px-4 py-5 sm:mx-0 sm:rounded-plate sm:px-6 sm:py-6 ${verdict.className}`}
     >
       <div className="flex items-start gap-3">
         <Icon name={verdict.icon} className="mt-0.5 size-8 sm:size-10" />
@@ -1125,7 +1125,7 @@ function PreviewCard({
       </dl>
 
       {owed ? (
-        <div className="mt-4 rounded-[4px] bg-status-warning-soft p-4">
+        <div className="mt-4 rounded-plate bg-status-warning-soft p-4">
           <h3 className="font-semibold text-ink">Payment to take</h3>
           <p className="mt-1 text-ink">{takePaymentSentence(owed.dueCents, owed.currency)}</p>
           {bookingLine ? <p className="mt-1 text-sm text-ink">{bookingLine}</p> : null}
@@ -1457,7 +1457,7 @@ function GroupPreviewCard({
             })}
           </ul>
           {owes ? (
-            <div className="mt-4 rounded-[4px] bg-status-warning-soft p-4">
+            <div className="mt-4 rounded-plate bg-status-warning-soft p-4">
               <h3 className="font-semibold text-ink">Payment to take</h3>
               <p className="mt-1 text-ink">{groupPaymentLine(due)}</p>
             </div>

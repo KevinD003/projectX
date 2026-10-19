@@ -138,7 +138,6 @@ export default async function OrganizerEventsPage({ searchParams } = {}) {
   return (
     <div>
       <PageHeader
-        eyebrow="Workspace · Events"
         title="Your events"
         actions={
           <Link href="/organizer/events/new" className={PRIMARY_LINK}>

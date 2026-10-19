@@ -52,10 +52,7 @@ export default async function OrganizerVenuesPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-            Workspace · Events and venues
-          </p>
-          <h1 className="mt-2 text-h2 font-semibold text-ink">Your venues</h1>
+          <h1 className="text-h2 text-ink">Your venues</h1>
         </div>
         <Link href="/organizer/venues/new" className={PRIMARY_LINK}>
           Add a venue
