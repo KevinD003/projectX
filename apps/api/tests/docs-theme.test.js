@@ -157,4 +157,96 @@ describe('the docs theme', () => {
 
     await app.close()
   })
+
+  it('shows a reader real health values, not a placeholder string and the first log level', async () => {
+    const { app } = await createTestApp({ docs: true })
+
+    const document = JSON.parse((await app.inject({ method: 'GET', url: '/openapi.json' })).body)
+    const schema = document.paths['/health'].get.responses['200'].content['application/json'].schema
+    const { properties } = schema
+
+    expect(properties.version.examples).toEqual(['0.1.0'])
+    expect(properties.logLevel.examples).toEqual(['info'])
+    expect(properties.uptimeSeconds.examples).toEqual([3600])
+
+    await app.close()
+  })
+})
+
+/**
+ * A page as small as `theme.js` needs: elements found by selector, their
+ * attributes, the root's classes and the observers it registers.
+ *
+ * @param {Record<string, object[]>} found Elements to hand back, by selector.
+ * @returns {{window: object, document: object, observers: Function[], classes: Set<string>}} The stub.
+ */
+function stubPage(found) {
+  const classes = new Set()
+  const observers = []
+  const root = {
+    classList: {
+      contains: (name) => classes.has(name),
+      toggle: (name, on) => (on ? classes.add(name) : classes.delete(name)),
+    },
+  }
+  const document = {
+    head: { appendChild: () => {} },
+    documentElement: root,
+    createElement: () => ({}),
+    querySelector: () => ({}),
+    querySelectorAll: (selector) => found[selector] ?? [],
+  }
+  const window = {
+    MutationObserver: class {
+      constructor(callback) {
+        observers.push(callback)
+      }
+      observe() {}
+    },
+  }
+  return { window, document, observers, classes }
+}
+
+/**
+ * An element that keeps its attributes.
+ *
+ * @returns {{getAttribute: Function, setAttribute: Function, attributes: Map<string, string>}} The stub.
+ */
+function stubElement() {
+  const attributes = new Map()
+  return {
+    attributes,
+    getAttribute: (name) => attributes.get(name) ?? null,
+    setAttribute: (name, value) => attributes.set(name, String(value)),
+  }
+}
+
+describe('the docs script', () => {
+  it('names the logo, the dark-mode switch and the server picker Swagger UI leaves unnamed', () => {
+    const logo = stubElement()
+    const toggle = stubElement()
+    const servers = stubElement()
+    const page = stubPage({
+      '.swagger-ui .topbar img': [logo],
+      '.swagger-ui .dark-mode-toggle button': [toggle],
+      '.swagger-ui select#servers': [servers],
+    })
+    const { js } = loadDocsTheme().theme
+
+    new Function('window', 'document', js[0].content)(page.window, page.document)
+
+    expect(logo.attributes.get('alt')).toBe('The Desi Events API')
+    expect(toggle.attributes.get('aria-label')).toBe('Dark mode')
+    expect(toggle.attributes.get('aria-pressed')).toBe('false')
+    expect(servers.attributes.get('aria-label')).toBe('Server')
+
+    // Swagger UI re-renders; each observed change names the controls again
+    // and keeps the switch's state in step with the page's dark mode.
+    expect(page.observers).toHaveLength(2)
+    page.classes.add('dark-mode')
+    logo.attributes.delete('alt')
+    page.observers[1]()
+    expect(toggle.attributes.get('aria-pressed')).toBe('true')
+    expect(logo.attributes.get('alt')).toBe('The Desi Events API')
+  })
 })

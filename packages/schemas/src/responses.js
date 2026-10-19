@@ -897,12 +897,29 @@ export const organizationResponseSchema = z.object({
   data: organizationSchema,
 })
 
-/** `GET /health` and `GET /ready`. */
+/**
+ * `GET /health` and `GET /ready`.
+ *
+ * The `examples` on uptime, version and log level are what the published
+ * document shows a reader. Without them Swagger UI invents `0`, `"string"`
+ * and the first log level in the list, `fatal`, which is the one value an
+ * instance in rotation never reports. They are annotations and validate
+ * nothing.
+ */
 export const healthResponseSchema = z.object({
   status: z.enum(['ok', 'degraded', 'error']),
-  uptimeSeconds: z.number().min(0).optional(),
-  version: z.string().min(1).max(32).optional(),
-  logLevel: logLevelSchema.optional(),
+  uptimeSeconds: z
+    .number()
+    .min(0)
+    .meta({ examples: [3600] })
+    .optional(),
+  version: z
+    .string()
+    .min(1)
+    .max(32)
+    .meta({ examples: ['0.1.0'] })
+    .optional(),
+  logLevel: logLevelSchema.meta({ examples: ['info'] }).optional(),
   timestamp: timestampSchema,
   checks: z
     .object({
