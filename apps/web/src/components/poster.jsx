@@ -45,11 +45,14 @@ import { createElement } from 'react'
 
 import { categoryLabel } from '../lib/catalog.js'
 import {
+  HEADLINE_SHARE,
   POSTER_ELEMENTS,
   describePoster,
   fitHeadline,
+  letteringDepth,
   posterArt,
   posterTitle,
+  tileClearance,
 } from '../lib/poster-art.js'
 import { CategoryIcon } from './icons.jsx'
 
@@ -73,6 +76,42 @@ export const VARIANT_CLASSES = Object.freeze({
 
 /** The height over the width each variant is fitted for. */
 const VARIANT_ASPECT = Object.freeze({ card: 2 / 3, poster: 5 / 4, hero: 1 })
+
+/** Every shape a variant's frame takes: the hero is 5:4 on a phone and 4:5 from lg. */
+const VARIANT_FRAMES = Object.freeze({ card: [2 / 3], poster: [5 / 4], hero: [4 / 5, 5 / 4] })
+
+/**
+ * How a poster is laid out: the headline and the line under it, the size the
+ * headline is set at, and the line in the tile the shape must stay below.
+ *
+ * The title and the shape share the plate, so they are given a band each.
+ * The headline is fitted to at most `HEADLINE_SHARE` of the height, so a long
+ * title is set smaller rather than run on; the shape is then scaled toward
+ * its corner until it starts below the whole lettering block, in every shape
+ * the frame takes. A short title leaves the shape at full size.
+ *
+ * @param {object} event An event or summary.
+ * @param {'card'|'poster'|'hero'} [variant] The frame.
+ * @returns {{headline: string, subline: string|null, fit: {fontSize: string, lines: number, size: number}, frames: Array<{aspect: number, depth: number, clearTop: number}>, clearTop: number}} The layout.
+ */
+export function posterLayout(event, variant = 'card') {
+  const shape = VARIANT_CLASSES[variant] ? variant : 'card'
+  const { headline, subline } = posterTitle(event?.title ?? categoryLabel(event?.category))
+  const fit = fitHeadline(headline, { aspect: VARIANT_ASPECT[shape], share: HEADLINE_SHARE })
+  const frames = VARIANT_FRAMES[shape].map((aspect) => {
+    const depth = letteringDepth({ lines: fit.lines, size: fit.size, subline, aspect })
+
+    return { aspect, depth, clearTop: tileClearance(depth, aspect) }
+  })
+
+  return {
+    headline,
+    subline,
+    fit,
+    frames,
+    clearTop: Math.max(...frames.map((frame) => frame.clearTop)),
+  }
+}
 
 /** The title's colour, per tone: white on the dark plates, purple on the light. */
 const TONE_CLASSES = Object.freeze({
@@ -197,12 +236,12 @@ function Lettering({ text, className = '', ...rest }) {
  */
 export function EventPoster({ event, variant = 'card', registration = false, className }) {
   const shape = VARIANT_CLASSES[variant] ? variant : 'card'
+  const { headline, subline, fit, clearTop } = posterLayout(event, shape)
   const art = posterArt({
     seed: event?.slug ?? event?.id ?? 'desi-event',
     category: event?.category,
+    clearTop,
   })
-  const { headline, subline } = posterTitle(event?.title ?? categoryLabel(event?.category))
-  const fit = fitHeadline(headline, { aspect: VARIANT_ASPECT[shape] })
   const date = posterDate(event)
   const place = posterPlace(event)
   const tone = TONE_CLASSES[art.tone] ?? TONE_CLASSES.inverse

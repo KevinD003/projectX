@@ -488,7 +488,10 @@ const MOTIF_DRAWINGS = Object.freeze({
           'stroke-width': 1.2,
         }),
       ]),
-      el('circle', { cx: 88, cy: 88, r: r2(ring * 0.55), fill: c.scheme.second }),
+      // A knock-out in the ground's own colour, as a halftone screen leaves
+      // its centre unprinted. Not the second plate: on the lilac and white
+      // schemes a pale disc sat on the dots and read as a rendering fault.
+      el('circle', { cx: 88, cy: 88, r: r2(ring * 0.55), fill: c.scheme.ground }),
     ]
   },
 
@@ -565,18 +568,168 @@ export function posterDesign({ seed, category }) {
 }
 
 /**
+ * How far up the tile a drawing reaches: the smallest `y` any of its
+ * elements can paint, in the shape's own bottom-right drawing space.
+ *
+ * Exact for the circles, rectangles and lines the shapes use, and safe for
+ * a path: a straight or quadratic segment lies within its points, so the
+ * highest point is a bound, and an arc is bounded by its radius above its
+ * end points (exactly so for the rainbow's half rings, whose end points span
+ * a diameter).
+ *
+ * @param {Array<object>} nodes Elements, as the motif drawings return them.
+ * @returns {number} The top, in tile units.
+ */
+export function drawingTop(nodes) {
+  let top = Number.POSITIVE_INFINITY
+
+  for (const node of nodes) {
+    const { attrs } = node
+
+    if (node.tag === 'circle') top = Math.min(top, Number(attrs.cy) - Number(attrs.r))
+    if (node.tag === 'rect') top = Math.min(top, Number(attrs.y))
+    if (node.tag === 'line') top = Math.min(top, Number(attrs.y1), Number(attrs.y2))
+    if (node.tag === 'path') top = Math.min(top, pathTop(String(attrs.d)))
+    if (node.children.length > 0) top = Math.min(top, drawingTop(node.children))
+  }
+
+  return top
+}
+
+/**
+ * The highest point of a path written with `M`, `L`, `Q`, `A` and `Z`.
+ *
+ * @param {string} d The path data.
+ * @returns {number} Its top, or a bound on it.
+ */
+function pathTop(d) {
+  const tokens = d.match(/[MLQAZ]|-?[0-9.]+/gu) ?? []
+  const ARGUMENTS = { M: 2, L: 2, Q: 4, A: 7, Z: 0 }
+  let top = Number.POSITIVE_INFINITY
+  let x = Number.NaN
+  let y = Number.NaN
+  let index = 0
+
+  while (index < tokens.length) {
+    const command = tokens[index]
+    const values = tokens.slice(index + 1, index + 1 + ARGUMENTS[command]).map(Number)
+    index += 1 + ARGUMENTS[command]
+
+    if (command === 'A') {
+      const [rx, ry, , , , endX, endY] = values
+      // A half ring whose end points span its diameter peaks one radius up;
+      // any other arc stays within a circle of its radius whose centre is at
+      // most one radius from its end points.
+      const halfRing = y === endY && Math.abs(Math.abs(endX - x) - 2 * rx) < 0.02
+      top = Math.min(top, Math.min(y, endY) - (halfRing ? ry : 2 * ry))
+      x = endX
+      y = endY
+    } else if (values.length > 0) {
+      for (let at = 1; at < values.length; at += 2) top = Math.min(top, values[at])
+      x = values[values.length - 2]
+      y = values[values.length - 1]
+    }
+  }
+
+  return top
+}
+
+/**
+ * The share of a poster's height the headline may take, at most. A long
+ * title is set smaller to stay inside it rather than run into the shape.
+ */
+export const HEADLINE_SHARE = 40
+
+/** The gap kept between the lettering and the shape, in the frame's width units. */
+const LETTERING_GAP = 3
+
+/**
+ * How deep the lettering block runs from its edge of the frame, as a share
+ * of the frame's height (0 to 1): the padding, the headline as it was
+ * fitted, the line under it, and a gap before the shape may start.
+ *
+ * Generous rather than exact. The line under the headline is counted at the
+ * size it is set at on a small card (13px is about 7% of a 190px card) and
+ * at two lines once it is longer than one line holds.
+ *
+ * @param {object} options What is set.
+ * @param {number} options.lines The headline's line count, from {@link fitHeadline}.
+ * @param {number} options.size Its size in the frame's width units, from {@link fitHeadline}.
+ * @param {string|null} [options.subline] The line under it.
+ * @param {number} options.aspect The frame's height over its width.
+ * @returns {number} The depth, as a share of the frame's height.
+ */
+export function letteringDepth({ lines, size, subline = null, aspect }) {
+  const padding = 6
+  const headline = Math.min((lines * size * 0.9) / aspect, HEADLINE_SHARE)
+  const sublineLines = subline ? Math.min(2, Math.ceil(String(subline).length / 34)) : 0
+  const under = subline ? 2.5 + sublineLines * 7 * 1.05 : 0
+
+  return Math.min(1, (padding + under + LETTERING_GAP) / aspect / 100 + headline / 100)
+}
+
+/**
+ * Where, in the tile, a shape must start to stay clear of lettering that
+ * runs a share of the frame's height from the title's edge.
+ *
+ * The tile is a square anchored to the shape's corner and sliced by the
+ * frame. A frame at least as tall as it is wide shows the tile's whole
+ * height; a wider one shows the part of it nearest the shape's corner. The
+ * answer is in the shape's own bottom-right drawing space, whichever corner
+ * the poster flips it to.
+ *
+ * @param {number} depth The lettering's depth, from {@link letteringDepth}.
+ * @param {number} aspect The frame's height over its width.
+ * @returns {number} The `y` the shape must not reach above, from 0 to 100.
+ */
+export function tileClearance(depth, aspect) {
+  const { height } = POSTER_VIEWBOX
+  const shown = Math.min(1, aspect)
+
+  return r2(height * (1 - shown) + height * shown * depth)
+}
+
+/**
  * The drawing for an event.
+ *
+ * With `clearTop`, the shape is scaled toward its corner until nothing of it
+ * reaches above that line of the tile, so a long title never has a ring or a
+ * disc run through its lettering. `EventPoster` works the line out from the
+ * title it is setting ({@link letteringDepth}, {@link tileClearance}).
  *
  * @param {object} options What to draw.
  * @param {string} options.seed The event's slug (or any stable string).
  * @param {string} [options.category] Its category.
- * @returns {{viewBox: string, palette: string, motif: string, tone: 'inverse'|'ink', titleAt: 'top'|'bottom', anchor: string, children: Array<object>}} The drawing and how to set the title over it.
+ * @param {number} [options.clearTop] The `y` the shape must stay below, in the shape's bottom-right drawing space.
+ * @returns {{viewBox: string, palette: string, motif: string, tone: 'inverse'|'ink', titleAt: 'top'|'bottom', anchor: string, shapeTop: number, children: Array<object>}} The drawing and how to set the title over it.
  */
 export function posterArt(options) {
   const design = posterDesign(options)
   const { width, height } = POSTER_VIEWBOX
   const random = seededRandom(design.seed)
-  const shape = MOTIF_DRAWINGS[design.motif]({ random, scheme: design.scheme })
+  const drawn = MOTIF_DRAWINGS[design.motif]({ random, scheme: design.scheme })
+  // Scaled about the tile's corner (100, 100), which the frame keeps in view,
+  // rounded down so the shape never ends up a hair above its line.
+  const reach = drawingTop(drawn)
+  const clearTop = Number.isFinite(options.clearTop) ? options.clearTop : null
+  const scale =
+    clearTop !== null && reach < clearTop
+      ? Math.max(0, Math.floor(((height - clearTop) / (height - reach)) * 1000) / 1000)
+      : 1
+  const shape =
+    scale < 1
+      ? [
+          el(
+            'g',
+            {
+              'data-keep-clear': '',
+              transform: `matrix(${scale} 0 0 ${scale} ${r2(width * (1 - scale))} ${r2(height * (1 - scale))})`,
+            },
+            drawn,
+          ),
+        ]
+      : drawn
+  const shapeTop = height - (height - reach) * scale
   // The shape is drawn for the bottom-right; a mirrored poster flips the tile
   // across, a title-at-the-bottom poster flips it up, so the shape always
   // sits in the corner away from the words.
@@ -594,6 +747,7 @@ export function posterArt(options) {
     tone: design.tone,
     titleAt: design.titleAt,
     anchor: design.anchor,
+    shapeTop,
     children: [
       el('rect', {
         x: -200,
@@ -671,19 +825,20 @@ export function posterTitle(title) {
  * @param {string} headline The words to set.
  * @param {object} [options] Options.
  * @param {number} [options.aspect] The frame's height over its width (1.25 for 4:5).
- * @returns {{fontSize: string, lines: number}} A CSS `font-size` and the line count it was fitted for.
+ * @param {number} [options.share] The share of the frame's height, in percent, the lines may take.
+ *   54 by default; a poster with its shape beside the title passes {@link HEADLINE_SHARE}.
+ * @returns {{fontSize: string, lines: number, size: number}} A CSS `font-size`, the line count it was fitted for, and the size in the frame's width units.
  */
-export function fitHeadline(headline, { aspect = 1.25 } = {}) {
+export function fitHeadline(headline, { aspect = 1.25, share = 54 } = {}) {
   const words = String(headline ?? '')
     .toUpperCase()
     .split(/\s+/u)
     .filter(Boolean)
   const em = 0.46
   const measure = 84
-  const share = 54
   const leading = 0.9
 
-  if (words.length === 0) return { fontSize: 'min(12cqi, 6rem)', lines: 1 }
+  if (words.length === 0) return { fontSize: 'min(12cqi, 6rem)', lines: 1, size: 12 }
 
   const longest = Math.max(...words.map((word) => word.length))
   /**
@@ -720,9 +875,14 @@ export function fitHeadline(headline, { aspect = 1.25 } = {}) {
     if (lines * size * leading <= share * aspect) best = { size, lines }
   }
 
-  const heightCap = r2(share / (best.lines * leading))
+  // Rounded down, so the capped lines never run past their share.
+  const heightCap = Math.floor((share / (best.lines * leading)) * 100) / 100
 
-  return { fontSize: `min(${best.size}cqi, ${heightCap}cqb, 6rem)`, lines: best.lines }
+  return {
+    fontSize: `min(${best.size}cqi, ${heightCap}cqb, 6rem)`,
+    lines: best.lines,
+    size: best.size,
+  }
 }
 
 /**

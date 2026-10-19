@@ -7,10 +7,13 @@ import {
   POSTER_MOTIFS,
   POSTER_VIEWBOX,
   describePoster,
+  drawingTop,
   fitHeadline,
+  letteringDepth,
   posterArt,
   posterDesign,
   posterTitle,
+  tileClearance,
   toSvgString,
 } from './poster-art.js'
 
@@ -270,6 +273,84 @@ describe('posterTitle', () => {
   it('keeps a short title whole, joint or no joint', () => {
     expect(posterTitle('A: B')).toEqual({ headline: 'A: B', subline: null })
     expect(posterTitle('  Raas   Night  ')).toEqual({ headline: 'Raas Night', subline: null })
+  })
+})
+
+describe('drawingTop', () => {
+  const node = (tag, attrs, children = []) => ({ tag, attrs, children })
+
+  it('reads a circle, a rectangle, a line and a straight or curved path', () => {
+    expect(drawingTop([node('circle', { cx: 70, cy: 70, r: 30 })])).toBe(40)
+    expect(drawingTop([node('rect', { x: 0, y: 92, width: 10, height: 10 })])).toBe(92)
+    expect(drawingTop([node('line', { x1: 0, y1: 101, x2: 101, y2: 33 })])).toBe(33)
+    expect(drawingTop([node('path', { d: 'M 10 104 L 10 60 Q 10 20 50 18 Z' })])).toBe(18)
+  })
+
+  it('peaks a half ring one radius above its end points, and looks inside groups', () => {
+    const ring = node('path', { d: 'M 26 102 A 44 44 0 0 1 114 102 Z' })
+
+    expect(drawingTop([node('g', {}, [ring])])).toBe(58)
+  })
+})
+
+describe('posterArt with a line to keep clear', () => {
+  it('scales the shape toward its corner until it starts below the line', () => {
+    for (const seed of ['nach-stockton-nach-2', 'navratri-garba-nights', 'mudita-raag']) {
+      const free = posterArt({ seed, category: 'GARBA_DANDIYA' })
+      const clear = posterArt({ seed, category: 'GARBA_DANDIYA', clearTop: 62 })
+
+      expect(clear.shapeTop).toBeGreaterThanOrEqual(62)
+      if (free.shapeTop < 62) {
+        expect(clear.children[1].children[0].attrs).toHaveProperty('data-keep-clear', '')
+      }
+    }
+  })
+
+  it('leaves a shape that already starts below the line as it is', () => {
+    const free = posterArt({ seed: 'nach-stockton-nach-2', category: 'GARBA_DANDIYA' })
+    const clear = posterArt({
+      seed: 'nach-stockton-nach-2',
+      category: 'GARBA_DANDIYA',
+      clearTop: free.shapeTop - 1,
+    })
+
+    expect(clear.children).toEqual(free.children)
+  })
+
+  it('sizes the lettering block by its headline, the line under it, and the frame', () => {
+    const one = letteringDepth({ lines: 1, size: 20, aspect: 1.25 })
+    const three = letteringDepth({
+      lines: 3,
+      size: 14,
+      subline: 'Featuring Swar Sangam',
+      aspect: 1.25,
+    })
+
+    expect(one).toBeLessThan(three)
+    expect(three).toBeLessThanOrEqual(1)
+    // A wide frame shows only the bottom of the tile, so the same block
+    // reaches further down it.
+    expect(tileClearance(0.5, 2 / 3)).toBeGreaterThan(tileClearance(0.5, 1.25))
+    expect(tileClearance(0.5, 1.25)).toBe(50)
+  })
+})
+
+describe('the halftone', () => {
+  it('knocks its centre out in the ground, never a pale disc in the second plate', () => {
+    const seeds = Array.from({ length: 80 }, (_, index) => `halftone-${index}`)
+    const halftones = seeds
+      .map((seed) => ({ seed, art: posterArt({ seed, category: 'COMEDY' }) }))
+      .filter(({ art }) => art.motif === 'halftone')
+
+    expect(halftones.length).toBeGreaterThan(0)
+    for (const { seed, art } of halftones) {
+      const { scheme } = posterDesign({ seed, category: 'COMEDY' })
+      const shape = art.children[1].children
+      const last = shape[shape.length - 1]
+
+      expect(last.tag).toBe('circle')
+      expect(last.attrs.fill).toBe(scheme.ground)
+    }
   })
 })
 
