@@ -195,7 +195,7 @@ describe('MyTicketsPage', () => {
     ])
 
     expect(
-      screen.getByText('Withdrawn — this ticket no longer works at the door'),
+      screen.getByText('Withdrawn: this ticket no longer works at the door'),
     ).toBeInTheDocument()
     expect(screen.queryByText('CANCELLED')).toBeNull()
   })

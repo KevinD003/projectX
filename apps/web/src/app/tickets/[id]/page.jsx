@@ -76,7 +76,7 @@ const STATUS = Object.freeze({
     label: 'Offered to somebody. It is still yours and still admits you until they accept.',
     admits: true,
   },
-  CHECKED_IN: { label: 'Already used — somebody went in on it.', admits: false },
+  CHECKED_IN: { label: 'Already used: somebody went in on it.', admits: false },
   TRANSFERRED: {
     label:
       'Handed on. The pass that went with it stopped working the moment the transfer completed.',
@@ -84,7 +84,7 @@ const STATUS = Object.freeze({
   },
   REVOKED: { label: 'Withdrawn by the organiser. It admits nobody.', admits: false },
   REFUNDED: { label: 'Refunded. It admits nobody.', admits: false },
-  CANCELLED: { label: 'Withdrawn — this ticket no longer works at the door.', admits: false },
+  CANCELLED: { label: 'Withdrawn: this ticket no longer works at the door.', admits: false },
   SUPERSEDED: { label: 'Replaced by a newer ticket.', admits: false },
   VOID: { label: 'Void. It admits nobody.', admits: false },
 })

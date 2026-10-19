@@ -115,12 +115,12 @@ export const REACHABLE_STATUSES = Object.freeze([
  */
 export const TICKET_STATUS_WORDS = Object.freeze({
   VALID: { label: 'Ready to use', tone: 'success' },
-  TRANSFER_PENDING: { label: 'Offered — still yours until they accept', tone: 'pending' },
+  TRANSFER_PENDING: { label: 'Offered, still yours until they accept', tone: 'pending' },
   TRANSFERRED: { label: 'Handed on', tone: 'info' },
-  CHECKED_IN: { label: 'Used — you went in', tone: 'info' },
+  CHECKED_IN: { label: 'Used, you went in', tone: 'info' },
   REVOKED: { label: 'Withdrawn by the organiser', tone: 'danger' },
   REFUNDED: { label: 'Refunded', tone: 'info' },
-  CANCELLED: { label: 'Withdrawn — this ticket no longer works at the door', tone: 'danger' },
+  CANCELLED: { label: 'Withdrawn: this ticket no longer works at the door', tone: 'danger' },
 })
 
 /** The states in which a ticket that owes its price can still be paid for at the door. */
@@ -175,7 +175,7 @@ export function venuePaymentChip(ticket) {
   if (venue.cancelled) return { label: 'Cancelled — not paid', tone: 'neutral' }
 
   if (!venue.paid && OWING_STATUSES.has(ticket.status) && eventCalledOff(ticket)) {
-    return { label: 'Event cancelled — nothing to pay', tone: 'neutral' }
+    return { label: 'Event cancelled, nothing to pay', tone: 'neutral' }
   }
 
   if (owesAtDoor(ticket)) {

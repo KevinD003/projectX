@@ -60,7 +60,7 @@
  * full or is not offered (back to card, re-quoted, focus on the alert); the
  * referral code stopped applying (cleared, re-quoted, no focus move). Nothing
  * is charged in any of them, and Pay waits for the buyer. A booking to pay at
- * the venue is confirmed as "Booked — pay at the door", never "Paid".
+ * the venue is confirmed as "Booked, pay at the door", never "Paid".
  *
  * @module components/checkout-basket
  */
@@ -147,7 +147,7 @@ export function attendeeSlots(lines, nightOf) {
       position += 1
       slots.push({
         key: `${line.ticketTypeId}:${index}`,
-        label: `Ticket ${position} of ${total} — ${line.name}${night ? `, ${night}` : ''}`,
+        label: `Ticket ${position} of ${total}: ${line.name}${night ? `, ${night}` : ''}`,
         ticketTypeId: line.ticketTypeId,
       })
     }

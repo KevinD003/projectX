@@ -71,7 +71,7 @@ export function BookedOrder({ order, event = null, named = false, venueDueCents 
               className="flex items-start gap-3 font-display text-h1 font-bold text-balance text-ticket-ink"
             >
               <Icon name="check-circle" className="mt-[0.15em] size-[0.8em] text-status-success" />
-              <span>{atVenue ? 'Booked — pay at the door' : 'Booked'}</span>
+              <span>{atVenue ? 'Booked, pay at the door' : 'Booked'}</span>
             </h2>
             {event?.title ? (
               <p className="mt-2 text-label font-semibold text-ticket-ink">{event.title}</p>

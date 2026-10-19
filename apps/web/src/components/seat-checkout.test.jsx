@@ -346,7 +346,7 @@ describe('reserving, naming and paying', () => {
     expect(screen.getByTestId('summary-total')).toHaveTextContent('$115.00')
 
     // A name for one seat; the others are left for the buyer's own name.
-    await user.type(screen.getByLabelText('Seat A1, row A, Stalls — Front stalls'), '  Ravi Shah ')
+    await user.type(screen.getByLabelText('Seat A1, row A, Stalls: Front stalls'), '  Ravi Shah ')
     await user.click(screen.getByRole('button', { name: 'Pay $115.00 (simulated)' }))
 
     expect(props.placeOrder).toHaveBeenCalledTimes(1)
@@ -375,7 +375,7 @@ describe('reserving, naming and paying', () => {
     await user.click(seatButton('A3'))
     await user.click(screen.getByRole('button', { name: 'Reserve 1 seat' }))
     await user.type(
-      await screen.findByLabelText('Seat A3, row A, Stalls — Front stalls'),
+      await screen.findByLabelText('Seat A3, row A, Stalls: Front stalls'),
       'ravi@example.test',
     )
 
@@ -390,7 +390,7 @@ describe('reserving, naming and paying', () => {
     await user.click(seatButton('A3'))
     await user.click(screen.getByRole('button', { name: 'Reserve 1 seat' }))
     await user.type(
-      await screen.findByLabelText('Seat A3, row A, Stalls — Front stalls'),
+      await screen.findByLabelText('Seat A3, row A, Stalls: Front stalls'),
       'ravi@example.test',
     )
     expect(screen.getByRole('button', { name: /^Pay / })).toBeDisabled()
@@ -786,7 +786,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     expect(await screen.findByTestId('summary-door')).toHaveTextContent('$45.00')
 
     await user.click(screen.getByRole('button', { name: 'Pay booking fee $3.31 (simulated)' }))
-    await screen.findByRole('heading', { name: 'Booked — pay at the door' })
+    await screen.findByRole('heading', { name: 'Booked, pay at the door' })
 
     expect(placeOrder.mock.calls[0][0]).toMatchObject({
       paymentMethod: 'AT_VENUE',

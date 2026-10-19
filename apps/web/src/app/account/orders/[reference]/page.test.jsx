@@ -199,7 +199,7 @@ describe('the order', () => {
 
     const { container } = await renderPage()
 
-    expect(screen.getAllByText('Paid — simulated').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Paid (simulated)').length).toBeGreaterThan(0)
     // 10:00 UTC is 3:30 PM in Mumbai.
     expect(container.textContent).toMatch(/Sep 1, 2026, 3:30\sPM (IST|GMT\+5:30)/)
   })
@@ -259,7 +259,7 @@ describe('what it cost', () => {
     const { container } = await renderPage()
 
     expect(
-      screen.getByText('Simulated payment — no card was charged and no money moved.'),
+      screen.getByText('Simulated payment: no card was charged and no money moved.'),
     ).toBeInTheDocument()
     expect(container.textContent).not.toMatch(/refund/i)
   })
@@ -981,7 +981,7 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
 
     const { container } = await renderPage()
 
-    expect(screen.getByText('Booked — pay $80.00 at the door')).toBeInTheDocument()
+    expect(screen.getByText('Booked, pay $80.00 at the door')).toBeInTheDocument()
     expect(screen.getByText('Booking fee paid')).toBeInTheDocument()
     expect(screen.getByText('Paid online (simulated)')).toBeInTheDocument()
     expect(screen.getByText('To pay at the door')).toBeInTheDocument()
@@ -992,7 +992,7 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
         'Until a ticket is paid for at the door, the organiser or The Desi Events can cancel it; the booking fee is not refunded if they do.',
       ),
     ).toBeInTheDocument()
-    expect(container.textContent).not.toContain('Paid — simulated')
+    expect(container.textContent).not.toContain('Paid (simulated)')
   })
 
   it('names the place’s tax on a booking paid at the venue, and says none is added to its tickets', async () => {
@@ -1085,7 +1085,7 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
     await renderPage()
 
     expect(
-      screen.getByText('Passed on — its new holder pays $40.00 at the door'),
+      screen.getByText('Passed on, its new holder pays $40.00 at the door'),
     ).toBeInTheDocument()
     expect(
       screen.getByText(
@@ -1212,11 +1212,11 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
     await renderPage()
 
     expect(
-      screen.getByText('Passed on — its new holder pays $25.00 at the door'),
+      screen.getByText('Passed on, its new holder pays $25.00 at the door'),
     ).toBeInTheDocument()
     expect(screen.queryByText(/its new holder pays \$40\.00/u)).toBeNull()
     // One row still owes; the one paid at the door is not listed as owing.
-    expect(screen.getAllByText(/^Passed on — its new holder pays/u)).toHaveLength(1)
+    expect(screen.getAllByText(/^Passed on, its new holder pays/u)).toHaveLength(1)
   })
 
   it('draws a block for each cancellation of unpaid tickets, with or without a kept fee', async () => {
@@ -1249,7 +1249,7 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
       'The booking fee paid for them online, $6.62, is kept by The Desi Events and is not refunded.',
     )
     expect(block).toHaveTextContent('Reason given: “Not paid by the deadline we set.”')
-    expect(screen.getByText('Cancelled — not paid at the door')).toBeInTheDocument()
+    expect(screen.getByText('Cancelled, not paid at the door')).toBeInTheDocument()
   })
 
   it('reads what the order paid online, so a fee refunded earlier is never called nothing paid', async () => {
@@ -1397,7 +1397,7 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
     getMyOrder.mockResolvedValue(atVenue({ state: 'NONE' }, { status: 'REFUNDED' }))
     await renderPage()
 
-    expect(screen.getByText('Booking fee refunded — simulated')).toBeInTheDocument()
+    expect(screen.getByText('Booking fee refunded (simulated)')).toBeInTheDocument()
     expect(screen.queryByText(/This order was refunded in full/u)).toBeNull()
   })
 
@@ -1411,15 +1411,15 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
 
     await renderPage()
 
-    expect(screen.getByText('Cancelled — nothing to pay')).toBeInTheDocument()
+    expect(screen.getByText('Cancelled, nothing to pay')).toBeInTheDocument()
     expect(
       screen.getByText(
         'This event was cancelled, so nothing is owed at the door for these tickets.',
       ),
     ).toBeInTheDocument()
     expect(screen.queryByText('To pay at the door')).toBeNull()
-    expect(screen.queryByText(/Booked — pay/u)).toBeNull()
-    expect(screen.queryByText('Paid — simulated')).toBeNull()
+    expect(screen.queryByText(/Booked, pay/u)).toBeNull()
+    expect(screen.queryByText('Paid (simulated)')).toBeNull()
   })
 
   it('says where door money went on a booking that ended', () => {

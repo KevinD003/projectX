@@ -647,7 +647,7 @@ export function SeatCheckout({
           ]
             .filter(Boolean)
             .join(', ')
-            .concat(tier ? ` — ${tier.name}` : ''),
+            .concat(tier ? `: ${tier.name}` : ''),
         }
       })
     : []

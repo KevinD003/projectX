@@ -259,7 +259,7 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
 
   it('reads each state of the door as SPEC3-XI writes it', () => {
     expect(orderStatusFor(atVenue())).toEqual({
-      label: 'Booked — pay $80.00 at the door',
+      label: 'Booked, pay $80.00 at the door',
       tone: 'pending',
     })
     expect(orderStatusFor(atVenue({ state: 'PAID', unpaidCents: 0, paidCents: 8_000 }))).toEqual({
@@ -267,11 +267,11 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
       tone: 'success',
     })
     expect(orderStatusFor(atVenue({ state: 'PASSED_ON' }))).toEqual({
-      label: 'Passed on — the new holder pays at the door',
+      label: 'Passed on, the new holder pays at the door',
       tone: 'info',
     })
     expect(orderStatusFor(atVenue({ state: 'CANCELLED' }))).toEqual({
-      label: 'Cancelled — not paid at the door',
+      label: 'Cancelled, not paid at the door',
       tone: 'neutral',
     })
   })
@@ -281,17 +281,17 @@ describe('a booking paid at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
     // cancelled and the tickets withdrawn: the API says ENDED and owes 0.
     const ended = atVenue({ state: 'ENDED', unpaidTickets: 0, unpaidCents: 0 })
 
-    expect(orderStatusFor(ended)).toEqual({ label: 'Cancelled — nothing to pay', tone: 'neutral' })
+    expect(orderStatusFor(ended)).toEqual({ label: 'Cancelled, nothing to pay', tone: 'neutral' })
     expect(orderStatusFor(ended).label).not.toMatch(/Paid|pay \$/u)
   })
 
   it('says the booking fee was refunded, or partly when a share was kept', () => {
     expect(orderStatusFor(atVenue({}, { status: 'REFUNDED' }))).toEqual({
-      label: 'Booking fee refunded — simulated',
+      label: 'Booking fee refunded (simulated)',
       tone: 'info',
     })
     expect(orderStatusFor(atVenue({ feeKeptCents: 331 }, { status: 'REFUNDED' }))).toEqual({
-      label: 'Booking fee partly refunded — simulated',
+      label: 'Booking fee partly refunded (simulated)',
       tone: 'info',
     })
   })
@@ -350,7 +350,7 @@ describe('a ticket of a booking paid at the venue', () => {
         },
         'USD',
       ),
-    ).toEqual({ label: 'Passed on — its new holder pays $25.00 at the door', tone: 'info' })
+    ).toEqual({ label: 'Passed on, its new holder pays $25.00 at the door', tone: 'info' })
   })
 
   it('says nothing of its own for a ticket that owes nothing, one the buyer holds, or one passed on that no longer owes', () => {
@@ -430,7 +430,7 @@ describe('the tickets a booking paid at the venue passed on', () => {
 
     expect(tickets).toEqual([rows[0]])
     expect(venueTicketMeaning(tickets[0], 'USD').label).toBe(
-      'Passed on — its new holder pays $40.00 at the door',
+      'Passed on, its new holder pays $40.00 at the door',
     )
   })
 
@@ -442,7 +442,7 @@ describe('the tickets a booking paid at the venue passed on', () => {
 
     expect(tickets).toEqual([rows[1]])
     expect(venueTicketMeaning(tickets[0], 'USD')).toEqual({
-      label: 'Passed on — its new holder pays $25.00 at the door',
+      label: 'Passed on, its new holder pays $25.00 at the door',
       tone: 'info',
     })
   })

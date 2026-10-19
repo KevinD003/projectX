@@ -331,7 +331,7 @@ describe('REACHABLE_STATUSES', () => {
 
   it('reads a withdrawn ticket in words, never as the raw CANCELLED', () => {
     expect(ticketChip(ticket({ status: 'CANCELLED', admits: false }))).toEqual({
-      label: 'Withdrawn — this ticket no longer works at the door',
+      label: 'Withdrawn: this ticket no longer works at the door',
       tone: 'danger',
     })
   })
@@ -560,7 +560,7 @@ describe('a ticket booked to pay at the venue (SPEC3 §12.7, SPEC3-XI §12.7)', 
 
       expect(owesAtDoor(calledOff), status).toBe(false)
       expect(ticketChip(calledOff)).toEqual({
-        label: 'Event cancelled — nothing to pay',
+        label: 'Event cancelled, nothing to pay',
         tone: 'neutral',
       })
       expect(venuePaymentNotes(calledOff)).toEqual([

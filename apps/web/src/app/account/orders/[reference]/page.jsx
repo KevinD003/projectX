@@ -207,7 +207,7 @@ function paymentSentence(order) {
     return 'Nothing was paid online for this order.'
   }
 
-  if (tookPayment(order)) return 'Simulated payment — no card was charged and no money moved.'
+  if (tookPayment(order)) return 'Simulated payment: no card was charged and no money moved.'
   if (['PENDING', 'CANCELLED', 'EXPIRED'].includes(order.status)) return 'Not paid.'
 
   return null

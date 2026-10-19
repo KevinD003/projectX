@@ -781,7 +781,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
 
     await expect(card).toHaveCount(1)
     await expect(link).toHaveAttribute('href', `/account/orders/${reference}`)
-    await expect(card).toContainText('Paid — simulated')
+    await expect(card).toContainText('Paid (simulated)')
     await expect(definition(card, 'Reference')).toHaveText(reference)
     await expect(definition(card, 'Tickets')).toHaveText('1')
     await expect(definition(card, 'Total')).toHaveText(allIn)
@@ -794,7 +794,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     const facts = buyer.getByRole('region', { name: 'The order' })
 
     await expect(definition(facts, 'Reference')).toHaveText(reference)
-    await expect(definition(facts, 'Status')).toContainText('Paid — simulated')
+    await expect(definition(facts, 'Status')).toContainText('Paid (simulated)')
 
     // One line, of one ticket, at face value: the quantity bought.
     const money = buyer.getByRole('region', { name: 'What it cost' })
@@ -822,7 +822,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     // The columns add up to the total, which is the figure the button named.
     expect(paise(FACE) + paise(fee) + (taxShown ? paise(taxShown) : 0)).toBe(paise(allIn))
 
-    await expect(money).toContainText('Simulated payment — no card was charged and no money moved.')
+    await expect(money).toContainText('Simulated payment: no card was charged and no money moved.')
 
     const onOrder = buyer.getByRole('region', { name: 'Tickets on this order' })
 
