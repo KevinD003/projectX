@@ -400,28 +400,33 @@
  * plate. The key plate (the title a reader reads) never moves or fades. At
  * rest, and always under reduced motion, the impressions are hidden, so
  * nothing is ever left misregistered.
+ *
+ * Once per load: after a client navigation `<html>` carries
+ * `data-navigated` (components/navigation-mark.jsx) and none of this runs,
+ * because a poster reached that way arrives by the view transition's morph
+ * from its card, and two signature motions on one object is one too many.
  */
 .poster-impression {
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-registration] .poster-impression {
+  :root:not([data-navigated]) [data-registration] .poster-impression {
     animation: poster-impression 450ms var(--ease-out) both;
   }
 
-  [data-registration] [data-impression='magenta'] {
+  :root:not([data-navigated]) [data-registration] [data-impression='magenta'] {
     --impression-x: -6px;
     --impression-y: 4px;
   }
 
-  [data-registration] [data-impression='gold'] {
+  :root:not([data-navigated]) [data-registration] [data-impression='gold'] {
     --impression-x: 6px;
     --impression-y: -4px;
     animation-delay: 60ms;
   }
 
-  [data-registration] [data-plate='ghost'] {
+  :root:not([data-navigated]) [data-registration] [data-plate='ghost'] {
     animation: poster-ghost 450ms var(--ease-out) both;
   }
 }
