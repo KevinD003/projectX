@@ -1,7 +1,20 @@
 /**
- * The event listing: filter by category, state or province and city, free
- * text, and — behind "More filters" — when, language, format, price and
- * whether tickets are on sale.
+ * The event listing: the poster wall, filtered by category, state or province
+ * and city, free text, and (behind "More filters") when, language, format,
+ * price and whether tickets are on sale.
+ *
+ * This is the one page the site allows a wall of posters: the content is a
+ * list of events and the poster is how each one is recognised. Two across on
+ * a phone, four on a desk, each the event's own house poster or approved
+ * cover, and each carried to the event's page as one object when it is
+ * followed.
+ *
+ * ## For search engines
+ *
+ * The listing itself is canonical at `/events`. A filtered, searched or
+ * later page is a view of it: it points its canonical there and asks not to
+ * be indexed, while its links are still followed, so every event is found and
+ * no filter combination competes with the listing.
  *
  * All filter state lives in the query string, so the server renders the right
  * results on the first response, the back button behaves, and a filtered view
@@ -14,6 +27,8 @@
 import Link from 'next/link'
 import { EmptyState } from '../../components/ui.jsx'
 
+import { listingRobots } from '../../lib/site-seo.js'
+
 import { loadCatalogueFacets, loadEventList } from '../../lib/api.js'
 import { describeCategories } from '../../lib/catalog.js'
 import {
@@ -25,23 +40,35 @@ import {
   regionValue,
   withChosenOptions,
 } from '../../lib/search-params.js'
-import { ArrowLeftIcon, ArrowRightIcon, InfoIcon, SearchIcon } from '../../components/icons.jsx'
+import { ArrowLeftIcon, ArrowRightIcon, SearchIcon } from '../../components/icons.jsx'
 import { PRIMARY_LINK_SMALL, SECONDARY_LINK } from '../../components/link-classes.js'
 import { EventFilters } from '../../components/listing-filters.jsx'
 import { EventGrid } from '../../components/listing-card.jsx'
-import { FadeIn } from '../../components/motion.jsx'
 import { Breadcrumbs } from '../../components/page-state.jsx'
 import { PageHero } from '../../components/page-hero.jsx'
-import { EventArt } from '../../components/event-art.jsx'
 import { SampleDataNotice } from '../../components/sample-data-notice.jsx'
 import { TrafficScope } from '../../components/traffic-scope.jsx'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = {
-  title: 'All events',
-  description:
-    'Every garba and dandiya night, beginner garba class and Navratri mela on The Desi Events — filter by category, state or province, city, date, language or price, or search.',
+/** What a search engine is told about the listing. */
+const DESCRIPTION =
+  'Concerts, comedy, garba, Durga Puja, Diwali melas, Bollywood nights and more across the USA and Canada. Filter by category, state or province, city, date, language or price, or search.'
+
+/**
+ * The listing's metadata: canonical at `/events`, and a filtered or later
+ * page kept out of the index while its links are followed.
+ *
+ * @param {EventsPageProps} props Route props.
+ * @returns {Promise<object>} The metadata.
+ */
+export async function generateMetadata({ searchParams }) {
+  return {
+    title: 'All events',
+    description: DESCRIPTION,
+    alternates: { canonical: '/events' },
+    ...listingRobots(await searchParams),
+  }
 }
 
 /** How a "When" choice reads in the summary sentence. */
@@ -181,35 +208,28 @@ export default async function EventsPage({ searchParams }) {
   const languages = (facets.languages ?? []).map((entry) => entry.value)
   const active = hasActiveFilters(filters)
 
-  // A fan of the first posters on the page, behind the heading. Decoration:
-  // the same posters are on the cards below, each with its name.
-  const fan = events.slice(0, 3)
+  const placement = usedFallback ? null : filters.q ? 'SEARCH' : 'LISTING'
 
   return (
-    <div>
+    <div className="flex flex-col">
       <PageHero
         headingId="events-heading"
+        size="display"
         breadcrumbs={
           <Breadcrumbs
-            tone="inverse"
+            structured
             trail={[
               { href: '/', label: 'Home' },
               { href: null, label: 'Discover events' },
             ]}
           />
         }
-        title={
-          <>
-            What&rsquo;s <em className="font-medium text-accent-inverse italic">on</em>
-          </>
-        }
-        lead="Garba, dandiya and raas nights from Edison to Santa Clara. Filter it down to the night you actually want."
-        art={fan.length > 0 ? <PosterFan events={fan} /> : null}
-        className="pb-24 sm:pb-28"
+        title="What’s on"
+        lead="Concerts, comedy, garba, Durga Puja, Bollywood nights and the rest of the calendar, from Edison to Santa Clara and up to Toronto."
       />
 
-      <div className="mx-auto max-w-content px-4 sm:px-6">
-        <FadeIn delay={0.12} className="relative z-10 -mt-14">
+      <div className="border-y border-line bg-surface-subtle">
+        <div className="mx-auto max-w-content px-4 py-4 sm:px-6 sm:py-5">
           {/*
             No `key` here, deliberately. It used to be derived from the filter
             values, which remounted the whole form on every change and threw
@@ -224,33 +244,30 @@ export default async function EventsPage({ searchParams }) {
             anyActive={active}
             resultCount={pagination?.total ?? events.length}
           />
-        </FadeIn>
+        </div>
+      </div>
 
+      <div className="mx-auto w-full max-w-content px-4 pt-8 pb-20 sm:px-6 sm:pt-10 lg:pb-28">
         <SampleDataNotice show={usedFallback} />
 
-        <div className="mt-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
+        <div className="flex flex-col gap-3 border-b border-line pb-5 md:flex-row md:items-end md:justify-between md:gap-8">
+          <div className="min-w-0">
             <p
               role="status"
               data-testid="result-count"
-              className="font-display text-h2 font-semibold text-ink"
+              className="font-display text-h2 font-bold text-balance text-ink"
             >
               {resultSummary(pagination, filters, region)}
             </p>
-            {pagination.totalPages > 1 ? (
-              <p className="mt-1 text-[0.9375rem] text-ink-muted">
-                Page {pagination.page} of {pagination.totalPages}, soonest first
-              </p>
-            ) : (
-              <p className="mt-1 text-[0.9375rem] text-ink-muted">Soonest first</p>
-            )}
+            <p className="mt-1 text-label text-ink-muted">
+              {pagination.totalPages > 1
+                ? `Page ${pagination.page} of ${pagination.totalPages}, soonest first`
+                : 'Soonest first'}
+            </p>
           </div>
-          <p className="inline-flex items-start gap-2.5 rounded-control bg-surface-subtle px-4 py-2.5 text-sm text-ink-muted md:max-w-md">
-            <InfoIcon className="mt-0.5 h-4.5 w-4.5 text-accent-strong" />
-            <span>
-              A card’s price says whether the booking fee is in it.{' '}
-              <strong className="font-bold text-ink">Payments on this site are simulated.</strong>
-            </span>
+          <p className="text-caption text-ink-muted md:max-w-xs md:text-right">
+            A card’s price says whether the booking fee is in it.{' '}
+            <strong className="font-semibold text-ink">Payments on this site are simulated.</strong>
           </p>
         </div>
 
@@ -260,13 +277,13 @@ export default async function EventsPage({ searchParams }) {
           here only when a visitor asks for it, never automatically on a filter
           change.
         */}
-        <div id="event-results" tabIndex={-1} className="mt-8 scroll-mt-28">
+        <div id="event-results" tabIndex={-1} className="mt-8 scroll-mt-28 sm:mt-10">
           {events.length === 0 ? (
             <EmptyState
               icon={<SearchIcon className="h-8 w-8" />}
               title="Nothing matches that"
               description="Try a broader search, another city, or browse everything we have on."
-              className="bg-surface-raised"
+              className="bg-surface-subtle"
               action={
                 <Link href="/events" className={PRIMARY_LINK_SMALL}>
                   Clear all filters
@@ -278,84 +295,54 @@ export default async function EventsPage({ searchParams }) {
               events={events}
               label="Matching events"
               headingLevel="h2"
+              shared
               // A click on a card is counted as from search results when the
               // visitor searched, and from the events list otherwise.
-              trafficPlacement={usedFallback ? null : filters.q ? 'SEARCH' : 'LISTING'}
+              trafficPlacement={placement}
             />
           )}
         </div>
 
         {pagination.totalPages > 1 ? (
-          <>
-            <nav
-              aria-label="Listing pages"
-              className="mt-8 flex items-center justify-between gap-4 sm:justify-center sm:gap-8"
-            >
-              {pagination.hasPreviousPage ? (
-                <Link
-                  href={buildEventsHref({ ...filters, page: pagination.page - 1 })}
-                  className={SECONDARY_LINK}
-                >
-                  <ArrowLeftIcon className="h-4.5 w-4.5" />
-                  Previous
-                </Link>
-              ) : (
-                <span className="w-28" />
-              )}
+          <nav
+            aria-label="Listing pages"
+            className="mt-14 flex items-center justify-between gap-4 border-t border-line pt-6"
+          >
+            {pagination.hasPreviousPage ? (
+              <Link
+                href={buildEventsHref({ ...filters, page: pagination.page - 1 })}
+                className={SECONDARY_LINK}
+              >
+                <ArrowLeftIcon className="h-4.5 w-4.5" />
+                Previous
+              </Link>
+            ) : (
+              <span className="w-28" />
+            )}
 
-              <p className="text-[0.9375rem] text-ink-muted">
-                Page <span className="font-bold text-ink">{pagination.page}</span> of{' '}
-                {pagination.totalPages}
-              </p>
+            <p className="text-label text-ink-muted tabular-nums">
+              Page <span className="font-bold text-ink">{pagination.page}</span> of{' '}
+              {pagination.totalPages}
+            </p>
 
-              {pagination.hasNextPage ? (
-                <Link
-                  href={buildEventsHref({ ...filters, page: pagination.page + 1 })}
-                  className={SECONDARY_LINK}
-                >
-                  Next
-                  <ArrowRightIcon className="h-4.5 w-4.5" />
-                </Link>
-              ) : (
-                <span className="w-28" />
-              )}
-            </nav>
-          </>
+            {pagination.hasNextPage ? (
+              <Link
+                href={buildEventsHref({ ...filters, page: pagination.page + 1 })}
+                className={SECONDARY_LINK}
+              >
+                Next
+                <ArrowRightIcon className="h-4.5 w-4.5" />
+              </Link>
+            ) : (
+              <span className="w-28" />
+            )}
+          </nav>
         ) : null}
       </div>
 
       {/* Counts clicks on the cards above; a signed-in organiser's own events
           and staff at The Desi Events are left out. */}
       <TrafficScope />
-    </div>
-  )
-}
-
-/**
- * Three posters fanned out behind the listing's heading.
- *
- * @param {object} props Component props.
- * @param {object[]} props.events The events whose posters to fan.
- * @returns {JSX.Element} The fan.
- */
-function PosterFan({ events }) {
-  const placements = [
-    'left-0 top-14 w-48 -rotate-[9deg]',
-    'right-0 top-12 w-48 rotate-[8deg]',
-    'left-1/2 top-4 w-60 -translate-x-1/2 -rotate-[1.5deg]',
-  ]
-
-  return (
-    <div className="relative h-60 w-[27.5rem]">
-      {events.map((event, index) => (
-        <FadeIn
-          key={event.slug}
-          delay={0.16 + index * 0.06}
-          className={`absolute overflow-hidden rounded-2xl border-4 border-page shadow-dialog ${placements[index]}`}
-        >
-          <EventArt event={event} sizes="18rem" />
-        </FadeIn>
-      ))}
     </div>
   )
 }
