@@ -131,9 +131,7 @@ export default async function ImportsPage({ searchParams }) {
       <section
         aria-labelledby="pending-heading"
         data-waiting={pending?.total > 0 ? 'true' : undefined}
-        className={`mt-8 p-5 sm:p-6 ${PANEL} ${
-          pending?.total > 0 ? 'border-l-4 border-l-action-primary' : ''
-        }`}
+        className={`mt-8 p-5 sm:p-6 ${PANEL}`}
       >
         <h2 id="pending-heading" className="text-h3 font-semibold text-ink">
           Approve and publish all pending imported events
