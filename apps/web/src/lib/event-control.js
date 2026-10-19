@@ -853,6 +853,30 @@ export function feeListText(row) {
 }
 
 /**
+ * The admin list's four smaller columns in one muted line, for a phone, where
+ * a labelled cell each made every event a tall card: "0 paid orders ·
+ * 0 pictures waiting · Site default fee · Pay at the venue off".
+ *
+ * @param {object} row A `platformEvents.list` row.
+ * @returns {string} The line.
+ */
+export function eventRowSummary(row) {
+  const count = (value, one, many) => {
+    const n = Number(value ?? 0)
+
+    return `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`
+  }
+  const fee = feeListText(row)
+
+  return [
+    count(row?.paidOrders, 'paid order', 'paid orders'),
+    count(row?.picturesWaiting, 'picture waiting', 'pictures waiting'),
+    fee === 'No booking fee' ? fee : `${fee} fee`,
+    `Pay at the venue ${venueListText(row).replace(/^On/u, 'on').replace(/^Off$/u, 'off')}`,
+  ].join(' · ')
+}
+
+/**
  * One entry of the panel's history, as one line (SPEC3 §12.3). Whether a
  * switch change turned paying at the venue on or changed its limit depends on
  * the change before it, which is the next older entry of the same kind.

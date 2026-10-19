@@ -357,6 +357,39 @@ describe('the booking fee and paying at the venue in the list (SPEC3 §7.3)', ()
     )
   })
 
+  it('folds the smaller columns into one line on a phone, and leaves the table’s columns as they are', async () => {
+    await renderPage()
+
+    const table = screen.getByRole('table')
+    const [, first] = within(table).getAllByRole('row')
+    const header = within(first).getByRole('rowheader')
+    const summary = header.querySelector('[data-slot="row-summary"]')
+
+    // Inside the row's heading cell, shown below md only.
+    expect(summary).toHaveClass('md:hidden')
+    expect(summary.textContent).toMatch(
+      /^\d[\d,]* paid orders? · \d+ pictures? waiting · .+ · Pay at the venue (on|off)/u,
+    )
+    // The cells it stands for are left out below md, the state, the start
+    // and the actions are not, and every row keeps one cell per column.
+    const cells = within(first).getAllByRole('cell')
+
+    expect(cells).toHaveLength(EVENT_COLUMNS.length - 1)
+    for (const [index, column] of EVENT_COLUMNS.slice(1).entries()) {
+      const narrow = [
+        'Paid orders',
+        'Pictures waiting',
+        'Booking fee',
+        'Pay at the venue',
+        'Last changed',
+      ]
+
+      if (narrow.includes(column.heading))
+        expect(cells[index], column.heading).toHaveClass('max-md:hidden')
+      else expect(cells[index], column.heading).not.toHaveClass('max-md:hidden')
+    }
+  })
+
   it('says the state as a word with its glyph, and the start as a day over a time', async () => {
     await renderPage()
 
