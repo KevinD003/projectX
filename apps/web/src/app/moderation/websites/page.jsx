@@ -207,10 +207,7 @@ export default async function WebsiteLinksPage({ searchParams }) {
 
   const heading = (
     <>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Website links</h1>
+      <h1 className="text-h2 font-semibold text-ink">Website links</h1>
     </>
   )
 

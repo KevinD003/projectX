@@ -165,10 +165,7 @@ export default async function RetentionPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Retention rehearsals</h1>
+        <h1 className="text-h2 font-semibold text-ink">Retention rehearsals</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           What a retention sweep <em>would</em> reach, if the proposed durations were adopted.
           Nothing on this page has deleted anything, and nothing on this page can: the retention job

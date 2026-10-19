@@ -154,10 +154,7 @@ export default async function PicturesWaitingPage({ searchParams } = {}) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Pictures waiting for a decision</h1>
+      <h1 className="text-h2 font-semibold text-ink">Pictures waiting for a decision</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>
 
       <nav aria-label="Filter by decision" className="mt-6">

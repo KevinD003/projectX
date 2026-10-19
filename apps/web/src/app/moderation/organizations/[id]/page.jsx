@@ -103,10 +103,7 @@ export default async function ReviewOrganizationPage({ params }) {
           Back to organisation checks
         </Link>
       </p>
-      <p className="mt-4 text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold break-words text-ink">{organization.name}</h1>
+      <h1 className="mt-4 text-h2 font-semibold break-words text-ink">{organization.name}</h1>
       <p className="mt-2 flex flex-wrap items-center gap-2">
         <Badge variant={reading.tone} size="lg" srLabel="State:">
           {reading.label}

@@ -175,10 +175,7 @@ export default async function OperationsPage() {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Money
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Operations</h1>
+      <h1 className="text-h2 font-semibold text-ink">Operations</h1>
       <p className="mt-2 text-ink-muted">
         What the machine could not finish on its own. Nothing is actioned from this page — each item
         links to where the work is done, behind its own second factor.
