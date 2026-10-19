@@ -200,6 +200,7 @@ export async function loadEventList(filters = {}, options = {}) {
           // the lifecycle meant an event vanished from discovery the moment
           // its organiser opened sales.
           ...eventListQuery(filters),
+          ...(filters.startsAfter ? { startsAfter: filters.startsAfter } : {}),
         },
         callOptions(),
       )
@@ -359,13 +360,27 @@ export async function loadVenueBySlug(slug, options = {}) {
  * from a page of results meant a city whose events all fell past the first
  * forty-eight was not merely hidden but unselectable.
  *
+ * It reads from a day before now. The public listing keeps a night that has
+ * passed until its organiser closes it, and soonest-first those come first:
+ * forty-eight finished nights would fill the page and leave the home page's
+ * agenda empty while the calendar ahead is full. A day back keeps a night
+ * that is on right now; `notYetOver` (`lib/home-sections.js`) drops what has
+ * ended.
+ *
  * @param {object} [options] Overrides.
  * @param {object} [options.client] API client to use; defaults to the shared one.
- * @returns {Promise<EventListResult>} Up to one page of 48 summaries, unfiltered.
+ * @param {Date} [options.now] The moment to read from; defaults to now.
+ * @returns {Promise<EventListResult>} Up to one page of 48 summaries.
  */
 export async function loadCatalogueOverview(options = {}) {
-  return loadEventList({ page: 1, perPage: 48 }, options)
+  const now = options.now ?? new Date()
+  const startsAfter = new Date(now.getTime() - OVERVIEW_LOOKBACK_MS).toISOString()
+
+  return loadEventList({ page: 1, perPage: 48, startsAfter }, options)
 }
+
+/** How far back the home page's read reaches, so a night on now is still in it. */
+export const OVERVIEW_LOOKBACK_MS = 24 * 60 * 60 * 1000
 
 /** Facet lists used when the API cannot be reached. */
 const FALLBACK_FACETS = Object.freeze({
