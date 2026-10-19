@@ -149,7 +149,7 @@ describe('one import', () => {
 
     expect(
       screen.getByRole('button', {
-        name: `Tick the first ${IMPORT_LIMITS.approveItems} of ${rows.length} shown`,
+        name: `Tick the first ${IMPORT_LIMITS.approveItems} of ${rows.length} waiting`,
       }),
     ).toBeInTheDocument()
   })

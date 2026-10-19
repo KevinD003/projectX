@@ -257,3 +257,45 @@ describe('pendingSentences and outcomeSentences', () => {
     ).toEqual(['No imported event was waiting, so nothing was approved.'])
   })
 })
+
+describe('how the panel reads', () => {
+  it('sets the count as a figure a glance takes in, hidden from a screen reader that hears the sentence', () => {
+    const { container } = render(<ApprovePendingPanel pending={pending()} />)
+
+    const figure = container.querySelector('[data-slot="pending-count"]')
+
+    expect(figure).toHaveTextContent('309')
+    expect(figure).toHaveAttribute('aria-hidden', 'true')
+    expect(figure).toHaveClass('font-display', 'tabular-nums')
+    // The button is the large primary, the page's one action.
+    expect(screen.getByRole('button', { name: 'Approve and publish all 309 events' })).toHaveClass(
+      'min-h-12',
+    )
+  })
+
+  it('draws no figure when nothing waits, and says so beside a success glyph', () => {
+    const { container } = render(
+      <ApprovePendingPanel
+        pending={pending({ total: 0, willGoOnSale: 0, publishedNothingToSell: 0, past: 0 })}
+      />,
+    )
+
+    expect(container.querySelector('[data-slot="pending-count"]')).toBeNull()
+    expect(container.querySelector('[data-tone="success"]')).not.toBeNull()
+  })
+
+  it('reports the outcome on the success ground, with its glyph', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(answer(200, DONE))
+    const { container } = render(<ApprovePendingPanel pending={pending()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Approve and publish all 309 events' }))
+
+    const outcome = container.querySelector('[data-slot="approve-outcome"]')
+
+    expect(outcome).toHaveClass('bg-status-success-soft')
+    expect(outcome.querySelector('[data-tone="success"]')).not.toBeNull()
+    expect(outcome).toHaveTextContent('Approve and publish all')
+  })
+})
