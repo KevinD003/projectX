@@ -36,10 +36,7 @@ export default async function FeeRefundsPage() {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Booking fee refunds</h1>
+      <h1 className="text-h2 font-semibold text-ink">Booking fee refunds</h1>
       {allowed ? (
         <>
           <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>

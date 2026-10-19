@@ -64,10 +64,7 @@ export default async function ModerationQueuePage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Review queue</h1>
+      <h1 className="text-h2 font-semibold text-ink">Review queue</h1>
       <p className="mt-2 text-ink-muted">
         Oldest submission first. Somebody who submitted on Monday should not still be waiting
         because a Thursday listing looked more interesting.

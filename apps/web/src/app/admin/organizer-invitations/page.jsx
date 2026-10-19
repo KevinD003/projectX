@@ -107,10 +107,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
   if (!sessionCan(session, 'organizer:invite')) {
     return (
       <div>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Platform administration
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Organiser invitations</h1>
+        <h1 className="text-h2 font-semibold text-ink">Organiser invitations</h1>
         <RefusalNotice tone="neutral" title="Not for this account" detail={NOT_FOR_THIS_ACCOUNT} />
       </div>
     )
@@ -145,10 +142,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Organiser invitations</h1>
+      <h1 className="text-h2 font-semibold text-ink">Organiser invitations</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">
         Organisers join The Desi Events only through an invitation from the team at The Desi Events.
         Each invitation carries a code that works once, for the email address it names, for{' '}

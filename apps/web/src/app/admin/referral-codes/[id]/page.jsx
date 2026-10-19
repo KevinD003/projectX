@@ -227,9 +227,6 @@ export default async function ReferralCodePage({ params, searchParams }) {
   return (
     <div>
       {back}
-      <p className="mt-2 text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
       <h1 className="mt-2 text-h2 font-semibold text-ink">
         {code.label ? `Referral code: ${code.label}` : 'Referral code'}
       </h1>

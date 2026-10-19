@@ -88,10 +88,7 @@ export default async function ConnectPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Money
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Payout setup</h1>
+      <h1 className="text-h2 font-semibold text-ink">Payout setup</h1>
 
       <p
         role="note"

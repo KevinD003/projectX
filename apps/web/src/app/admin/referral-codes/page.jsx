@@ -67,10 +67,7 @@ const SELECT =
 function Heading() {
   return (
     <>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Referral codes</h1>
+      <h1 className="text-h2 font-semibold text-ink">Referral codes</h1>
     </>
   )
 }
