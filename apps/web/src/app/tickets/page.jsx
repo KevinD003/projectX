@@ -152,12 +152,17 @@ function StubDate({ startsAt, timeZone }) {
   if (!date) return null
 
   return (
-    <p aria-hidden="true" className="flex items-end gap-3 font-display leading-none">
-      <span className="text-[3.5rem] leading-[0.85] font-bold tabular-nums">{date.day}</span>
+    <p aria-hidden="true" className="flex shrink-0 items-end gap-3 font-display leading-none">
+      <span className="text-[2.75rem] leading-[0.85] font-bold tabular-nums sm:text-[3.5rem]">
+        {date.day}
+      </span>
       <span className="flex flex-col gap-1 pb-0.5">
         <span className="text-label font-bold uppercase">{date.month}</span>
         <span className="font-sans text-caption text-ink-muted">
-          {date.weekday} · {date.time}
+          {date.weekday}
+          <span className="max-sm:hidden"> · </span>
+          <br className="sm:hidden" />
+          {date.time}
         </span>
       </span>
     </p>
@@ -200,6 +205,10 @@ function TicketCard({ ticket, now }) {
         as="div"
         eventDay={today}
         muted={!ticket.admits}
+        // A phone gets the ticket in about 360px: tighter padding, and the
+        // stub's date and its pass link on one line.
+        faceClassName="max-sm:p-4"
+        stubClassName="max-sm:px-4 max-sm:py-3"
         face={
           <>
             <div className="flex flex-wrap items-center gap-2">
@@ -212,8 +221,12 @@ function TicketCard({ ticket, now }) {
               </Link>
             </h3>
 
-            <dl className="mt-5 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-              <Detail term="When" className="sm:col-span-2 lg:col-span-1">
+            {/* Two columns even on a phone. There the date is the stub's,
+                printed large, so "When" is kept for a screen reader only
+                (the stub's date is hidden from one), and so is the order's
+                reference, which the ticket's own page shows. */}
+            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:mt-5 sm:gap-x-6 lg:grid-cols-3">
+              <Detail term="When" className="max-sm:sr-only sm:col-span-2 lg:col-span-1">
                 {when ? <time dateTime={ticket.event.startsAt}>{when}</time> : ''}
               </Detail>
               <Detail term="Night">
@@ -226,7 +239,9 @@ function TicketCard({ ticket, now }) {
               <Detail term="Reference">
                 <span className="font-mono">{ticket.code}</span>
               </Detail>
-              <Detail term="Order">{ticket.orderReference ?? ''}</Detail>
+              <Detail term="Order" className="max-sm:sr-only">
+                {ticket.orderReference ?? ''}
+              </Detail>
             </dl>
 
             {doorNotes.map((note) => (
@@ -255,7 +270,7 @@ function TicketCard({ ticket, now }) {
           </>
         }
         stub={
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 md:h-full md:flex-col md:flex-nowrap md:items-stretch md:justify-start md:gap-5 md:pt-0 md:pl-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 sm:gap-4 md:h-full md:flex-col md:flex-nowrap md:items-stretch md:justify-start md:gap-5 md:pt-0 md:pl-2">
             <StubDate startsAt={startsAt} timeZone={zone} />
             <div className="flex flex-col gap-3 md:mt-auto">
               {/* The joining link of an online event, given by the server
@@ -276,8 +291,11 @@ function TicketCard({ ticket, now }) {
               {/* Whether it admits is the server's word, from the same
                   function the door runs; the page does not work it out. */}
               {ticket.admits ? (
-                <Link href={`/tickets/${ticket.id}#entry-pass`} className={SECONDARY_LINK}>
-                  <Icon name="qr" className="size-5" />
+                <Link
+                  href={`/tickets/${ticket.id}#entry-pass`}
+                  className={`${SECONDARY_LINK} max-sm:px-3`}
+                >
+                  <Icon name="qr" className="size-5 max-sm:hidden" />
                   Show my entry pass
                   <span className="sr-only"> for {ticket.event.title}</span>
                 </Link>
