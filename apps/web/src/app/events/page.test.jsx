@@ -38,6 +38,7 @@ const { default: EventsPage, generateMetadata } = await import('./page.jsx')
  * @param {boolean} [options.usedFallback] Whether the sample catalogue answered.
  * @param {boolean} [options.facetsFellBack] Whether the facets came from the sample catalogue; as `usedFallback` unless given.
  * @param {object} [options.facets] Facet lists to add to (or replace) the default ones.
+ * @param {object[]} [options.onNow] What the read for the nights under way answers.
  * @returns {Promise<HTMLElement>} The render container.
  */
 async function draw({
@@ -47,10 +48,10 @@ async function draw({
   usedFallback = false,
   facetsFellBack = usedFallback,
   facets = {},
+  onNow = [],
 } = {}) {
   const page = events ?? sampleEventSummaries().slice(0, 12)
-
-  loadEventList.mockResolvedValue({
+  const listing = {
     events: page,
     pagination: pagination ?? {
       page: 1,
@@ -61,7 +62,22 @@ async function draw({
       hasPreviousPage: false,
     },
     usedFallback,
-  })
+  }
+  // The read for the nights under way is the one bounded on both sides.
+  const underWay = {
+    events: onNow,
+    pagination: {
+      page: 1,
+      perPage: 48,
+      total: onNow.length,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+    usedFallback,
+  }
+
+  loadEventList.mockImplementation(async (filters) => (filters.startsBefore ? underWay : listing))
   loadCatalogueFacets.mockResolvedValue({
     facets: {
       categories: [
@@ -280,17 +296,22 @@ const PLACES = Object.freeze({
 describe('where the listing starts', () => {
   const NOW = new Date('2026-10-19T16:00:00.000Z')
 
+  /** The first read with no `startsBefore`: the upcoming listing. */
+  const listingCall = () => loadEventList.mock.calls.find(([filters]) => !filters.startsBefore)[0]
+  /** The read bounded on both sides: the nights under way. */
+  const onNowCall = () => loadEventList.mock.calls.find(([filters]) => filters.startsBefore)?.[0]
+
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(NOW)
   })
   afterEach(() => vi.useRealTimers())
 
-  it('reads from a day before now when no date is chosen, so finished nights do not lead', async () => {
+  it('starts the listing at now when no date is chosen, so finished nights do not lead it', async () => {
     await draw()
 
-    expect(loadEventList).toHaveBeenCalledTimes(1)
-    expect(loadEventList.mock.calls[0][0]).toEqual({
+    expect(loadEventList).toHaveBeenCalledTimes(2)
+    expect(listingCall()).toEqual({
       category: '',
       region: '',
       city: '',
@@ -304,20 +325,76 @@ describe('where the listing starts', () => {
       onSale: false,
       page: 1,
       perPage: 12,
-      startsAfter: '2026-10-18T16:00:00.000Z',
+      startsAfter: '2026-10-19T16:00:00.000Z',
     })
   })
 
-  it('keeps the window with the other filters, and on a later page', async () => {
+  it('reads the nights under way from a day back, with the same filters', async () => {
     await draw({ query: { category: 'COMEDY', page: '3' } })
 
-    expect(loadEventList).toHaveBeenLastCalledWith(
+    expect(onNowCall()).toEqual(
       expect.objectContaining({
         category: 'COMEDY',
-        page: 3,
+        page: 1,
+        perPage: 48,
         startsAfter: '2026-10-18T16:00:00.000Z',
+        startsBefore: '2026-10-19T16:00:00.000Z',
       }),
     )
+    expect(listingCall()).toEqual(
+      expect.objectContaining({ category: 'COMEDY', page: 3, startsAfter: NOW.toISOString() }),
+    )
+  })
+
+  it('shows a night that is on now first, counts it, and drops one that has ended', async () => {
+    const [first, second, third] = sampleEventSummaries()
+    const onNow = {
+      ...first,
+      title: 'On right now',
+      startsAt: '2026-10-19T14:00:00.000Z',
+      endsAt: '2026-10-19T19:00:00.000Z',
+    }
+    const ended = {
+      ...second,
+      title: 'Finished this morning',
+      startsAt: '2026-10-19T02:00:00.000Z',
+      endsAt: '2026-10-19T06:00:00.000Z',
+    }
+
+    await draw({ events: [third], onNow: [ended, onNow] })
+
+    const cards = within(screen.getByRole('list', { name: 'Matching events' })).getAllByRole(
+      'heading',
+    )
+
+    expect(cards.map((card) => card.textContent)).toEqual(['On right now', third.title])
+    expect(screen.getByTestId('result-count')).toHaveTextContent(/^2 events$/u)
+  })
+
+  it('keeps the nights under way to the first page, though it still counts them', async () => {
+    const [first, second] = sampleEventSummaries()
+    const onNow = { ...first, startsAt: NOW.toISOString(), endsAt: '2026-10-19T20:00:00.000Z' }
+
+    await draw({
+      query: { page: '2' },
+      events: [second],
+      onNow: [onNow],
+      pagination: {
+        page: 2,
+        perPage: 12,
+        total: 13,
+        totalPages: 2,
+        hasNextPage: false,
+        hasPreviousPage: true,
+      },
+    })
+
+    const cards = within(screen.getByRole('list', { name: 'Matching events' })).getAllByRole(
+      'heading',
+    )
+
+    expect(cards.map((card) => card.textContent)).toEqual([second.title])
+    expect(screen.getByTestId('result-count')).toHaveTextContent(/^14 events$/u)
   })
 
   it.each([[{ when: 'weekend' }], [{ when: 'dates', from: '2026-10-01', to: '2026-10-31' }]])(
@@ -325,8 +402,9 @@ describe('where the listing starts', () => {
     async (query) => {
       await draw({ query })
 
-      expect(loadEventList.mock.calls[0][0]).not.toHaveProperty('startsAfter')
-      expect(loadEventList.mock.calls[0][0]).toMatchObject(query)
+      expect(loadEventList).toHaveBeenCalledTimes(1)
+      expect(listingCall()).not.toHaveProperty('startsAfter')
+      expect(listingCall()).toMatchObject(query)
     },
   )
 
@@ -343,7 +421,7 @@ describe('where the listing starts', () => {
     })
 
     for (const link of screen.getAllByRole('link')) {
-      expect(link.getAttribute('href') ?? '').not.toMatch(/startsAfter/u)
+      expect(link.getAttribute('href') ?? '').not.toMatch(/startsAfter|startsBefore/u)
     }
   })
 })
@@ -409,10 +487,14 @@ describe('state, then city', () => {
       events: sampleEventSummaries().slice(0, 1),
     })
 
-    expect(loadEventList).toHaveBeenCalledTimes(1)
-    expect(loadEventList).toHaveBeenLastCalledWith(
-      expect.objectContaining({ region: 'CA-ON', city: 'Brampton', language: 'Punjabi' }),
-    )
+    // Read once, not again after reconciling: the upcoming listing and the
+    // nights under way, both with the URL's filters.
+    expect(loadEventList).toHaveBeenCalledTimes(2)
+    for (const [filters] of loadEventList.mock.calls) {
+      expect(filters).toEqual(
+        expect.objectContaining({ region: 'CA-ON', city: 'Brampton', language: 'Punjabi' }),
+      )
+    }
     expect(screen.getByLabelText('State or province')).toHaveValue('CA-ON')
     expect(screen.getByRole('option', { name: 'Ontario' })).toHaveValue('CA-ON')
     expect(screen.getByLabelText('City')).toHaveValue('Brampton')
