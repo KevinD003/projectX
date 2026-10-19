@@ -92,10 +92,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Privacy requests</h1>
+        <h1 className="text-h2 font-semibold text-ink">Privacy requests</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           Erasures raised in this organisation. A request changes nothing until somebody types back
           the phrase the server issued, and what it can reach is limited to this

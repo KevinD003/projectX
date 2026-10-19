@@ -79,10 +79,7 @@ export default async function PrivacyHoldsPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Privacy holds</h1>
+        <h1 className="text-h2 font-semibold text-ink">Privacy holds</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           A hold stops an erasure from running. While one is active, a request against that subject
           is refused and nothing is changed. Releasing a hold is its own recorded decision.

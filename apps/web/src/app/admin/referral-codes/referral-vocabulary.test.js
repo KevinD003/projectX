@@ -15,6 +15,10 @@ import {
   INTRODUCTION,
   LIST_NOTE,
   RETURN_CAUSE_WORDS,
+  STACKED,
+  STACKED_FRAME,
+  STACKED_FRAME_WIDE,
+  STACKED_WIDE,
   STATUS_FILTERS,
   copyLabel,
   makerName,
@@ -327,5 +331,25 @@ describe('changing a code', () => {
       errors: { form: 'Nothing has changed. Change something, then save.' },
       body: null,
     })
+  })
+})
+
+describe('the frame a stacked table sits in', () => {
+  it('frames the table only from the width at which it is a table, never the cards below it', () => {
+    // STACKED is a table from sm, STACKED_WIDE from md: each frame starts at the same step.
+    expect(STACKED.table).toContain('sm:table')
+    expect(STACKED_WIDE.table).toContain('md:table')
+    for (const [frame, step] of [
+      [STACKED_FRAME, 'sm'],
+      [STACKED_FRAME_WIDE, 'md'],
+    ]) {
+      const classes = frame.split(' ')
+
+      expect(classes).toContain(`${step}:rounded-card`)
+      expect(classes).toContain(`${step}:border-line`)
+      expect(classes).toContain(`${step}:[&_thead]:bg-surface-subtle`)
+      // Every class waits for the step: below it, the rows are cards already.
+      for (const name of classes) expect(name.startsWith(`${step}:`)).toBe(true)
+    }
   })
 })

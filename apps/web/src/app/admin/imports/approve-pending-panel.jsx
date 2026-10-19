@@ -28,7 +28,7 @@ import { useRef, useState } from 'react'
 
 import { useFocusAfterRender } from '../../../components/focus-after-render.jsx'
 import { StepUpPrompt } from '../../../components/step-up-prompt.jsx'
-import { Alert, Button } from '../../../components/ui.jsx'
+import { Alert, Button, StatusIcon } from '../../../components/ui.jsx'
 import { apiFetch } from '../../../lib/api-fetch.js'
 import { describeApiRefusal, parseRetryAfter, refusalSentence } from '../../../lib/refusal.js'
 
@@ -182,39 +182,79 @@ export function ApprovePendingPanel({ pending }) {
     }
   }
 
+  const [lead, ...details] = pendingSentences(pending)
+  const waiting = pending.total > 0
+
   return (
-    <div className="mt-3">
-      <div className="max-w-3xl space-y-1 text-ink-muted">
-        {pendingSentences(pending).map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-        <p>
-          Each event is approved on its own, as on its import’s page; one that cannot be is reported
-          and the rest go on. You confirm with your second factor.
-        </p>
-      </div>
+    <div className="mt-4">
+      {waiting ? (
+        <div className="grid gap-x-8 gap-y-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+          {/* The count as a figure a glance can take in; the sentence beside
+              it says the same in words, so the figure is hidden from a
+              screen reader rather than read twice. */}
+          <p
+            aria-hidden="true"
+            data-slot="pending-count"
+            className="font-display text-h1 leading-none font-bold text-ink tabular-nums"
+          >
+            {pending.total.toLocaleString('en-US')}
+          </p>
+          <div className="min-w-0 max-w-3xl">
+            <p className="text-body font-medium text-ink">{lead}</p>
+            {details.length > 0 ? (
+              <ul className="mt-2 space-y-1.5 text-sm text-ink-muted">
+                {details.map((line) => (
+                  <li key={line} className="flex items-start gap-2">
+                    <StatusIcon tone="info" className="mt-0.5 size-4 shrink-0 text-ink-subtle" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <p className="mt-3 text-sm text-ink-muted">
+              Each event is approved on its own, as on its import’s page; one that cannot be is
+              reported and the rest go on. You confirm with your second factor.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex max-w-3xl items-start gap-2 text-ink-muted">
+          <StatusIcon tone="success" className="mt-1 shrink-0 text-status-success" />
+          <div className="space-y-1">
+            {[lead, ...details].map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div ref={messageRef} tabIndex={-1} className="mt-4 focus-visible:outline-none">
         {/* Always drawn, so what is put in it is announced; plain markup
             inside, since an Alert is a live region of its own. */}
         <div role="status" aria-live="polite">
           {outcome ? (
-            <div className="rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink">
-              <p className="font-semibold">Approve and publish all</p>
-              {outcomeSentences(outcome).map((line) => (
-                <p key={line} className="mt-1">
-                  {line}
-                </p>
-              ))}
-              {(outcome.refusals ?? []).length > 0 ? (
-                <ul className="mt-2 list-disc space-y-1 pl-5">
-                  {outcome.refusals.map((refused) => (
-                    <li key={refused.eventId}>
-                      {`${titles.get(refused.eventId) ?? 'An event'}: ${refused.message ?? 'The API refused it.'}`}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+            <div
+              data-slot="approve-outcome"
+              className="flex items-start gap-3 rounded-card border border-status-success/25 bg-status-success-soft p-4 text-sm text-ink"
+            >
+              <StatusIcon tone="success" className="mt-0.5 shrink-0 text-status-success" />
+              <div className="min-w-0">
+                <p className="font-semibold">Approve and publish all</p>
+                {outcomeSentences(outcome).map((line) => (
+                  <p key={line} className="mt-1 tabular-nums">
+                    {line}
+                  </p>
+                ))}
+                {(outcome.refusals ?? []).length > 0 ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {outcome.refusals.map((refused) => (
+                      <li key={refused.eventId}>
+                        {`${titles.get(refused.eventId) ?? 'An event'}: ${refused.message ?? 'The API refused it.'}`}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
@@ -238,14 +278,9 @@ export function ApprovePendingPanel({ pending }) {
         </div>
       ) : null}
 
-      {pending.total > 0 ? (
-        <div className="mt-4">
-          <Button
-            type="button"
-            className="min-h-11"
-            disabled={busy || stepUp}
-            onClick={() => void send()}
-          >
+      {waiting ? (
+        <div className="mt-5">
+          <Button type="button" size="lg" disabled={busy || stepUp} onClick={() => void send()}>
             {busy ? 'Approving…' : `Approve and publish all ${events(pending.total)}`}
           </Button>
         </div>
