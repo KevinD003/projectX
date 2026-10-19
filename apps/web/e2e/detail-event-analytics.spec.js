@@ -318,8 +318,9 @@ test.describe.serial('visits to an event’s page', () => {
       await accepted(await view)
     }
 
-    // The event's card on the home page: in "The next nights out" or as the
-    // hero's next night, either of which counts as the home page.
+    // The event’s link on the home page: in the agenda ("This weekend" or
+    // "Coming up"), as the hero's next event, or as the next event of its kind
+    // in the category index, any of which counts as the home page.
     await visitor.goto('/')
 
     const homeCard = visitor

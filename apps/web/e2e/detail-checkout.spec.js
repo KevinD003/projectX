@@ -403,13 +403,13 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
 
     await expect(tickets.locator('p').filter({ hasText: /^From / })).toHaveText(`From ${FACE}`)
 
-    // "₹X all in — includes ₹F booking fee and ₹T GST (18%)." The tax clause
+    // "₹X all in, including the ₹F booking fee and ₹T GST (18%)." The tax clause
     // is drawn only when there is tax, so it is optional here and its absence
     // is then checked against the order.
     const quote = normalise(
       await tickets.locator('p').filter({ hasText: 'all in' }).textContent(),
     ).match(
-      /^(₹[\d,]+\.\d{2}) all in — includes (₹[\d,]+\.\d{2}) booking fee(?: and (₹[\d,]+\.\d{2}) ([^.(]+?)(?: \([^)]*\))?)?\.$/u,
+      /^(₹[\d,]+\.\d{2}) all in, including the (₹[\d,]+\.\d{2}) booking fee(?: and (₹[\d,]+\.\d{2}) ([^.(]+?)(?: \([^)]*\))?)?\.$/u,
     )
 
     expect(quote, 'the event page quotes no all-in price').not.toBeNull()

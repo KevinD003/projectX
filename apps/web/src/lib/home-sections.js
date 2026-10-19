@@ -202,3 +202,145 @@ export function organisersWithNext(events, limit = 4) {
     .sort((left, right) => Date.parse(left.next.startsAt) - Date.parse(right.next.startsAt))
     .slice(0, limit)
 }
+
+/**
+ * A calendar date in a zone, as `YYYY-MM-DD`, and its weekday (0 is Sunday).
+ *
+ * @param {Date|number} instant The moment.
+ * @param {string} timeZone An IANA zone.
+ * @returns {{date: string, weekday: number}|null} The date there, or null for a moment or zone that cannot be read.
+ */
+function localDate(instant, timeZone) {
+  const at = new Date(instant)
+
+  if (Number.isNaN(at.getTime())) return null
+
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'short',
+      timeZone,
+    }).formatToParts(at)
+    const part = (type) => parts.find((entry) => entry.type === type)?.value ?? ''
+    const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(part('weekday'))
+
+    return { date: `${part('year')}-${part('month')}-${part('day')}`, weekday }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A `YYYY-MM-DD` date moved by whole days.
+ *
+ * @param {string} date A calendar date.
+ * @param {number} days How many days on (or back, when negative).
+ * @returns {string} The other date.
+ */
+function addDays(date, days) {
+  const moved = new Date(`${date}T12:00:00Z`)
+
+  moved.setUTCDate(moved.getUTCDate() + days)
+
+  return moved.toISOString().slice(0, 10)
+}
+
+/**
+ * The dates of this weekend, Friday to Sunday, as somebody in a zone would
+ * say it: from Monday to Thursday, the coming one; from Friday to Sunday, the
+ * one already under way, from today.
+ *
+ * @param {number} now The moment to measure from, in milliseconds.
+ * @param {string} timeZone An IANA zone.
+ * @returns {{from: string, to: string}|null} The first and last date, inclusive.
+ */
+export function weekendDates(now, timeZone) {
+  const today = localDate(now, timeZone)
+
+  if (!today || today.weekday < 0) return null
+
+  // Sunday is 0: the weekend's last day. Friday (5) and Saturday (6) are in it.
+  if (today.weekday === 0) return { from: today.date, to: today.date }
+  if (today.weekday >= 5) return { from: today.date, to: addDays(today.date, 7 - today.weekday) }
+
+  const friday = addDays(today.date, 5 - today.weekday)
+
+  return { from: friday, to: addDays(friday, 2) }
+}
+
+/**
+ * @typedef {object} AgendaDay
+ * @property {string} key The day, `YYYY-MM-DD` in the zone of its first event.
+ * @property {object[]} events The day's events, in the order given.
+ */
+
+/**
+ * @typedef {object} Agenda
+ * @property {'weekend'|'upcoming'} kind Whether the list is this weekend's, or simply what is next.
+ * @property {object[]} events The events listed, soonest first.
+ * @property {AgendaDay[]} days The same events, by the day they are on.
+ */
+
+/**
+ * What the home page lists under its first heading: this weekend's events,
+ * when anything listed falls on this weekend, and otherwise the soonest events
+ * still to come.
+ *
+ * "This weekend" is read in each event's own zone, as its date is: a Friday
+ * night in Santa Clara is on Friday in Santa Clara. Only events that have not
+ * finished count, and nothing is invented: a quiet weekend says "Coming up"
+ * rather than padding the list with the week after.
+ *
+ * @param {object[]} events Event summaries, soonest first.
+ * @param {object} [options] Options.
+ * @param {number} [options.now] The moment to measure from, in milliseconds.
+ * @param {number} [options.limit] How many events at most.
+ * @returns {Agenda} The agenda.
+ */
+export function homeAgenda(events, { now = Date.now(), limit = 8 } = {}) {
+  const upcoming = notYetOver(events, now)
+  const weekend = upcoming.filter((event) => {
+    const zone = event?.timezone ?? 'America/New_York'
+    const window = weekendDates(now, zone)
+    const day = localDate(Date.parse(event?.startsAt), zone)
+
+    // A night that began before the weekend and is still going counts too.
+    return (
+      Boolean(window && day) &&
+      day.date <= window.to &&
+      (day.date >= window.from || Date.parse(event.startsAt) <= now)
+    )
+  })
+  const kind = weekend.length > 0 ? 'weekend' : 'upcoming'
+  const listed = (kind === 'weekend' ? weekend : upcoming).slice(0, limit)
+  const days = []
+
+  for (const event of listed) {
+    const key =
+      localDate(Date.parse(event.startsAt), event?.timezone ?? 'America/New_York')?.date ?? ''
+    const last = days.at(-1)
+
+    if (last && last.key === key) last.events.push(event)
+    else days.push({ key, events: [event] })
+  }
+
+  return { kind, events: listed, days }
+}
+
+/**
+ * The cities with the most events listed, for the short index: highest count
+ * first, then alphabetically, from the facets the API counted.
+ *
+ * @param {Array<{value: string, count: number}>} cityFacets City facet counts.
+ * @param {number} [limit] How many cities.
+ * @returns {CityChip[]} The cities.
+ */
+export function topCities(cityFacets, limit = 12) {
+  return (cityFacets ?? [])
+    .filter((facet) => facet?.value && Number.isInteger(facet.count) && facet.count > 0)
+    .sort((left, right) => right.count - left.count || left.value.localeCompare(right.value))
+    .slice(0, limit)
+    .map((facet) => ({ city: facet.value, count: facet.count }))
+}

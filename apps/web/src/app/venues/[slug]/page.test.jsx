@@ -105,8 +105,13 @@ describe('the venue page', () => {
   it('states the venue time zone rather than assuming the reader shares it', async () => {
     render(await VenuePage(route))
 
-    expect(screen.getByText(/Asia\/Kolkata/)).toBeInTheDocument()
-    expect(screen.getByText(/local time at the venue, not/i)).toBeInTheDocument()
+    // In the words a person uses: the zone's name, never the database's.
+    expect(
+      screen.getByText(
+        'All times on this page are India Standard Time, the local time at the venue, not yours.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Asia\/Kolkata/)).toBeNull()
   })
 
   it('renders each accessibility claim as readable text, not an icon', async () => {

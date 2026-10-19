@@ -624,6 +624,14 @@ test.describe('the venue directory', () => {
     // No accessibility filter yet, so no sentence about one.
     await expect(visitor.getByText(/applied a page at a time/u)).toHaveCount(0)
 
+    // The needs sit behind one disclosure, closed while none is chosen, so
+    // the directory is not a wall of checkboxes before the first venue.
+    const needs = form.locator('details', {
+      has: visitor.locator('summary', { hasText: 'What you need to get in' }),
+    })
+
+    await expect(needs).not.toHaveAttribute('open')
+    await needs.locator('summary').click()
     await form.getByRole('checkbox', { name: 'Hearing loop', exact: true }).check()
     await form.getByRole('button', { name: 'Apply', exact: true }).click()
 
@@ -647,6 +655,10 @@ test.describe('the venue directory', () => {
       ),
     ).toBeVisible()
     await expect(form.getByRole('checkbox', { name: 'Hearing loop', exact: true })).toBeChecked()
+    // Open on arrival now that one is chosen, and saying how many.
+    await expect(needs).toHaveAttribute('open')
+    await expect(needs.locator('summary')).toContainText('1 chosen')
+    await expect(form.getByRole('checkbox', { name: 'Hearing loop', exact: true })).toBeVisible()
 
     // The card opens the venue's own page, which the header still files under Venues.
     await visitor.getByRole('link', { name: loop.name, exact: true }).click()

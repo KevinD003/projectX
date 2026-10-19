@@ -448,6 +448,46 @@ pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`
 - **Copy.** No em dashes in visible strings; times are written by the site's
   formatters in the event's zone (or UTC, said so), never as raw ISO.
 
+### The public pages, as built
+
+- **The house poster** (`lib/poster-art.js`, `components/poster.jsx`). Every
+  event without an approved cover wears a typographic poster: one of six brand
+  schemes as a flat plate, one printed shape suited to its category (sun, arch,
+  rays, bands, rainbow, halftone, lattice), and its own title set huge and
+  condensed with the date and city on a snipe. Scheme, shape, corner and title
+  position come from the slug, so an event looks the same everywhere. Hex
+  colours live only in `PALETTES`; the lettering is drawn from an attribute so
+  the title is read once, and the whole poster is one named image.
+- **Plate registration.** The home page's next-up poster and the event page's
+  hero print themselves into register once (`[data-registration]`, CSS only,
+  motion-safe): a magenta and a gold impression of the title and the foil
+  impression of the shape slide 6px into place over 450ms. The title itself
+  never moves, and it is the page's one plate moment.
+- **One object across a navigation.** A poster on `/events` and the hero on
+  the event page share a `ViewTransition` name (`share="poster-morph"`, 300ms),
+  so following a card moves the poster rather than cutting to a new one.
+- **Home.** The first screen is the purple plate: headline, one line, the
+  search (keyword and city, a plain GET to `/events`) on the left, the next
+  event's poster on the right. Under it, "This weekend" (or "Coming up") as a
+  dated list of rows, read in each event's own zone; the busiest cities set
+  large with every city behind one disclosure; the kinds of night as a ruled
+  index with each one's next event; three lines on how booking works.
+- **`/events`** is the only poster wall: two across on a phone, four on a
+  desk, under a quiet filter band. Filtered, searched and later pages ask not
+  to be indexed and point their canonical at `/events`.
+- **The event page.** Poster beside title and facts on the white page; the
+  tickets box sticks beside the content from the desk breakpoint, and below it
+  a fixed bar keeps the price and a link to the tickets in reach, stepping
+  aside while the box is on screen (the page pads its scroll so focus is never
+  hidden behind it).
+- **Directories** (categories, organisers, venues, contact, limitations) are
+  ruled indexes in the display face, not card grids. An organiser or venue
+  page opens on the purple plate; everything else opens on the white page.
+- **Structured data.** `WebSite` with `SearchAction` and `Organization` on the
+  home page, `Organization` on an organiser's page (from its own record only),
+  `Event` on an event, `Place` on a venue, and `BreadcrumbList` microdata in the
+  trail itself (`Breadcrumbs structured`).
+
 ---
 
 ## 10. Do and don't

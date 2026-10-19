@@ -7,7 +7,7 @@ test.describe('home → events → event → checkout', () => {
     await page.goto('/')
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      'Nine nights. One circle. Find your garba.',
+      'Plans for the weekend, sorted.',
     )
 
     await page.getByRole('link', { name: 'See all events' }).click()
