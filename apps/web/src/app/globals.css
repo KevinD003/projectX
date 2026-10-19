@@ -387,3 +387,14 @@
     transform: none;
   }
 }
+
+/*
+ * The event page's buy bar (components/sticky-buy-bar.jsx) is fixed to the
+ * foot of a phone's screen. Scrolling leaves room for it, so a control that
+ * takes focus is never hidden behind it (WCAG 2.4.11).
+ */
+@media (width < 64rem) {
+  html:has([data-buy-bar]) {
+    scroll-padding-bottom: 6rem;
+  }
+}

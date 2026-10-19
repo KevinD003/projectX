@@ -699,6 +699,89 @@ describe('the event detail page in the new design', () => {
     expect(within(hero).getByText('Cancelled')).toHaveTextContent('Availability: Cancelled')
   })
 
+  it('prints the poster into register once, and carries it over from the listing as one object', async () => {
+    await renderEvent(edison)
+
+    const hero = screen.getByRole('region', { name: 'Navratri Night One: Garba Under the Lights' })
+    const poster = hero.querySelector('[data-slot="poster"]')
+
+    // The one plate moment on the page.
+    expect(poster).toHaveAttribute('data-registration')
+    expect(document.querySelectorAll('[data-registration]')).toHaveLength(1)
+    // The title is set once as text, in the heading: nothing in it waits on
+    // an animation before it can be read.
+    expect(screen.getByRole('heading', { level: 1 }).querySelector('[data-motion]')).toBeNull()
+  })
+
+  it('quotes the all-in price as one plain sentence, without a dash', async () => {
+    await renderEvent(edison)
+
+    const box = screen.getByRole('complementary', { name: 'Tickets' })
+    const quote = [...box.querySelectorAll('p')].find((paragraph) =>
+      paragraph.textContent.includes('all in'),
+    )
+
+    expect(quote.textContent.replace(/\s+/g, ' ').trim()).toBe(
+      '$38.06 all in, including the $3.06 booking fee.',
+    )
+  })
+
+  it('keeps the price and the way to the tickets in reach on a phone while it can be bought', async () => {
+    const { container, unmount } = await renderEvent(edison)
+    const bar = container.querySelector('[data-buy-bar]')
+
+    expect(bar).not.toBeNull()
+    expect(bar).toHaveClass('fixed', 'lg:hidden')
+    expect(within(bar).getByText('From $38.06')).toBeInTheDocument()
+    expect(within(bar).getByText('with fees')).toBeInTheDocument()
+    expect(within(bar).getByRole('link', { name: 'See tickets' })).toHaveAttribute(
+      'href',
+      '#tickets',
+    )
+    // It is a way down to the tickets, not a second buy button.
+    expect(screen.getAllByRole('link', { name: /Choose tickets/ })).toHaveLength(1)
+    unmount()
+
+    const stopped = await renderEvent({ ...edison, status: 'CANCELLED' })
+
+    expect(stopped.container.querySelector('[data-buy-bar]')).toBeNull()
+  })
+
+  it('says the times are the venue’s own in words a person uses, not a database zone', async () => {
+    await renderEvent(edison)
+
+    expect(
+      screen.getByText('All times are the venue’s own, Eastern Time (EDT), not yours.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/America\/New_York/u)).toBeNull()
+  })
+
+  it('does not read the summary twice when the description opens with it', async () => {
+    const summary = 'A night of garba under the lights.'
+
+    await renderEvent({ ...edison, summary, description: `${summary} Doors at seven.` })
+
+    expect(screen.getAllByText(summary, { exact: false })).toHaveLength(1)
+  })
+
+  it('marks the trail up as a BreadcrumbList, from the home page to this event', async () => {
+    await renderEvent(edison)
+
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    const list = trail.querySelector('[itemtype="https://schema.org/BreadcrumbList"]')
+    const items = [...list.querySelectorAll('[itemprop="itemListElement"]')]
+
+    expect(items.map((item) => item.querySelector('[itemprop="name"]').textContent)).toEqual([
+      'Home',
+      'Discover events',
+      'Garba & Dandiya',
+      'Navratri Night One: Garba Under the Lights',
+    ])
+    expect(
+      items.map((item) => item.querySelector('meta[itemprop="position"]').getAttribute('content')),
+    ).toEqual(['1', '2', '3', '4'])
+  })
+
   it('leads back to the listing and the category through the trail', async () => {
     await renderEvent(edison)
 
