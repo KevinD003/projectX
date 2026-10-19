@@ -111,7 +111,7 @@ export default async function VenueMapsPage({ params }) {
         </Link>
       </nav>
 
-      <h1 className="mt-4 text-h2 font-semibold text-ink">Seating maps — {venue.name}</h1>
+      <h1 className="mt-4 text-h2 font-semibold text-ink">Seating maps at {venue.name}</h1>
       <p className="mt-2 text-ink-muted">
         A map is one way of laying the hall out. Each map keeps every version it has ever had.
       </p>

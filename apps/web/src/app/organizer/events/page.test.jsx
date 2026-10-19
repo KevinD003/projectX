@@ -225,7 +225,11 @@ describe('OrganizerEventsPage', () => {
 
     render(await OrganizerEventsPage())
 
-    expect(screen.getByText(/the most recent; older events are not counted/i)).toBeTruthy()
+    expect(
+      screen.getByText(
+        'The most recently created events are listed and counted; older ones are not shown here.',
+      ),
+    ).toBeTruthy()
   })
 
   it('draws no counts when there is nothing listed to count', async () => {
