@@ -33,7 +33,7 @@ import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx
 import { EmptyState } from '../../../components/ui.jsx'
 import { PageHeader, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
-import { feeListText, venueListText } from '../../../lib/event-control.js'
+import { eventRowSummary, feeListText, venueListText } from '../../../lib/event-control.js'
 import { statusReading } from '../../../lib/event-status.js'
 import { listPlatformEvents } from '../../../lib/organizer-api.js'
 import { readSession } from '../../../lib/session.js'
@@ -174,6 +174,9 @@ export const EVENT_TABLE = Object.freeze({
   th: 'border-b border-line-strong bg-surface-subtle px-3 py-3 align-bottom text-xs font-semibold text-ink-muted first:pl-4 last:pr-4',
   tbody: 'block divide-y divide-line xl:table-row-group xl:divide-y-0',
   row: 'grid grid-cols-2 gap-x-6 gap-y-3 p-4 sm:grid-cols-3 xl:table-row xl:p-0',
+  // Below md, a cell that the one-line summary already says.
+  wide: 'max-md:hidden',
+  summary: 'mt-1 block text-xs text-ink-muted md:hidden',
   cell: 'min-w-0 xl:table-cell xl:border-b xl:border-line xl:px-3 xl:py-3 xl:align-top xl:first:pl-4 xl:last:pr-4',
   label: 'mb-0.5 block text-xs font-medium text-ink-muted xl:hidden',
   inlineLabel: 'text-xs font-medium text-ink-muted xl:hidden',
@@ -204,16 +207,17 @@ export const EVENT_COLUMNS = Object.freeze([
  * @param {string} props.label The column's heading.
  * @param {boolean} [props.numeric] Right-aligned in the table.
  * @param {boolean} [props.inline] Below `xl`, the label and a short value share one line.
+ * @param {boolean} [props.wide] Left out below `md`, where the row's summary line says it.
  * @param {string} [props.className] Extra classes.
  * @param {ReactNode} props.children The value.
  * @returns {JSX.Element} The cell.
  */
-function Cell({ label, numeric = false, inline = false, className = '', children }) {
+function Cell({ label, numeric = false, inline = false, wide = false, className = '', children }) {
   return (
     <td
       className={`${EVENT_TABLE.cell} ${numeric ? 'tabular-nums xl:text-right' : ''} ${
         inline ? 'flex items-baseline justify-between gap-2' : ''
-      } ${className}`}
+      } ${wide ? EVENT_TABLE.wide : ''} ${className}`}
     >
       <span aria-hidden="true" className={inline ? EVENT_TABLE.inlineLabel : EVENT_TABLE.label}>
         {label}
@@ -265,6 +269,12 @@ function EventRow({ row, filters }) {
             </span>
           ) : null}
         </span>
+        {/* Below md: the four smaller columns in one line, inside the row's
+            own heading cell so the table's columns stay as they are. An
+            event is then its title, its state and start, and its actions. */}
+        <span className={EVENT_TABLE.summary} data-slot="row-summary">
+          {eventRowSummary(row)}
+        </span>
       </th>
       <Cell label="State">
         <StatusWord tone={reading.tone} srLabel="State:">
@@ -279,27 +289,27 @@ function EventRow({ row, filters }) {
       <Cell label="Starts (UTC)">
         <Instant value={row.startsAt} />
       </Cell>
-      <Cell label="Paid orders" numeric inline>
+      <Cell label="Paid orders" numeric inline wide>
         <span className={row.paidOrders === 0 ? 'text-ink-muted' : 'text-ink'}>
           {row.paidOrders.toLocaleString('en-US')}
         </span>
       </Cell>
-      <Cell label="Pictures waiting" numeric inline>
+      <Cell label="Pictures waiting" numeric inline wide>
         <span className={row.picturesWaiting === 0 ? 'text-ink-muted' : 'font-semibold text-ink'}>
           {row.picturesWaiting.toLocaleString('en-US')}
         </span>
       </Cell>
-      <Cell label="Booking fee" inline>
+      <Cell label="Booking fee" inline wide>
         <span className="text-right xl:text-left">{feeListText(row)}</span>
       </Cell>
-      <Cell label="Pay at the venue" inline>
+      <Cell label="Pay at the venue" inline wide>
         <span className="text-right xl:text-left">{venueListText(row)}</span>
       </Cell>
-      <Cell label="Last changed" className="text-ink-muted">
+      <Cell label="Last changed" wide className="text-ink-muted">
         <Instant value={row.updatedAt} />
       </Cell>
-      <Cell label="Actions">
-        <ul className="flex flex-col gap-1">
+      <Cell label="Actions" className="col-span-full sm:col-span-1">
+        <ul className="flex flex-row flex-wrap gap-x-6 gap-y-1 sm:flex-col sm:gap-1">
           <li>
             <Link href={href} className={`${TEXT_LINK} inline-flex min-h-6 items-center`}>
               {deleted ? 'Open its record' : 'Open in the editor'}

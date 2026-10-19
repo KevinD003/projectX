@@ -36,6 +36,7 @@ import {
   changedBy,
   currencySymbol,
   currentFeeSentence,
+  eventRowSummary,
   feeListText,
   feeTermsShort,
   historyLines,
@@ -761,5 +762,42 @@ describe('an event not yet posted (SPEC3 §12.3, O8)', () => {
     expect(UNPOSTED_TERMS_SENTENCE).toBe(
       'You can set this event’s booking fee and whether it can be paid for at the venue now, before it is published.',
     )
+  })
+})
+
+describe('eventRowSummary', () => {
+  it('says the admin list’s four smaller columns in one line, counted in words', () => {
+    expect(
+      eventRowSummary({
+        paidOrders: 0,
+        picturesWaiting: 0,
+        feeSource: 'SITE_DEFAULT',
+        venuePaymentEnabled: false,
+      }),
+    ).toBe('0 paid orders · 0 pictures waiting · Site default fee · Pay at the venue off')
+    expect(
+      eventRowSummary({
+        paidOrders: 1,
+        picturesWaiting: 1,
+        feeSource: 'EVENT',
+        feePercentageBps: 300,
+        feeFlatCentsPerTicket: 149,
+        feeCurrency: 'USD',
+        venuePaymentEnabled: true,
+        venuePaymentLimit: 50,
+      }),
+    ).toBe(
+      '1 paid order · 1 picture waiting · 3.00% + $1.49 fee · Pay at the venue on, up to 50 unpaid',
+    )
+    expect(
+      eventRowSummary({
+        paidOrders: 1204,
+        picturesWaiting: 2,
+        feeSource: 'EVENT',
+        feePercentageBps: 0,
+        feeFlatCentsPerTicket: 0,
+        feeCurrency: 'USD',
+      }),
+    ).toBe('1,204 paid orders · 2 pictures waiting · No booking fee · Pay at the venue off')
   })
 })
