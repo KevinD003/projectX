@@ -521,8 +521,20 @@ export default async function EventDetailPage({ params }) {
               ) : null}
             </ul>
 
+            {/*
+              The first screen's one action. While tickets can be bought it is
+              the magenta plate, so the first viewport carries the primary
+              colour, and it goes to the tickets panel rather than straight to
+              checkout: the panel is where the tiers, the all-in price and the
+              one "Choose tickets" are, and a second buy link here would split
+              the click count and the choice. Outlined when nothing is on sale.
+            */}
             {ticketTypes.length > 0 || imported ? (
-              <a href="#tickets" className={`${OUTLINE_LINK} mt-6`}>
+              <a
+                href="#tickets"
+                data-hero-action=""
+                className={`${buyable ? PRIMARY_LINK : OUTLINE_LINK} mt-6`}
+              >
                 <TicketIcon className="h-4.5 w-4.5" />
                 Tickets and prices
               </a>

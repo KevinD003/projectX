@@ -747,6 +747,24 @@ describe('the event detail page in the new design', () => {
     expect(stopped.container.querySelector('[data-buy-bar]')).toBeNull()
   })
 
+  it('gives the first screen the magenta action while tickets are on sale, and only then', async () => {
+    const { container, unmount } = await renderEvent(edison)
+    const hero = container.querySelector('[data-hero-action]')
+
+    expect(hero).toHaveAccessibleName('Tickets and prices')
+    expect(hero).toHaveAttribute('href', '#tickets')
+    expect(hero).toHaveClass('bg-action-primary', 'text-action-primary-ink')
+    // Still one way to checkout on the page.
+    expect(screen.getAllByRole('link', { name: /Choose tickets/ })).toHaveLength(1)
+    unmount()
+
+    const stopped = await renderEvent({ ...edison, status: 'CANCELLED' })
+    const outlined = stopped.container.querySelector('[data-hero-action]')
+
+    expect(outlined).toHaveAccessibleName('Tickets and prices')
+    expect(outlined).not.toHaveClass('bg-action-primary')
+  })
+
   it('says the times are the venue’s own in words a person uses, not a database zone', async () => {
     await renderEvent(edison)
 
