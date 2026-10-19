@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * The booking, once the order has been placed.
  *
@@ -14,6 +16,7 @@
  */
 
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 
 import { formatAmount } from '../lib/pricing.js'
 import { TicketObject } from './ticket-object.jsx'
@@ -46,9 +49,22 @@ export function unpaidCancellationSentence(waived) {
  * @param {object} [props.event] The event, for its title.
  * @param {boolean} [props.named] Whether the buyer gave any ticket a name.
  * @param {number|null} [props.venueDueCents] What the quote said is paid at the door, when the order does not say.
+ * @param {boolean} [props.focusOnArrival] Move focus to "Booked" when it is drawn: the checkout's Pay button is gone, and focus with it.
  * @returns {JSX.Element} The confirmation.
  */
-export function BookedOrder({ order, event = null, named = false, venueDueCents = null }) {
+export function BookedOrder({
+  order,
+  event = null,
+  named = false,
+  venueDueCents = null,
+  focusOnArrival = false,
+}) {
+  const heading = useRef(null)
+
+  useEffect(() => {
+    if (focusOnArrival) heading.current?.focus()
+  }, [focusOnArrival])
+
   const tickets = (order.tickets ?? []).length
   const atVenue = order.paymentMethod === 'AT_VENUE'
   const due = order.venuePayment?.dueCents ?? venueDueCents ?? 0
@@ -67,7 +83,9 @@ export function BookedOrder({ order, event = null, named = false, venueDueCents 
         face={
           <>
             <h2
+              ref={heading}
               id="booked-heading"
+              tabIndex={-1}
               className="flex items-start gap-3 font-display text-h1 font-bold text-balance text-ticket-ink"
             >
               <Icon name="check-circle" className="mt-[0.15em] size-[0.8em] text-status-success" />

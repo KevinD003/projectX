@@ -655,6 +655,7 @@ export function SeatCheckout({
   if (status === 'paid' && isBooked(order)) {
     return (
       <BookedOrder
+        focusOnArrival
         order={order}
         event={event}
         named={Object.values(names).some((name) => String(name).trim())}
