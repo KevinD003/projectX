@@ -33,11 +33,11 @@
 
 import Link from 'next/link'
 
+import { AllClear, StatusWord } from '../../components/admin-kit.jsx'
 import { AgingBadge } from '../../components/money-figure.jsx'
 import { ReadRefusal } from '../../components/read-refusal.jsx'
 import { StepUpForRead } from '../../components/step-up-for-read.jsx'
-import { EmptyState } from '../../components/ui.jsx'
-import { CountTile, CountTiles } from '../../components/workspace-kit.jsx'
+import { PageHeader } from '../../components/workspace-kit.jsx'
 import { formatAmount } from '../../lib/pricing.js'
 import { describeApiRefusal } from '../../lib/refusal.js'
 import {
@@ -50,6 +50,20 @@ import { readSession, sessionCan } from '../../lib/session.js'
 export const dynamic = 'force-dynamic'
 
 export const metadata = { title: 'Operations', robots: { index: false, follow: false } }
+
+/**
+ * An enum value as words a person reads: `DEAD_LETTER` as "Dead letter".
+ *
+ * @param {string} value The API's value.
+ * @returns {string} The words, with a capital first.
+ */
+export function sentenceCase(value) {
+  const words = String(value ?? '')
+    .replace(/_/gu, ' ')
+    .toLowerCase()
+
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
 
 /** A queue this caller is not shown at all. */
 const NOT_ASKED = Object.freeze({ value: null, error: null })
@@ -118,11 +132,23 @@ function QueueFailure({ queue }) {
  */
 function QueueSection({ id, title, description, failure, count, more = null, children }) {
   return (
-    <section aria-labelledby={id} className="mt-8">
-      <h2 id={id} className="text-xl font-semibold text-ink">
-        {title} {failure ? null : <span className="font-normal text-ink-muted">({count})</span>}
-      </h2>
-      <p className="mt-1 text-sm text-ink-muted">{description}</p>
+    <section aria-labelledby={id} className="border-t border-line pt-6 first-of-type:border-t-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 id={id} className="text-h3 font-semibold text-ink">
+          {title}{' '}
+          {failure ? null : (
+            <span className="font-sans text-base font-normal text-ink-muted tabular-nums">
+              ({count})
+            </span>
+          )}
+        </h2>
+        {failure ? null : (
+          <StatusWord tone={count === 0 ? 'success' : 'warning'}>
+            {count === 0 ? 'Clear' : `${count.toLocaleString('en-US')} waiting`}
+          </StatusWord>
+        )}
+      </div>
+      <p className="mt-1 max-w-3xl text-sm text-ink-muted">{description}</p>
 
       {failure ?? children}
 
@@ -175,11 +201,10 @@ export default async function OperationsPage() {
 
   return (
     <div>
-      <h1 className="text-h2 font-semibold text-ink">Operations</h1>
-      <p className="mt-2 text-ink-muted">
-        What the machine could not finish on its own. Nothing is actioned from this page — each item
-        links to where the work is done, behind its own second factor.
-      </p>
+      <PageHeader
+        title="Operations"
+        description="What the machine could not finish on its own. Nothing is done from this page: each item links to where the work is done, behind its own second factor."
+      />
 
       {!platform ? (
         <p className="mt-4 rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink-muted">
@@ -191,176 +216,152 @@ export default async function OperationsPage() {
 
       {stepUp ? <StepUpForRead action="see the queues that hold money" /> : null}
 
-      {/* The same three counts the sections below head themselves with, side
-          by side, for a queue that was read. A queue that could not be read
-          has no tile rather than a zero: nobody counted it. */}
-      {(platform && (!reconciliation.error || !notifications.error)) ||
-      (organizationId && !refunds.error) ? (
-        <CountTiles>
-          {platform && !reconciliation.error ? (
-            <CountTile
-              label="Payments not reconciled"
-              value={reconciliation.value?.tasks.length ?? 0}
-            />
-          ) : null}
-          {platform && !notifications.error ? (
-            <CountTile label="Notifications that did not go" value={stuck.length} />
-          ) : null}
-          {organizationId && !refunds.error ? (
-            <CountTile label="Refunds waiting" value={unresolved.length} />
-          ) : null}
-        </CountTiles>
-      ) : null}
-
-      {platform ? (
-        <QueueSection
-          id="reconciliation-heading"
-          title="Payment reconciliation"
-          description="Where the system does not know what happened: a provider that did not answer, a webhook that contradicts the stored payment, a refund whose outcome is unknown. Oldest first, because the one that has been unknown longest is the most urgent."
-          failure={reconciliation.error ? <QueueFailure queue={reconciliation} /> : null}
-          count={reconciliation.value?.tasks.length ?? 0}
-          more={{
-            href: '/operations/reconciliation',
-            label: 'Every reconciliation item, resolved ones included',
-          }}
-        >
-          {(reconciliation.value?.tasks.length ?? 0) === 0 ? (
-            <div className="mt-3">
-              <EmptyState
+      <div className="mt-8 space-y-10">
+        {platform ? (
+          <QueueSection
+            id="reconciliation-heading"
+            title="Payment reconciliation"
+            description="Where the system does not know what happened: a provider that did not answer, a webhook that contradicts the stored payment, a refund whose outcome is unknown. Oldest first, because the one that has been unknown longest is the most urgent."
+            failure={reconciliation.error ? <QueueFailure queue={reconciliation} /> : null}
+            count={reconciliation.value?.tasks.length ?? 0}
+            more={{
+              href: '/operations/reconciliation',
+              label: 'Every reconciliation item, resolved ones included',
+            }}
+          >
+            {(reconciliation.value?.tasks.length ?? 0) === 0 ? (
+              <AllClear
                 title="Nothing unresolved"
                 description="Every payment this system has taken agrees with what the provider says about it."
               />
-            </div>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {reconciliation.value.tasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="rounded-card border border-line bg-surface-raised shadow-card p-4 focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-focus"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium text-ink">
-                      <Link
-                        href={`/operations/reconciliation/${task.id}`}
-                        className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
-                      >
-                        {task.kind.replace(/_/gu, ' ').toLowerCase()}
-                      </Link>
-                      {task.orderReference ? (
-                        <span className="ml-2 font-mono text-sm text-ink-muted">
-                          {task.orderReference}
-                        </span>
-                      ) : null}
-                    </p>
-                    <AgingBadge band={task.aging} hours={task.ageHours} />
-                  </div>
-                  {task.lastError ? (
-                    <p className="mt-1 text-sm text-ink-muted">{task.lastError}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </QueueSection>
-      ) : null}
+            ) : (
+              <ul className="mt-4 divide-y divide-line rounded-card border border-line bg-surface-raised shadow-card">
+                {reconciliation.value.tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="p-4 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-focus"
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-medium text-ink">
+                        <Link
+                          href={`/operations/reconciliation/${task.id}`}
+                          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
+                        >
+                          {sentenceCase(task.kind)}
+                        </Link>
+                        {task.orderReference ? (
+                          <span className="ml-2 font-mono text-sm text-ink-muted">
+                            {task.orderReference}
+                          </span>
+                        ) : null}
+                      </p>
+                      <AgingBadge band={task.aging} hours={task.ageHours} />
+                    </div>
+                    {task.lastError ? (
+                      <p className="mt-1 text-sm text-ink-muted">{task.lastError}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QueueSection>
+        ) : null}
 
-      {platform ? (
-        <QueueSection
-          id="notifications-heading"
-          title="Notifications that did not go"
-          description="Dead letters and messages waiting on a retry. Neither recipients nor payloads are shown: an operations screen answers “did this go?”, not “who was it to?” or “what did it say?”."
-          failure={notifications.error ? <QueueFailure queue={notifications} /> : null}
-          count={stuck.length}
-          more={{
-            href: '/operations/notifications',
-            label: 'Every message in the outbox, sent ones included',
-          }}
-        >
-          {stuck.length === 0 ? (
-            <div className="mt-3">
-              <EmptyState
+        {platform ? (
+          <QueueSection
+            id="notifications-heading"
+            title="Notifications that did not go"
+            description="Dead letters and messages waiting on a retry. Neither recipients nor payloads are shown: an operations screen answers “did this go?”, not “who was it to?” or “what did it say?”."
+            failure={notifications.error ? <QueueFailure queue={notifications} /> : null}
+            count={stuck.length}
+            more={{
+              href: '/operations/notifications',
+              label: 'Every message in the outbox, sent ones included',
+            }}
+          >
+            {stuck.length === 0 ? (
+              <AllClear
                 title="Everything went"
                 description="No message is dead-lettered or waiting on a retry."
               />
-            </div>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {stuck.map((message) => (
-                <li
-                  key={message.id}
-                  className="rounded-card border border-line bg-surface-raised shadow-card p-4"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium text-ink">{message.template}</p>
-                    <span className="rounded-full border border-line-strong bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink">
-                      {message.status.replace(/_/gu, ' ').toLowerCase()} · {message.attempts}/
-                      {message.maxAttempts}
-                    </span>
-                  </div>
-                  {message.lastError ? (
-                    <p className="mt-1 text-sm text-ink-muted">{message.lastError}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </QueueSection>
-      ) : null}
+            ) : (
+              <ul className="mt-4 divide-y divide-line rounded-card border border-line bg-surface-raised shadow-card">
+                {stuck.map((message) => (
+                  <li key={message.id} className="p-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-medium text-ink">{message.template}</p>
+                      <StatusWord
+                        tone={message.status === 'RETRY_SCHEDULED' ? 'pending' : 'danger'}
+                      >
+                        {`${sentenceCase(message.status)} · ${message.attempts} of ${message.maxAttempts}`}
+                      </StatusWord>
+                    </div>
+                    {message.lastError ? (
+                      <p className="mt-1 text-sm text-ink-muted">{message.lastError}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QueueSection>
+        ) : null}
 
-      {organizationId ? (
-        <QueueSection
-          id="refunds-heading"
-          title="Refunds waiting"
-          description="Asked for and still unsettled. Each one holds money back from what may be paid out, so a refund nobody moves on is a payout nobody can make."
-          failure={refunds.error ? <QueueFailure queue={refunds} /> : null}
-          count={unresolved.length}
-          more={{
-            href: `/finance/refunds?organizationId=${encodeURIComponent(organizationId)}`,
-            label: 'Every refund, settled ones included',
-          }}
-        >
-          {unresolved.length === 0 ? (
-            <div className="mt-3">
-              <EmptyState
+        {organizationId ? (
+          <QueueSection
+            id="refunds-heading"
+            title="Refunds waiting"
+            description="Asked for and still unsettled. Each one holds money back from what may be paid out, so a refund nobody moves on is a payout nobody can make."
+            failure={refunds.error ? <QueueFailure queue={refunds} /> : null}
+            count={unresolved.length}
+            more={{
+              href: `/finance/refunds?organizationId=${encodeURIComponent(organizationId)}`,
+              label: 'Every refund, settled ones included',
+            }}
+          >
+            {unresolved.length === 0 ? (
+              <AllClear
                 title="Nothing outstanding"
                 description="No refund is waiting on a decision or on a provider."
               />
-            </div>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {unresolved.map((refund) => (
-                <li
-                  key={refund.id}
-                  className="rounded-card border border-line bg-surface-raised shadow-card p-4"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium text-ink">
-                      <Link
-                        href={`/finance/refunds/${refund.id}`}
-                        className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
+            ) : (
+              <ul className="mt-4 divide-y divide-line rounded-card border border-line bg-surface-raised shadow-card">
+                {unresolved.map((refund) => (
+                  <li key={refund.id} className="p-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-medium text-ink">
+                        <Link
+                          href={`/finance/refunds/${refund.id}`}
+                          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
+                        >
+                          {formatAmount(refund.amountCents, refund.currency)}
+                        </Link>
+                        {refund.orderReference ? (
+                          <span className="ml-2 font-mono text-sm text-ink-muted">
+                            {refund.orderReference}
+                          </span>
+                        ) : null}
+                      </p>
+                      <StatusWord
+                        tone={
+                          refund.status === 'TIMEOUT' || refund.status === 'RECONCILIATION_REQUIRED'
+                            ? 'warning'
+                            : 'pending'
+                        }
                       >
-                        {formatAmount(refund.amountCents, refund.currency)}
-                      </Link>
-                      {refund.orderReference ? (
-                        <span className="ml-2 font-mono text-sm text-ink-muted">
-                          {refund.orderReference}
-                        </span>
-                      ) : null}
+                        {sentenceCase(refund.status)}
+                      </StatusWord>
+                    </div>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      {sentenceCase(refund.reason)}
+                      {refund.attempts > 0 ? ` · ${refund.attempts} submission attempt(s)` : ''}
                     </p>
-                    <span className="rounded-full border border-line-strong bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink">
-                      {refund.status.replace(/_/gu, ' ').toLowerCase()}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {refund.reason.replace(/_/gu, ' ').toLowerCase()}
-                    {refund.attempts > 0 ? ` · ${refund.attempts} submission attempt(s)` : ''}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </QueueSection>
-      ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QueueSection>
+        ) : null}
+      </div>
 
       <p className="mt-10 text-sm text-ink-muted">
         <Link href="/finance" className="underline underline-offset-4 hover:text-accent-strong">
