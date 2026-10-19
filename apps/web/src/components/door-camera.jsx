@@ -101,6 +101,12 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
   // under; if the count has moved on by the time the browser answers, the
   // steward stopped, switched to typing or left while it was asking.
   const stops = useRef(0)
+  // The camera's one control: Start, then Stop, then Start again. While the
+  // browser asks for the camera it is busy, and a busy button is disabled, so
+  // a keyboard user's focus falls to the page. Pressed from the keyboard, it
+  // takes focus back once the camera has answered.
+  const control = useRef(null)
+  const refocus = useRef(false)
 
   handlers.current = { onPass, onGroupPass, onOther }
   pausedRef.current = paused
@@ -130,6 +136,16 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
   useEffect(() => {
     if (!supported()) setState('unsupported')
   }, [])
+
+  useEffect(() => {
+    if (state === 'starting' || !refocus.current) return
+
+    refocus.current = false
+
+    const active = document.activeElement
+
+    if (!active || active === document.body) control.current?.focus()
+  }, [state])
 
   // Off when the page is hidden, and off when the panel goes away.
   useEffect(() => {
@@ -213,6 +229,7 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
       return
     }
 
+    refocus.current = Boolean(control.current) && document.activeElement === control.current
     setState('starting')
 
     const asked = stops.current
@@ -306,6 +323,7 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
       <div className="flex flex-wrap gap-3">
         {on ? (
           <Button
+            ref={control}
             type="button"
             variant="secondary"
             size="lg"
@@ -316,6 +334,7 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
           </Button>
         ) : state !== 'unsupported' ? (
           <Button
+            ref={control}
             type="button"
             size="lg"
             className="w-full sm:w-auto"
