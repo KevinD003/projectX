@@ -101,22 +101,21 @@ export default function LimitationsPage() {
     <div>
       <PageHero
         headingId="limitations-heading"
-        eyebrow="Plainly"
         title="What this site does not do"
         lead="The Desi Events is a demonstration build. These are the things somebody might expect of a ticketing site that this one does not do, what each one’s status is, and what happens instead."
       />
 
-      <div className="mx-auto max-w-3xl px-4 pt-12 sm:px-6">
-        <ul className="space-y-4">
+      <div className="mx-auto max-w-content px-4 pt-2 pb-20 sm:px-6 lg:pb-28">
+        <ul className="border-t-2 border-ink">
           {LIMITATIONS.map((limitation) => (
             <li
               key={limitation.id}
               id={limitation.id}
               aria-labelledby={`limitation-${limitation.id}`}
-              className="scroll-mt-28 rounded-card bg-surface-raised p-6 shadow-card"
+              className="grid scroll-mt-24 grid-cols-1 gap-x-12 gap-y-2 border-b border-line py-6 lg:grid-cols-[20rem_minmax(0,1fr)]"
             >
-              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-                <h2 id={`limitation-${limitation.id}`} className="text-h3 font-semibold text-ink">
+              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 lg:flex-col lg:justify-start">
+                <h2 id={`limitation-${limitation.id}`} className="text-h3 text-ink">
                   {limitation.name}
                 </h2>
                 <p className="text-sm">
@@ -126,7 +125,7 @@ export default function LimitationsPage() {
                   </span>
                 </p>
               </div>
-              <p className="mt-3 max-w-prose text-ink">
+              <p className="max-w-prose text-ink">
                 {meaningParts(limitation).map((run, index) =>
                   run.href ? (
                     <a key={index} href={run.href} className={LINK}>
@@ -141,7 +140,7 @@ export default function LimitationsPage() {
           ))}
         </ul>
 
-        <h2 className="mt-16 text-h2 font-semibold text-ink">Also in this build</h2>
+        <h2 className="mt-16 text-h2 text-ink">Also in this build</h2>
         <ul className="mt-4 max-w-prose space-y-3 text-ink">
           {ALSO.map((item) => (
             <li key={item.key} className="flex items-start gap-3">
