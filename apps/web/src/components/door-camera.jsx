@@ -29,6 +29,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { Icon } from '@desi-event/ui/icons'
+
 import { Button } from './ui.jsx'
 import { decodeFrame } from '../lib/qr-decode.js'
 
@@ -54,7 +56,7 @@ const CAMERA_STATES = Object.freeze({
   denied:
     'Camera permission was refused. Allow the camera for this site in your browser settings, or type the printed code instead.',
   unavailable:
-    'No camera could be started on this device — none is connected, or another app is using it. Type the printed code instead.',
+    'No camera could be started on this device. None is connected, or another app is using it. Type the printed code instead.',
   unsupported: 'This browser cannot use a camera here. Type the printed code instead.',
 })
 
@@ -253,32 +255,73 @@ export function DoorCamera({ onPass, onGroupPass, onOther, paused }) {
 
   const on = state === 'running'
   const shown = on && paused ? 'paused' : state
+  // The viewfinder's three looks: off (a quiet empty frame), scanning (the
+  // line travels), and locked (a pass was read: the line is gone and the
+  // brackets close in while the steward deals with the ticket).
+  const look = !on ? 'off' : paused ? 'locked' : 'scanning'
 
   return (
-    <div>
+    <div className="space-y-3">
+      {/* The preview and its frame. The video is the only thing the decoder
+          reads; the brackets and the line are drawn over it, beside it in the
+          tree, and hidden from assistive technology. The video is muted and
+          inline so a phone does not take it full screen. No camera, no
+          preview: the frame is shown empty, so the steward sees where the
+          pass will go before they start. */}
+      <figure
+        data-slot="door-viewfinder"
+        data-look={look}
+        className="door-viewfinder relative isolate aspect-[4/3] w-full max-w-xl overflow-hidden rounded-[4px] bg-surface-sunken sm:aspect-video"
+      >
+        <video
+          ref={video}
+          muted
+          playsInline
+          aria-label="Camera preview"
+          className={on ? 'absolute inset-0 h-full w-full bg-black object-cover' : 'hidden'}
+        />
+        {!on ? (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center text-ink-subtle"
+          >
+            <Icon name="qr" className="size-10" />
+          </div>
+        ) : null}
+        <div aria-hidden="true" className="door-brackets absolute inset-[12%] sm:inset-x-[28%]">
+          <span className="door-bracket door-bracket-tl" />
+          <span className="door-bracket door-bracket-tr" />
+          <span className="door-bracket door-bracket-bl" />
+          <span className="door-bracket door-bracket-br" />
+          {look === 'scanning' ? (
+            <span data-slot="door-scanline" className="door-scanline" />
+          ) : null}
+        </div>
+      </figure>
+
       <p role="status" aria-live="polite" className="text-sm text-ink-muted">
         {CAMERA_STATES[shown]}
       </p>
 
-      {/* The preview only; nothing reads it but the decoder, and it is muted
-          and inline so a phone does not take it full screen. */}
-      <video
-        ref={video}
-        muted
-        playsInline
-        aria-label="Camera preview"
-        className={
-          on ? 'mt-3 aspect-video w-full max-w-md rounded-card bg-black object-cover' : 'hidden'
-        }
-      />
-
-      <div className="mt-3 flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3">
         {on ? (
-          <Button type="button" variant="secondary" onClick={stop}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            className="w-full sm:w-auto"
+            onClick={stop}
+          >
             Stop camera
           </Button>
         ) : state !== 'unsupported' ? (
-          <Button type="button" onClick={start} loading={state === 'starting'}>
+          <Button
+            type="button"
+            size="lg"
+            className="w-full sm:w-auto"
+            onClick={start}
+            loading={state === 'starting'}
+          >
             {state === 'denied' || state === 'unavailable'
               ? 'Try the camera again'
               : 'Start camera'}

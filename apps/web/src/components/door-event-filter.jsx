@@ -45,7 +45,7 @@ export function DoorEventFilter({ organizations, organizationId = '', q = '' }) 
       action="/organizer/check-in"
       role="search"
       aria-label="Find an event"
-      className="mt-6 flex max-w-3xl flex-wrap items-end gap-3 rounded-card border border-line bg-surface-raised p-4 shadow-card"
+      className="mt-6 flex max-w-3xl flex-wrap items-end gap-3 rounded-[4px] bg-surface-raised p-4"
     >
       <FormField label="Organisation" className="min-w-0 flex-1 basis-56">
         <Select name="organizationId" defaultValue={organizationId}>
