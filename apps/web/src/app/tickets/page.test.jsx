@@ -90,7 +90,9 @@ describe('MyTicketsPage', () => {
   it('draws each ticket’s poster without announcing it', async () => {
     const { container } = await renderWallet([walletTicket()])
 
-    expect(container.querySelectorAll('[data-slot="poster-thumb"] svg')).toHaveLength(1)
+    expect(
+      container.querySelectorAll('[data-slot="poster-thumb"] [data-slot="poster"]'),
+    ).toHaveLength(1)
     expect(screen.queryByRole('img')).toBeNull()
   })
 
@@ -99,9 +101,9 @@ describe('MyTicketsPage', () => {
     workshop.event = { ...workshop.event, category: 'WORKSHOP' }
 
     const { container } = await renderWallet([walletTicket(), workshop])
-    const scenes = [...container.querySelectorAll('[data-slot="poster-thumb"] svg')].map((svg) =>
-      svg.getAttribute('aria-label'),
-    )
+    const scenes = [
+      ...container.querySelectorAll('[data-slot="poster-thumb"] [data-slot="poster"]'),
+    ].map((svg) => svg.getAttribute('aria-label'))
 
     expect(describePoster('WORKSHOP')).not.toBe(describePoster('GARBA_DANDIYA'))
     expect(scenes).toEqual([

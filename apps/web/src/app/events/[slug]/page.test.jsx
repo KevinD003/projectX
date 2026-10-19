@@ -582,7 +582,7 @@ describe('the event detail page in the new design', () => {
       'Navratri Night One: Garba Under the Lights',
     )
     expect(within(hero).getByRole('img')).toHaveAccessibleName(
-      /^Illustration of garba dancers .* for Navratri Night One: Garba Under the Lights$/,
+      'Garba & Dandiya poster for Navratri Night One: Garba Under the Lights',
     )
   })
 
@@ -614,7 +614,7 @@ describe('the event detail page in the new design', () => {
     expect(cover.getAttribute('src')).toContain(
       'url=%2Fapi%2Fv1%2Fmedia%2Fcmedia0000000000000000001',
     )
-    expect(hero.querySelector('svg[data-slot="poster"]')).toBeNull()
+    expect(hero.querySelector('[data-slot="poster"]')).toBeNull()
     expect(structuredData(container).image).toEqual([
       expect.stringMatching(/^https?:\/\/[^/]+\/api\/v1\/media\/cmedia0000000000000000001$/u),
     ])
