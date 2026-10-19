@@ -509,7 +509,7 @@ describe('what is offered', () => {
 
     expect(screen.getByText(POSTING_ROLES_SENTENCE)).toBeInTheDocument()
     expect(POSTING_ROLES_SENTENCE).toMatch(
-      /event manager, manager, administrator and owner — are given by the team at The Desi Events/u,
+      /event manager, manager, administrator and owner\) are given by the team at The Desi Events/u,
     )
   })
 

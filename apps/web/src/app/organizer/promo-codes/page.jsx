@@ -308,13 +308,18 @@ export default async function PromoCodesPage({ searchParams }) {
 
                       return (
                         <tr key={code.id}>
-                          <th scope="row" className={`${TD} font-mono font-semibold`}>
+                          <th
+                            scope="row"
+                            className={`${TD} text-left font-mono font-semibold whitespace-nowrap`}
+                          >
                             {code.code}
                           </th>
                           <td className={TD}>{describeDiscount(code)}</td>
                           <td className={TD}>{code.event ? code.event.title : 'All events'}</td>
                           <td className={`${TD} text-ink-muted`}>{promoWindowText(code, zone)}</td>
-                          <td className={TD}>{usesText(code)}</td>
+                          <td className={`${TD} whitespace-nowrap tabular-nums`}>
+                            {usesText(code)}
+                          </td>
                           <td className={TD}>
                             <span className="inline-flex items-center gap-1.5">
                               <StatusIcon tone={STATUS_TONES[code.status] ?? 'neutral'} />

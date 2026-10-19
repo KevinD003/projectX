@@ -215,7 +215,7 @@ export default async function VenuePaymentsPage({ params, searchParams }) {
       <div>
         <Breadcrumbs trail={trail} />
         <h1 className="mt-3 text-h2 font-semibold break-words text-ink">
-          Payments at the venue — {event.title}
+          Payments at the venue for {event.title}
         </h1>
         <ReadRefusal
           error={reportFailure}
@@ -239,7 +239,7 @@ export default async function VenuePaymentsPage({ params, searchParams }) {
     <div>
       <Breadcrumbs trail={trail} />
       <h1 className="mt-3 text-h2 font-semibold break-words text-ink">
-        Payments at the venue — {event.title}
+        Payments at the venue for {event.title}
       </h1>
 
       <section aria-labelledby="venue-figures-heading" className="mt-6">

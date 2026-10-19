@@ -102,7 +102,7 @@ export const metadata = { title: 'Team and roles', robots: { index: false, follo
 
 /** What the page says beside the invite form about roles that post events. */
 export const POSTING_ROLES_SENTENCE =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
 
 /** What the Ownership section says about who can take it. */
 export const HEIR_SENTENCE = 'Ownership can go only to somebody who already creates events here.'
@@ -124,7 +124,7 @@ export const PLATFORM_HELD_TEAM_SENTENCE =
 
 /** What a platform administrator with no organisation and no imported events is told. */
 export const NO_PLATFORM_HELD_SENTENCE =
-  'You belong to no organisation, and no event has been imported, so The Desi Events — which holds imported events — has no door team to run. Organisers run their own teams.'
+  'You belong to no organisation, and no event has been imported, so The Desi Events, which holds imported events, has no door team to run. Organisers run their own teams.'
 
 /** Statuses whose door is closed for good: never offered to a new door scope. */
 const CLOSED_EVENT_STATUSES = new Set(['COMPLETED', 'CANCELLED', 'REJECTED', 'ARCHIVED', 'DELETED'])
@@ -550,12 +550,12 @@ export default async function TeamPage({ searchParams }) {
 
                       return (
                         <tr key={member.id}>
-                          <th scope="row" className={`${TD} font-medium`}>
+                          <th scope="row" className={`${TD} min-w-[8rem] text-left font-medium`}>
                             {name}
                             {member.self ? <span className="text-ink-muted"> (you)</span> : null}
                           </th>
                           {full ? (
-                            <td className={TD}>
+                            <td className={`${TD} min-w-[14rem]`}>
                               <EmailAddress address={member.email} />
                             </td>
                           ) : null}
@@ -691,7 +691,7 @@ export default async function TeamPage({ searchParams }) {
                       return (
                         <tr key={invitation.id}>
                           {full ? (
-                            <td className={TD}>
+                            <td className={`${TD} min-w-[14rem]`}>
                               <EmailAddress address={invitation.email} />
                             </td>
                           ) : null}
