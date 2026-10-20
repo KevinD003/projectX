@@ -16,6 +16,12 @@ vi.mock('next/navigation', () => ({
 
 const { HeaderSearch } = await import('./header-search.jsx')
 
+// The form is loaded only when the search opens, to keep it out of every
+// page's first load. Load it once here, so these checks wait for what opening
+// does and not for the import: on a busy CI runner the import alone can
+// outlast findByRole's second.
+await import('./header-search-popover.jsx')
+
 afterEach(cleanup)
 
 describe('HeaderSearch', () => {
