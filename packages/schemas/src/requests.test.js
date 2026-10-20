@@ -15,6 +15,7 @@ import {
   createSessionRequestSchema,
   createTicketTypeRequestSchema,
   idParamSchema,
+  ONLINE_URL_PROBLEMS,
   listPromoCodesQuerySchema,
   organizationPromoCodeParamSchema,
   quoteOrderRequestSchema,
@@ -210,6 +211,38 @@ describe('createEventRequestSchema', () => {
         onlineUrl: 'https://stream.example/live',
       }).success,
     ).toBe(true)
+  })
+
+  it('refuses a non-https or private/loopback onlineUrl, and keeps a public https one with its passcode', () => {
+    const withOnlineUrl = (onlineUrl) =>
+      createEventRequestSchema.safeParse({ ...validEvent, isOnline: true, onlineUrl })
+
+    // Non-https is a downgrade / mixed-content link (F6).
+    const http = withOnlineUrl('http://attacker.example/join')
+    expect(http.success).toBe(false)
+    expect(http.error.issues[0].message).toBe(ONLINE_URL_PROBLEMS.protocol)
+    expect(issuePaths(http)).toEqual(['onlineUrl'])
+
+    // Loopback and private-network hosts, even over https, are refused.
+    for (const onlineUrl of [
+      'http://127.0.0.1:9/x',
+      'https://127.0.0.1/join',
+      'https://localhost/join',
+      'https://10.0.0.5/join',
+      'https://192.168.1.10/join',
+      'https://meet.corp.internal/join',
+      'https://stand-up.local/join',
+      'https://[::1]/join',
+    ]) {
+      const result = withOnlineUrl(onlineUrl)
+      expect(result.success, onlineUrl).toBe(false)
+      expect(issuePaths(result), onlineUrl).toEqual(['onlineUrl'])
+    }
+
+    // A real meeting link on a public host, passcode in the query, is kept.
+    const zoom = withOnlineUrl('https://us02web.zoom.us/j/8675309?pwd=Rk5tZ0tD')
+    expect(zoom.success).toBe(true)
+    expect(zoom.data.onlineUrl).toBe('https://us02web.zoom.us/j/8675309?pwd=Rk5tZ0tD')
   })
 
   it('rejects an unknown category and an unknown timezone', () => {
