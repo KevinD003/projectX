@@ -45,6 +45,8 @@ import { CAPTION, NUM, ROW_TH, TABLE, TD, TH, TH_NUM } from '../../components/re
 import { TrafficChart } from '../../components/traffic-chart.jsx'
 import {
   CardPlacements,
+  DISCLOSURE,
+  DisclosureSummary,
   EventsTraffic,
   TrafficByDay,
   TrafficSources,
@@ -65,6 +67,7 @@ import {
   PERIODS,
   REFUNDED_ORDERS_NOTE,
   VISIT_COUNTING_NOTES,
+  formatDay,
   freshness,
   periodFor,
   periodFrom,
@@ -120,6 +123,9 @@ const CHIP =
 const CHIP_CURRENT = `${CHIP} bg-action-primary font-semibold text-action-primary-ink shadow-control`
 const CHIP_OTHER = `${CHIP} border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink`
 
+/** A UTC day as the API keys it. */
+const UTC_DAY = /^\d{4}-\d{2}-\d{2}$/u
+
 /**
  * One breakdown, as a table.
  *
@@ -132,9 +138,10 @@ const CHIP_OTHER = `${CHIP} border border-line bg-surface-raised font-medium tex
  * @param {string} props.unit What the first numeric column holds.
  * @param {Array<object>} props.rows The grouped rows.
  * @param {boolean} props.money Whether to show the value column.
+ * @param {boolean} [props.days] Each row is a UTC day, keyed `YYYY-MM-DD`: written in words, as every other date on the page is.
  * @returns {JSX.Element} The table, or an empty note.
  */
-function Breakdown({ caption, unit, rows, money }) {
+function Breakdown({ caption, unit, rows, money, days = false }) {
   if (rows.length === 0) {
     return <Empty title={caption} description="Nothing has been sold in this grouping." />
   }
@@ -175,7 +182,11 @@ function Breakdown({ caption, unit, rows, money }) {
           {rows.map((row) => (
             <tr key={`${row.id}-${row.currency}`}>
               <th scope="row" className={ROW_TH}>
-                {row.label}
+                {days && UTC_DAY.test(row.label) ? (
+                  <time dateTime={row.label}>{formatDay(row.label, { withYear: true })}</time>
+                ) : (
+                  row.label
+                )}
               </th>
               <td className={NUM}>{row.quantity}</td>
               {money ? (
@@ -278,10 +289,8 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
             <CountFigure key={figure.label} label={figure.label} value={figure.value} />
           ))}
         </dl>
-        <details className="mt-3">
-          <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-sm text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus">
-            {COUNTED_SUMMARY}
-          </summary>
+        <details className={`mt-3 ${DISCLOSURE}`}>
+          <DisclosureSummary>{COUNTED_SUMMARY}</DisclosureSummary>
           <dl className="mt-2 grid max-w-3xl gap-3 text-sm">
             {figures.map((figure) => (
               <div key={figure.label}>
@@ -591,7 +600,7 @@ export default async function AnalyticsPage({ searchParams }) {
 
           <p className="mt-2 text-sm text-ink-muted">
             Dates and windows are in <strong>{view.timeZone}</strong>. Money figures are in{' '}
-            <strong>{view.currency}</strong> only — amounts in another currency are counted in their
+            <strong>{view.currency}</strong> only: amounts in another currency are counted in their
             own rows and never added to these.
           </p>
 
@@ -667,7 +676,7 @@ export default async function AnalyticsPage({ searchParams }) {
               ) : (
                 <Empty
                   title="Money figures are not included for this account"
-                  description="Seeing what an organisation is owed needs the finance capability in it. The figures are not hidden on this page — the server did not send them."
+                  description="Seeing what an organisation is owed needs the finance capability in it. The figures are not hidden on this page: the server did not send them."
                 />
               )}
             </section>
@@ -884,7 +893,7 @@ export default async function AnalyticsPage({ searchParams }) {
               Sales
             </h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Line value is what the order lines were priced at — not revenue. What the organisation
+              Line value is what the order lines were priced at, not revenue. What the organisation
               keeps after fees, tax and everything given back is in the money section above.
             </p>
 
@@ -911,6 +920,7 @@ export default async function AnalyticsPage({ searchParams }) {
               unit="Tickets"
               rows={view.sales.byDate}
               money={view.moneyVisible}
+              days
             />
           </section>
 
@@ -1038,9 +1048,9 @@ export default async function AnalyticsPage({ searchParams }) {
             </a>
           </p>
           <p className="mt-2 text-sm text-ink-muted">
-            The export carries the same figures under an explicit column list — no buyer, no
-            address, no visitor code, and nothing about how anybody paid. Its first rows say which
-            payment mode produced it and how visits were counted.
+            The export carries the same figures under an explicit column list: no buyer, no address,
+            no visitor code, and nothing about how anybody paid. Its first rows say which payment
+            mode produced it and how visits were counted.
           </p>
         </>
       ) : null}

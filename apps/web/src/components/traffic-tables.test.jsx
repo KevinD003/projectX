@@ -77,10 +77,10 @@ describe('TrafficSources', () => {
     ).toEqual(['Source', 'Page views', 'Share'])
   })
 
-  it('shows a dash for every share when nothing was viewed, rather than dividing by zero', () => {
+  it('says “None” for every share when nothing was viewed, rather than dividing by zero', () => {
     render(<TrafficSources total={0} sources={[{ source: 'DIRECT', views: 0 }]} />)
 
-    expect(screen.getByText('—')).toBeTruthy()
+    expect(screen.getByText('None')).toBeTruthy()
   })
 })
 
