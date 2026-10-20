@@ -284,14 +284,12 @@ export function SiteFooter({ compact = false } = {}) {
           <h2 id="footer-cities" className={COLUMN_HEADING}>
             Cities
           </h2>
-          <ul className="flex flex-wrap gap-x-1 gap-y-0">
-            {CITIES.map((city, index) => (
-              <li key={city} className="flex items-center gap-1">
-                {index > 0 ? (
-                  <span aria-hidden="true" className="text-ink-inverse-muted">
-                    ·
-                  </span>
-                ) : null}
+          {/* Spaced apart, with no glyph between them: a separator drawn
+              before a city starts the next line with a bare dot once the row
+              wraps on a phone. */}
+          <ul className="-mx-1 flex flex-wrap gap-x-4 gap-y-0">
+            {CITIES.map((city) => (
+              <li key={city}>
                 <Link href={buildEventsHref({ city })} className={`${FOOTER_LINK} px-1`}>
                   {city}
                 </Link>
