@@ -2,7 +2,19 @@ import { NextRequest } from 'next/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { REQUEST_PATH_HEADER } from './lib/request-path-header.js'
-import { BAD_ADDRESS_PATH, config, isMalformedPath, proxy } from './proxy.js'
+import {
+  BAD_ADDRESS_PATH,
+  CSP_HEADER,
+  config,
+  contentSecurityPolicy,
+  isMalformedPath,
+  proxy,
+} from './proxy.js'
+
+/** The nonce the CSP on a proxied response trusts in `script-src`. */
+function cspNonce(response) {
+  return response.headers.get(CSP_HEADER)?.match(/'nonce-([^']+)'/)?.[1] ?? null
+}
 
 /**
  * The request headers a proxied response forwards to the render.
@@ -69,6 +81,58 @@ describe('proxy', () => {
   })
 })
 
+describe('the page security headers (F4)', () => {
+  it('serves a nonce CSP, nosniff, a referrer policy and anti-clickjacking on a page', () => {
+    const response = proxy(new NextRequest('http://localhost:3000/events'))
+    const csp = response.headers.get(CSP_HEADER)
+
+    expect(csp).toContain(`default-src 'self'`)
+    expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/)
+    expect(csp).toContain(`object-src 'none'`)
+    expect(csp).toContain(`base-uri 'self'`)
+    expect(csp).toContain(`frame-ancestors 'none'`)
+    expect(csp).toContain(`form-action 'self'`)
+    // Inline styles (React, view transitions, Framer Motion) need this; scripts
+    // never do, so an injected script cannot run.
+    expect(csp).toContain(`style-src 'self' 'unsafe-inline'`)
+    expect(csp).not.toMatch(/script-src[^;]*'unsafe-inline'/)
+
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(response.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin')
+    expect(response.headers.get('x-frame-options')).toBe('DENY')
+  })
+
+  it('stamps the same nonce on the request so Next can trust its own scripts', () => {
+    const response = proxy(new NextRequest('http://localhost:3000/'))
+
+    // The nonce in the policy the browser enforces is the one carried on the
+    // request for Next to apply to its scripts.
+    expect(forwarded(response, CSP_HEADER)).toBe(response.headers.get(CSP_HEADER))
+    expect(cspNonce(response)).toMatch(/.+/)
+  })
+
+  it('mints a fresh, unpredictable nonce for every request', () => {
+    const first = cspNonce(proxy(new NextRequest('http://localhost:3000/')))
+    const second = cspNonce(proxy(new NextRequest('http://localhost:3000/')))
+
+    expect(first).not.toBe(second)
+  })
+
+  it('needs no unsafe-eval in production, and adds it only in development', () => {
+    const original = process.env.NODE_ENV
+
+    try {
+      process.env.NODE_ENV = 'production'
+      expect(contentSecurityPolicy('n')).not.toContain(`'unsafe-eval'`)
+
+      process.env.NODE_ENV = 'development'
+      expect(contentSecurityPolicy('n')).toContain(`'unsafe-eval'`)
+    } finally {
+      process.env.NODE_ENV = original
+    }
+  })
+})
+
 describe('an address that cannot be read', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -102,6 +166,10 @@ describe('an address that cannot be read', () => {
     expect(response.status).toBe(400)
     expect(await response.text()).toContain('That address could not be read')
     expect(response.headers.get('cache-control')).toBe('no-store')
+    // The 400 page is a page, so it carries the same security headers (F4).
+    expect(cspNonce(response)).toMatch(/.+/)
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(response.headers.get('x-frame-options')).toBe('DENY')
     expect(String(target)).toBe(`http://localhost:3000${BAD_ADDRESS_PATH}`)
     expect(init.headers.cookie).toBe('desi_session=abc')
   })
