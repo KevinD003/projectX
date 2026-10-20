@@ -133,6 +133,28 @@ describe('TrafficBeacons', () => {
     expect(sent()).toEqual([{ eventId: OTHER_EVENT, kind: 'CARD_CLICK', placement: 'HOME' }])
   })
 
+  it('marks <html> once it counts clicks, and clears the mark when the page goes', () => {
+    expect(document.documentElement.dataset.trafficReady).toBeUndefined()
+
+    const { unmount } = render(<TrafficBeacons />)
+
+    expect(document.documentElement.dataset.trafficReady).toBe('true')
+
+    unmount()
+
+    expect(document.documentElement.dataset.trafficReady).toBeUndefined()
+  })
+
+  it('marks <html> for staff too, where it has decided to count nothing', () => {
+    const { unmount } = render(<TrafficBeacons excludeAll />)
+
+    expect(document.documentElement.dataset.trafficReady).toBe('true')
+
+    unmount()
+
+    expect(document.documentElement.dataset.trafficReady).toBeUndefined()
+  })
+
   it('stops listening when the page goes', () => {
     const { unmount } = render(<TrafficBeacons />)
     const link = cardLink()
