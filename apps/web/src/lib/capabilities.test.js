@@ -99,15 +99,31 @@ describe('sessionCan', () => {
     expect(sessionCan(session, 'ticket:check_in', ORG_A)).toBe(true)
   })
 
-  it('gives a platform administrator everything but platform:role_manage, everywhere (ADR 0018)', () => {
+  it('gives a platform administrator everything but the three super-admin-only capabilities, everywhere (ADR 0018, 0022)', () => {
     const { session } = person('ADMIN')
+    // platform:role_manage (ADR 0018), and privacy:redact and promo:manage,
+    // which a non-member platform administrator no longer reaches across tenants
+    // (ADR 0022): with no membership here, the stand-in no longer answers for them.
+    const superAdminOnly = ['platform:role_manage', 'privacy:redact', 'promo:manage']
 
     for (const capability of ALL_CAPABILITIES) {
-      const expected = capability !== 'platform:role_manage'
+      const expected = !superAdminOnly.includes(capability)
 
       expect(sessionCan(session, capability, ORG_A), capability).toBe(expected)
       expect(sessionCan(session, capability), capability).toBe(expected)
     }
+  })
+
+  it('still gives a platform administrator who IS a member privacy:redact and promo:manage there (ADR 0022)', () => {
+    // The tightening removes the cross-tenant stand-in, not a membership the
+    // administrator actually holds: as an OWNER of ORG_A it redacts there, and
+    // still cannot in ORG_B where it is not a member.
+    const { session } = person('ADMIN', [[ORG_A, 'OWNER']])
+
+    expect(sessionCan(session, 'privacy:redact', ORG_A)).toBe(true)
+    expect(sessionCan(session, 'promo:manage', ORG_A)).toBe(true)
+    expect(sessionCan(session, 'privacy:redact', ORG_B)).toBe(false)
+    expect(sessionCan(session, 'promo:manage', ORG_B)).toBe(false)
   })
 
   it('never lets platform:admin stand in for platform:role_manage, even as an owner', () => {

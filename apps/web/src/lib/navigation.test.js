@@ -371,19 +371,36 @@ describe('workspace offers, by role', () => {
         ['/admin/fee-refunds', 'Booking fee refunds'],
         ['/moderation/websites', 'Website links'],
       ])
-      // Trust and safety keeps review and the records, and nothing of the platform's.
-      expect(
-        groups.find((group) => group.id === 'trust').items.map((item) => item.href),
-        role,
-      ).toEqual([
-        '/moderation/events',
-        '/privacy',
-        '/retention',
-        '/moderation/organizations',
-        '/moderation/pictures',
-      ])
       expect(workspaceHome(platform(role)), role).toBe('/admin')
     }
+  })
+
+  it('offers Privacy under Trust and safety to a super administrator, never a platform administrator (ADR 0022)', () => {
+    // `privacy:redact` is super-admin-only cross-tenant now: a membership-less
+    // platform administrator no longer reaches the privacy surface, so it drops
+    // from the rail, while a super administrator keeps it. Both keep review and
+    // the records.
+    const superAdminTrust = workspaceGroups(platform('SUPER_ADMIN')).find(
+      (group) => group.id === 'trust',
+    )
+    const adminTrust = workspaceGroups(platform('ADMIN')).find((group) => group.id === 'trust')
+
+    expect(superAdminTrust.items.map((item) => item.href)).toEqual([
+      '/moderation/events',
+      '/privacy',
+      '/retention',
+      '/moderation/organizations',
+      '/moderation/pictures',
+    ])
+    expect(adminTrust.items.map((item) => item.href)).toEqual([
+      '/moderation/events',
+      '/retention',
+      '/moderation/organizations',
+      '/moderation/pictures',
+    ])
+
+    expect(offered(platform('SUPER_ADMIN'))).toContain('/privacy')
+    expect(offered(platform('ADMIN'))).not.toContain('/privacy')
   })
 
   it('keeps the Platform group last for somebody it does not lead for', () => {
