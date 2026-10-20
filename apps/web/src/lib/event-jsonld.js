@@ -239,7 +239,7 @@ export function eventJsonLd(event, { siteUrl = '' } = {}) {
   if (sessions.length > 1) {
     data.subEvent = sessions.map((session) => ({
       '@type': 'Event',
-      name: `${event.title} — ${sessionDisplayLabel(session)}`,
+      name: `${event.title} (${sessionDisplayLabel(session)})`,
       startDate: session.startsAt,
       ...(session.endTimeListed === false ? {} : { endDate: session.endsAt }),
       ...(session.doorsOpenAt ? { doorTime: session.doorsOpenAt } : {}),

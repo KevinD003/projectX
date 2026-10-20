@@ -640,13 +640,13 @@ describe('the booking fee and paying at the venue, in words (SPEC3 §12.3, SPEC3
   it('writes the switch as words, on the panel and in the events list', () => {
     expect(venueStatusText({ enabled: false, limit: 50 })).toBe('Off')
     expect(venueStatusText({ enabled: true, limit: 1500 })).toBe(
-      'On — up to 1,500 tickets waiting to be paid at the door',
+      'On, up to 1,500 tickets waiting to be paid at the door',
     )
     // On, with no limit given: "On", never "up to 0".
     expect(venueStatusText({ enabled: true, limit: null })).toBe('On')
     // The smallest limit, one ticket, is not "1 tickets".
     expect(venueStatusText({ enabled: true, limit: 1 })).toBe(
-      'On — up to 1 ticket waiting to be paid at the door',
+      'On, up to 1 ticket waiting to be paid at the door',
     )
     expect(venueListText({ venuePaymentEnabled: true, venuePaymentLimit: 50 })).toBe(
       'On, up to 50 unpaid',
@@ -717,11 +717,11 @@ describe('the booking fee and paying at the venue, in words (SPEC3 §12.3, SPEC3
     ]
 
     expect(historyLines(history, { currency: 'USD', timeZone: 'UTC' })).toEqual([
-      'Sun, Oct 11, 2026 — Anil changed the limit to 80: “More room.”',
-      'Sat, Oct 10, 2026 — Anil turned paying at the venue on, up to 50 unpaid: “Trial run.”',
-      'Fri, Oct 9, 2026 — A former administrator set the booking fee to 0.00% + $0.00: “Charity night.”',
-      'Thu, Oct 8, 2026 — Priya returned the booking fee to the site default: “Back to normal.”',
-      'Wed, Oct 7, 2026 — Priya turned paying at the venue off: “Paused for now.”',
+      'Sun, Oct 11, 2026 · Anil changed the limit to 80: “More room.”',
+      'Sat, Oct 10, 2026 · Anil turned paying at the venue on, up to 50 unpaid: “Trial run.”',
+      'Fri, Oct 9, 2026 · A former administrator set the booking fee to 0.00% + $0.00: “Charity night.”',
+      'Thu, Oct 8, 2026 · Priya returned the booking fee to the site default: “Back to normal.”',
+      'Wed, Oct 7, 2026 · Priya turned paying at the venue off: “Paused for now.”',
     ])
   })
 

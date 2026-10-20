@@ -309,7 +309,7 @@ export const WRONG_INVITATION_KIND_SENTENCE =
 
 /** The refusal for handing ownership to somebody who does not create events here. */
 export const HEIR_MUST_POST_EVENTS_SENTENCE =
-  'Ownership can go only to somebody who already creates events here — an event manager, manager or administrator.'
+  'Ownership can go only to somebody who already creates events here: an event manager, manager or administrator.'
 
 /**
  * The roles a caller may grant in an organisation by a team invitation.

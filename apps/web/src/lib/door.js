@@ -237,7 +237,7 @@ export function confirmFailure(status, reason = null, refusal = {}) {
     return {
       sentence: payment
         ? PAYMENT_NO_ANSWER
-        : 'No answer from the server, so this may or may not have admitted them. Retry — a ticket cannot be admitted twice, and the answer will say which it was.',
+        : 'No answer from the server, so this may or may not have admitted them. Retry: a ticket cannot be admitted twice, and the answer will say which it was.',
       lookAgain: false,
       uncertain: true,
       reason: null,
@@ -346,8 +346,8 @@ export function doorEventLabel(entry, { withOrganization = false } = {}) {
   const when = doorTime(entry.event.startsAt, entry.event.timezone)
 
   return withOrganization && entry.organization?.name
-    ? `${entry.event.title} — ${entry.organization.name} — ${when}`
-    : `${entry.event.title} — ${when}`
+    ? `${entry.event.title} · ${entry.organization.name} · ${when}`
+    : `${entry.event.title} · ${when}`
 }
 
 /**
@@ -512,7 +512,7 @@ export function handedOnUnpaidSentence(count) {
 export function admitWithPaymentLabel(amount, { retry = false, count = null } = {}) {
   const admit = count === null ? 'admit' : `admit ${count}`
 
-  return retry ? `Retry: payment taken ${amount} — ${admit}` : `Payment taken: ${amount} — ${admit}`
+  return retry ? `Retry: payment taken ${amount}, ${admit}` : `Payment taken: ${amount}, ${admit}`
 }
 
 /**

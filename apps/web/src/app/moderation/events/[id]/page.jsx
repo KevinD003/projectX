@@ -268,7 +268,7 @@ export default async function ReviewEventPage({ params }) {
                   <div>
                     <dt className="font-medium text-ink">Sessions</dt>
                     <dd className="text-ink-muted">
-                      {(sessions.data ?? []).length} — {(event.ticketTypes ?? []).length} ticket
+                      {(sessions.data ?? []).length}, with {(event.ticketTypes ?? []).length} ticket
                       type
                       {(event.ticketTypes ?? []).length === 1 ? '' : 's'}
                     </dd>
@@ -287,7 +287,7 @@ export default async function ReviewEventPage({ params }) {
                           {performers.map((performer, index) => (
                             <li key={`${performer.name}-${index}`}>
                               {performer.name}
-                              {performer.role ? ` — ${performer.role}` : ''}
+                              {performer.role ? `: ${performer.role}` : ''}
                               {performer.bio ? (
                                 <span className="block text-xs">{performer.bio}</span>
                               ) : null}
@@ -379,7 +379,7 @@ export default async function ReviewEventPage({ params }) {
                             <li key={`${sponsor.name}-${index}`} className="break-all">
                               {sponsor.name}
                               {sponsor.level ? ` (${sponsor.level})` : ''}
-                              {sponsor.url ? ` — ${sponsor.url}` : ''}
+                              {sponsor.url ? `: ${sponsor.url}` : ''}
                             </li>
                           ))}
                         </ul>
@@ -394,7 +394,7 @@ export default async function ReviewEventPage({ params }) {
                           {ticketTypes.map((tier) => (
                             <li key={tier.id} className="flex flex-wrap items-center gap-2">
                               <span>
-                                {tier.name} — {formatPrice(tier.priceCents, tier.currency)}
+                                {tier.name}: {formatPrice(tier.priceCents, tier.currency)}
                               </span>
                               {tier.visibility === 'HIDDEN' ? (
                                 <Badge variant="neutral" srLabel="Visibility:">
@@ -423,7 +423,7 @@ export default async function ReviewEventPage({ params }) {
                   <div>
                     <dt className="font-medium text-ink">Refund policy</dt>
                     <dd className="text-ink-muted">
-                      {policies.refund ?? 'None given — an event cannot be published without one.'}
+                      {policies.refund ?? 'None given: an event cannot be published without one.'}
                     </dd>
                   </div>
                 </dl>

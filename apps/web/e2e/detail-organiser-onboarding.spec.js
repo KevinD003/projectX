@@ -172,7 +172,7 @@ const INVITATION_REQUIRED =
 
 /** What the API says to a posting role asked for from a team page. */
 const POSTING_REFUSAL =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
 
 /** What the team page says beside its invite form. */
 const POSTING_SENTENCE =

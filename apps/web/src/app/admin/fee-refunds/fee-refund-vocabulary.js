@@ -22,7 +22,7 @@ export const NOT_FOR_THIS_ACCOUNT =
  * finance refunds page's sentence, without its clause about narrowing a list.
  */
 export const MALFORMED_REFERENCE =
-  'That order reference is not in the form references take — letters, digits and dashes, 4 to 32 of them.'
+  'That order reference is not in the form references take: letters, digits and dashes, 4 to 32 of them.'
 
 /** What a reference no order has is told. */
 export const NO_SUCH_ORDER = 'No order has that reference.'

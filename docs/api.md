@@ -1000,7 +1000,7 @@ has approved. A rehearsal is enqueued against the worker by somebody with
 access to it.
 
 **Every duration in the response carries
-`PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`, per row rather than once in a
+`PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`, per row rather than once in a
 heading**, so a figure copied into a ticket brings its status with it. The
 response also carries `notEvaluated`, naming classes the policy lists that no
 rehearsal covers and why, and an optional `summary` giving the most recent run

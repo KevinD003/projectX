@@ -136,7 +136,7 @@ async function renderPage({ as = finance(), answer, mode, query = {} } = {}) {
       mode ?? {
         mode: 'MOCK',
         modeNotice:
-          'DEMO — no money moved. These figures describe a demonstration and are not an accounting record.',
+          'No money moved. These figures describe a demonstration and are not an accounting record.',
         totals: { grossCents: 999999 },
       },
     )
@@ -224,7 +224,7 @@ describe('the rows', () => {
 
     const row = screen.getByRole('link', { name: 'Refund on DE-8F3K2Q' }).closest('tr')
 
-    expect(within(row).getByText('Settled — simulated')).toBeInTheDocument()
+    expect(within(row).getByText('Settled: simulated')).toBeInTheDocument()
     expect(within(row).getByText(/1,500/u)).toBeInTheDocument()
   })
 
@@ -295,9 +295,11 @@ describe('the mode', () => {
   it('says what produced the figures, in the server’s words, before the table', async () => {
     await renderPage()
 
-    const banner = screen.getByText('Demonstration data').closest('p')
+    const banner = screen.getByText('Demonstration data:').closest('p')
 
-    expect(banner).toHaveTextContent(/DEMO — no money moved/u)
+    expect(banner).toHaveTextContent(
+      'Demonstration data: No money moved. These figures describe a demonstration and are not an accounting record.',
+    )
     expect(
       banner.compareDocumentPosition(screen.getByRole('table')) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
@@ -307,8 +309,8 @@ describe('the mode', () => {
     await renderPage({ mode: Object.assign(new Error('x'), { status: 503 }) })
 
     expect(screen.getByText(/neither payment mode this build can run in/u)).toBeInTheDocument()
-    expect(screen.queryByText('Demonstration data')).not.toBeInTheDocument()
-    expect(screen.queryByText('Sandbox data')).not.toBeInTheDocument()
+    expect(screen.queryByText('Demonstration data:')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sandbox data:')).not.toBeInTheDocument()
   })
 })
 

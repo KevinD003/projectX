@@ -357,12 +357,12 @@ describe('paying at the venue', () => {
     })
 
     expect(screen.getByTestId('venue-status')).toHaveTextContent(
-      'On — up to 1,500 tickets waiting to be paid at the door',
+      'On, up to 1,500 tickets waiting to be paid at the door',
     )
     expect(screen.getByText('3 tickets are waiting now.')).toBeInTheDocument()
     expect(
       screen.getByRole('link', {
-        name: 'Bookings waiting to be paid at the door: 3 tickets — review',
+        name: 'Bookings waiting to be paid at the door: 3 tickets. Review them',
       }),
     ).toHaveAttribute('href', '/admin/events/cevent0000000000000000001/venue-bookings')
     expect(screen.getByRole('button', { name: 'Save limit' })).toBeInTheDocument()
@@ -448,7 +448,7 @@ describe('paying at the venue', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByTestId('venue-status')).toHaveTextContent(
-      /^On — up to 1 ticket waiting to be paid at the door$/u,
+      /^On, up to 1 ticket waiting to be paid at the door$/u,
     )
   })
 
@@ -569,7 +569,7 @@ describe('the changes', () => {
     const list = screen.getByRole('list')
 
     expect(within(list).getByRole('listitem')).toHaveTextContent(
-      'Sat, Oct 10, 2026 — Anil set the booking fee to 3.00% + $1.49: “Launch rate.”',
+      'Sat, Oct 10, 2026 · Anil set the booking fee to 3.00% + $1.49: “Launch rate.”',
     )
     expect(screen.getByRole('link', { name: 'Show older changes' })).toHaveAttribute(
       'href',

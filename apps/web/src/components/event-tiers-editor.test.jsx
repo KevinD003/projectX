@@ -456,7 +456,7 @@ describe('a tier’s card', () => {
 
     expect(screen.getByText('Hidden')).toBeInTheDocument()
     expect(screen.getByText('Complimentary')).toBeInTheDocument()
-    expect(screen.getByText(/Reserved — Stalls at Session 2/)).toBeInTheDocument()
+    expect(screen.getByText(/Reserved: Stalls at Session 2/)).toBeInTheDocument()
     expect(screen.getByText(/3 sold · 2 held/)).toBeInTheDocument()
   })
 })

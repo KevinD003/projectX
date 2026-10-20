@@ -414,10 +414,10 @@ export function SessionForm({
           disabled={layoutLocked}
           onChange={(change) => set({ venueMapVersionId: change.target.value })}
         >
-          <option value="">General admission — no seating map</option>
+          <option value="">General admission: no seating map</option>
           {mapVersions.map((version) => (
             <option key={version.id} value={version.id}>
-              {version.mapName} v{version.version} — {version.seatCount} seats
+              {version.mapName} v{version.version}, {version.seatCount} seats
             </option>
           ))}
         </Select>

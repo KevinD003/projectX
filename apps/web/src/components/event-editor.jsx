@@ -727,8 +727,7 @@ export function EventEditor({
       } catch {
         setSave({
           kind: 'error',
-          message:
-            'Not saved. The service is not responding — your changes are still in the boxes.',
+          message: 'Not saved. The service is not responding: your changes are still in the boxes.',
         })
       }
     },
@@ -768,7 +767,7 @@ export function EventEditor({
     }
 
     if (problems.length > 0) {
-      setSave({ kind: 'unsaved', message: 'Not saved — some fields need attention.' })
+      setSave({ kind: 'unsaved', message: 'Not saved: some fields need attention.' })
       return undefined
     }
 
@@ -1640,7 +1639,7 @@ function ScheduleStep({
         label={`Starts${startAbbreviation ? ` (${startAbbreviation})` : ''}`}
         id="event-startsAt"
         required
-        description={`Local time at the venue — ${zone}.`}
+        description={`Local time at the venue: ${zone}.`}
       >
         <Input
           type="datetime-local"
@@ -1656,8 +1655,8 @@ function ScheduleStep({
         required
         description={
           endEstimated
-            ? `${ESTIMATED_END_LABEL}. Local time at the venue — ${zone}. The event page shows only the start.`
-            : `Local time at the venue — ${zone}.`
+            ? `${ESTIMATED_END_LABEL}. Local time at the venue: ${zone}. The event page shows only the start.`
+            : `Local time at the venue: ${zone}.`
         }
       >
         <Input
@@ -1715,7 +1714,7 @@ function ScheduleStep({
                 <option value="">Choose a venue…</option>
                 {venues.map((venue) => (
                   <option key={venue.id} value={venue.id}>
-                    {venue.name} — {venue.city}
+                    {venue.name}, {venue.city}
                   </option>
                 ))}
               </Select>

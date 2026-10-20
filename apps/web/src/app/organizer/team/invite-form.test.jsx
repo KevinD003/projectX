@@ -131,7 +131,7 @@ describe('the invite form', () => {
   it('shows the API’s sentence when it refuses a role that posts events', async () => {
     const user = userEvent.setup()
     const sentence =
-      'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
+      'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
 
     apiFetch.mockResolvedValue(
       answer(403, { error: { code: 'POSTING_ROLE_NEEDS_PLATFORM', message: sentence } }),

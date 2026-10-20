@@ -251,7 +251,7 @@ export function HoldActions({ organizationId, hold, releaseOnly = false }) {
                   Matter reference
                 </label>
                 <p id="hold-matter-hint" className="text-xs text-ink-muted">
-                  A reference that points at the matter — a case number, a ticket id. Not a
+                  A reference that points at the matter: a case number, a ticket id. Not a
                   description of it. What the matter is about is personal data about the person this
                   hold blocks, and this is the last place it should be written down.
                 </p>

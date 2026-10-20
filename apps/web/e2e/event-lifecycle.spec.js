@@ -437,7 +437,7 @@ test.describe.serial('an event, from a blank list to a cancellation', () => {
   test("journey 7: a session is added and reads back in the venue's zone", async () => {
     // The venue first, because a session is no use without somewhere to be.
     await openStep(organiser, /when and where/i)
-    await organiser.getByLabel(/^Venue/).selectOption({ label: `${seeded.venueName} — Mumbai` })
+    await organiser.getByLabel(/^Venue/).selectOption({ label: `${seeded.venueName}, Mumbai` })
     await expect(organiser.getByTestId('save-status')).toHaveText(/saved at/i, { timeout: 20_000 })
 
     await organiser.getByRole('button', { name: /^step 3\s*sessions$/i }).click()

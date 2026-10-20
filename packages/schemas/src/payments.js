@@ -98,7 +98,7 @@ export const SANDBOX_LABEL = 'SANDBOX'
 
 /** What a deployment, an operator and a buyer are all told. */
 export const PRODUCTION_PAYMENTS_DISABLED_MESSAGE =
-  'Production payments disabled — Phase 2 integration required.'
+  'Production payments disabled: Phase 2 integration required.'
 
 /** Shown wherever a mock payment produces something shaped like a record. */
 export const DEMO_PAYMENT_NOTICE =

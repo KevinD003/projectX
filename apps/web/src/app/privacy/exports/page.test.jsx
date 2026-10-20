@@ -100,7 +100,7 @@ describe('what the register shows', () => {
   it('says an aggregate export contains nobody', async () => {
     await renderPage({ data: [artifact()], pagination: null })
 
-    expect(screen.getByText(/Nobody — aggregate figures only/)).toBeInTheDocument()
+    expect(screen.getByText(/Nobody: aggregate figures only/)).toBeInTheDocument()
   })
 
   it('says how many when an artefact does contain people', async () => {
@@ -114,7 +114,7 @@ describe('what the register shows', () => {
   it('reports that nothing was stored', async () => {
     await renderPage({ data: [artifact()], pagination: null })
 
-    expect(screen.getByText(/No — streamed and not kept/)).toBeInTheDocument()
+    expect(screen.getByText(/No: streamed and not kept/)).toBeInTheDocument()
   })
 
   it('names an artefact an erasure invalidated', async () => {

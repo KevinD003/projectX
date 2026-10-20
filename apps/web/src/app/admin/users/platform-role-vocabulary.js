@@ -53,7 +53,7 @@ export const PLATFORM_ROLE_DESCRIPTIONS = Object.freeze({
   MODERATOR: 'Reviews events and decides organisation verification.',
   FINANCE_ADMIN: 'Works payment reconciliation and the platform’s money records.',
   ADMIN:
-    'Everything a super administrator can do — every event, organisation, refund, report and door, and putting people into organisations — except changing anybody’s platform role. Needs two-step sign-in.',
+    'Everything a super administrator can do (every event, organisation, refund, report and door, and putting people into organisations) except changing anybody’s platform role. Needs two-step sign-in.',
   SUPER_ADMIN:
     'Everything on the platform, including changing anybody’s platform role and organisation membership.',
 })

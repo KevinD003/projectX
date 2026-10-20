@@ -723,7 +723,7 @@ export function PaymentTermsPanel({
           <p className="text-sm">
             <Link href={`${eventPath}/venue-bookings`} className={TEXT_LINK}>
               Bookings waiting to be paid at the door: {unpaid.toLocaleString('en-US')}{' '}
-              {unpaid === 1 ? 'ticket' : 'tickets'} — review
+              {unpaid === 1 ? 'ticket' : 'tickets'}. Review them
             </Link>
           </p>
         ) : null}

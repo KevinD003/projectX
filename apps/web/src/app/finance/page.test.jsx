@@ -136,7 +136,7 @@ describe('Finance', () => {
     const banner = screen.getByRole('status')
     const totals = screen.getByRole('heading', { name: 'Totals', level: 2 })
 
-    expect(banner).toHaveTextContent('Demonstration data No money moved.')
+    expect(banner).toHaveTextContent('Demonstration data: No money moved.')
     // In the reading order, the banner comes first.
     expect(banner.compareDocumentPosition(totals) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })

@@ -83,10 +83,10 @@ export const metadata = {
  * Render a date as a plain ISO day, or a dash when there is none.
  *
  * @param {string|null} value An ISO timestamp.
- * @returns {string} The day, or an em dash.
+ * @returns {string} The day, or “Not recorded”.
  */
 function day(value) {
-  return typeof value === 'string' && value !== '' ? value.slice(0, 10) : '—'
+  return typeof value === 'string' && value !== '' ? value.slice(0, 10) : 'Not recorded'
 }
 
 /**
@@ -106,7 +106,7 @@ function standing(entry) {
   if (!latest) return 'No rehearsal has ever covered this class.'
 
   if (latest.state === 'SKIPPED_DISABLED') {
-    return `Last run declined — enforcement is not activated where it ran. ${runCount} run${runCount === 1 ? '' : 's'} recorded.`
+    return `Last run declined: enforcement is not activated where it ran. ${runCount} run${runCount === 1 ? '' : 's'} recorded.`
   }
 
   if (latest.state === 'FAILED') {
@@ -213,7 +213,7 @@ export default async function RetentionPage({ searchParams }) {
                 <p className="mt-1 text-sm text-ink-muted">{standing(entry)}</p>
                 {entry.latest ? (
                   <p className="mt-1 text-xs text-ink-muted">
-                    Cut-off {day(entry.latest.olderThan)} — {entry.latest.approval}
+                    Cut-off {day(entry.latest.olderThan)}. {entry.latest.approval}
                   </p>
                 ) : null}
               </li>
@@ -319,7 +319,7 @@ export default async function RetentionPage({ searchParams }) {
                 <p className="font-medium text-ink">{retentionClassLabel(entry.retentionClass)}</p>
                 <p className="mt-1 text-sm text-ink-muted">{entry.reason}</p>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Proposed at {entry.proposedDays} days — {entry.approval}
+                  Proposed at {entry.proposedDays} days. {entry.approval}
                 </p>
               </li>
             ))}

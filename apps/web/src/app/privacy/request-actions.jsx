@@ -240,7 +240,7 @@ export function RequestActions({ organizationId, request, canConfirm, canCancel 
             <>
               <p className="mt-2 text-sm text-ink-muted">
                 This cannot be undone. Type back the confirmation phrase you were given when this
-                request was raised — it is not shown here, and it is not recoverable from this
+                request was raised: it is not shown here, and it is not recoverable from this
                 screen.
               </p>
               <div className="mt-3 flex flex-col gap-1">

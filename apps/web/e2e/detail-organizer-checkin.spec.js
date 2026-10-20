@@ -205,7 +205,7 @@ test.describe('the door screen', () => {
     await typeCode(scanner, ids().doorCodes[0])
 
     await expect(
-      scanner.getByRole('heading', { name: 'Already admitted — do not admit again' }),
+      scanner.getByRole('heading', { name: 'Already admitted: do not admit again' }),
     ).toBeVisible()
     await expect(scanner.getByRole('button', { name: 'Admit', exact: true })).toHaveCount(0)
     expect(await admissions(ticketId)).toHaveLength(1)
@@ -530,7 +530,7 @@ test.describe('the pass, from the holder’s screen to the door’s camera', () 
     // Presented again: already in.
     await scanner.getByRole('button', { name: 'Next ticket' }).click()
     await expect(
-      scanner.getByRole('heading', { name: 'Already admitted — do not admit again' }),
+      scanner.getByRole('heading', { name: 'Already admitted: do not admit again' }),
     ).toBeVisible()
     expect(await admissions(ticketId)).toHaveLength(1)
 

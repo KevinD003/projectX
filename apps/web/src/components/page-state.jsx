@@ -163,7 +163,7 @@ export function Failure({ what, detail }) {
       role="status"
       className="mt-6 rounded-card border border-status-danger/25 bg-status-danger-soft p-4 text-sm text-status-danger"
     >
-      {what} could not be loaded.{detail ? ` ${asSentence(detail)}` : ''} Nothing here is stale — it
+      {what} could not be loaded.{detail ? ` ${asSentence(detail)}` : ''} Nothing here is stale: it
       is absent, and a figure guessed from a cache would be worse than none.
     </p>
   )
@@ -190,7 +190,7 @@ export function Forbidden({ area, backHref = '/', backLabel = 'Back to the site'
       <h1 className="text-h2 font-semibold text-ink">Not for you</h1>
       <p className="mt-2 text-ink-muted">
         {area} is not something this account can open. If you think it should be, ask whoever runs
-        the organisation — nothing on this page can grant it to you.
+        the organisation: nothing on this page can grant it to you.
       </p>
       <p className="mt-4">
         <Link

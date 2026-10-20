@@ -151,7 +151,7 @@ export function ticketWords(ticket, currency) {
 
   return [ticket.attendeeName ?? ticket.label, night, formatAmount(ticket.dueCents, currency)]
     .filter(Boolean)
-    .join(' — ')
+    .join(' · ')
 }
 
 /**
@@ -399,7 +399,7 @@ export function CancelUnpaidTicketsDialog({ eventId, orderReference, onClose, on
   // cancellation keeps a share of what is held, never of a fee refunded earlier.
   const paidFee = booking?.feesCents ?? 0
   const heldFee = booking?.feeHeldCents ?? 0
-  const subtitle = `Booking ${orderReference}${booking?.buyerName ? ` — ${booking.buyerName}` : ''}`
+  const subtitle = `Booking ${orderReference}${booking?.buyerName ? ` · ${booking.buyerName}` : ''}`
 
   return (
     <Modal

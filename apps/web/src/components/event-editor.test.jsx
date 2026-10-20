@@ -1598,7 +1598,7 @@ describe('the times an organiser types', () => {
     expect(screen.getByLabelText(/^Ends/)).toHaveValue('2026-11-01T23:00')
 
     // Both boxes say which zone they are in — once each, under start and end.
-    expect(screen.getAllByText(/local time at the venue — Asia\/Kolkata/i)).toHaveLength(2)
+    expect(screen.getAllByText(/local time at the venue: Asia\/Kolkata/i)).toHaveLength(2)
   })
 
   it('names the zone as it stands on the day: EDT in October, EST in December', async () => {

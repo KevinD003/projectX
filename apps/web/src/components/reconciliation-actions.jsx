@@ -48,22 +48,22 @@ import { apiFetch } from '../lib/api-fetch.js'
 const RESOLUTIONS = Object.freeze([
   {
     value: 'SETTLED_FROM_PROVIDER',
-    label: 'Settled — the provider confirms the money moved',
+    label: 'Settled: the provider confirms the money moved',
     meaning: 'Finishes what was left half-done. Only offered when the provider says so now.',
   },
   {
     value: 'RELEASED_FROM_PROVIDER',
-    label: 'Released — the provider confirms it did not',
+    label: 'Released: the provider confirms it did not',
     meaning: 'Undoes what was reserved. Only offered when the provider says so now.',
   },
   {
     value: 'ALREADY_CONSISTENT',
-    label: 'Already consistent — something else finished it',
+    label: 'Already consistent: something else finished it',
     meaning: 'No money moves. The item was stale by the time anybody looked.',
   },
   {
     value: 'NO_ACTION_REQUIRED',
-    label: 'No action required — recorded, nothing to apply',
+    label: 'No action required: recorded, nothing to apply',
     meaning: 'No money moves. Use this for work done outside this system.',
   },
 ])
@@ -103,7 +103,7 @@ const ACTIONS = Object.freeze([
     path: 'resolve',
     label: 'Resolve it',
     description:
-      'Asks the provider once more and applies what it says. Refused while the provider cannot say, or while it and this system disagree — an unknown state is not a failure, and a conflict is not a decision.',
+      'Asks the provider once more and applies what it says. Refused while the provider cannot say, or while it and this system disagree: an unknown state is not a failure, and a conflict is not a decision.',
     states: ['OPEN', 'IN_PROGRESS', 'ESCALATED'],
     tone: 'primary',
     needsNote: true,
@@ -176,7 +176,7 @@ export function ReconciliationActions({ task, mayAct }) {
   if (available.length === 0) {
     return (
       <p className="mt-4 rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink-muted">
-        This item is resolved. Its history stays readable and nothing here can reopen it — a closed
+        This item is resolved. Its history stays readable and nothing here can reopen it: a closed
         item that could be reopened is an audit trail that can be rewritten.
       </p>
     )
@@ -240,7 +240,7 @@ export function ReconciliationActions({ task, mayAct }) {
       if (response.ok) {
         setPending(null)
         setNote('')
-        setAnnouncement(`${action.label} — done.`)
+        setAnnouncement(`${action.label}: done.`)
         router.refresh()
         return
       }

@@ -82,7 +82,7 @@ const REQUEST_STATE_DESCRIPTIONS = Object.freeze({
   COMPLETED: 'Finished. See the outcome code for what was actually done.',
   HELD: 'Refused because a hold was active. Nothing was changed.',
   FAILED_SAFE:
-    'Stopped before writing anything. This is not a partial erasure — the engine refuses to leave somebody half-redacted, so the subject is exactly as they were.',
+    'Stopped before writing anything. This is not a partial erasure: the engine refuses to leave somebody half-redacted, so the subject is exactly as they were.',
   CANCELLED: 'Withdrawn before it ran. Nothing was changed.',
 })
 
@@ -100,11 +100,11 @@ const REQUEST_REASON_LABELS = Object.freeze({
 /** What each outcome code means once a request is terminal. */
 const OUTCOME_LABELS = Object.freeze({
   REDACTED: 'Redacted',
-  ALREADY_REDACTED: 'Already redacted — nothing left to do',
+  ALREADY_REDACTED: 'Already redacted: nothing left to do',
   WITHDRAWN_BY_OPERATOR: 'Withdrawn by an operator',
-  REFUSED_LEGAL_HOLD: 'Refused — a legal hold was active',
-  REFUSED_FRAUD_HOLD: 'Refused — a fraud investigation hold was active',
-  REFUSED_OPEN_PROCESS: 'Refused — an open process still needs the data',
+  REFUSED_LEGAL_HOLD: 'Refused: a legal hold was active',
+  REFUSED_FRAUD_HOLD: 'Refused: a fraud investigation hold was active',
+  REFUSED_OPEN_PROCESS: 'Refused: an open process still needs the data',
   CONFIRMATION_LAPSED: 'The confirmation expired before it was used',
   STOPPED_SAFELY: 'Stopped safely without writing anything',
   REDACTION_WRITE_FAILED: 'A write failed, so the run stopped without completing',
@@ -204,9 +204,9 @@ const SCOPE_STATUS_DESCRIPTIONS = Object.freeze({
 const AUDIT_RESULT_LABELS = Object.freeze({
   REQUESTED: 'Raised',
   CONFIRMED: 'Confirmed',
-  REFUSED_HOLD: 'Refused — hold active',
-  REFUSED_AUTHORIZATION: 'Refused — not authorised',
-  REFUSED_CONFLICT: 'Refused — conflicting state',
+  REFUSED_HOLD: 'Refused: hold active',
+  REFUSED_AUTHORIZATION: 'Refused: not authorised',
+  REFUSED_CONFLICT: 'Refused: conflicting state',
   STARTED: 'Started',
   COMPLETED: 'Completed',
   FAILED_SAFE: 'Stopped safely',
@@ -249,7 +249,7 @@ export function describeRefusal(error) {
 
   if (code === 'REFUSED_LEGAL_HOLD' || code === 'REFUSED_FRAUD_HOLD') {
     return {
-      title: 'Refused — a hold is active',
+      title: 'Refused: a hold is active',
       detail:
         'Nothing was changed. A hold has to be released before this subject can be redacted, and releasing one is its own recorded decision.',
       recoverable: false,
@@ -258,7 +258,7 @@ export function describeRefusal(error) {
 
   if (code === 'REFUSED_OPEN_PROCESS') {
     return {
-      title: 'Refused — an open process needs the data',
+      title: 'Refused: an open process needs the data',
       detail: 'Nothing was changed. This resolves itself when the process closes.',
       recoverable: false,
     }
@@ -268,7 +268,7 @@ export function describeRefusal(error) {
     return {
       title: 'Already in flight',
       detail:
-        'This subject already has a request that has not settled. One at a time is deliberate — two concurrent redactions of one person cannot be reasoned about.',
+        'This subject already has a request that has not settled. One at a time is deliberate: two concurrent redactions of one person cannot be reasoned about.',
       recoverable: false,
     }
   }
@@ -328,7 +328,7 @@ export function describeRefusal(error) {
   return {
     title: 'The service could not answer',
     detail:
-      'Nothing here is stale — it is absent. Nothing was changed by the attempt; try again, and if it persists this is worth escalating.',
+      'Nothing here is stale: it is absent. Nothing was changed by the attempt; try again, and if it persists this is worth escalating.',
     recoverable: true,
   }
 }

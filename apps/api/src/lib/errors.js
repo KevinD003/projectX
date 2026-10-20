@@ -264,7 +264,7 @@ export const REVIEW_REQUIRED_SENTENCE =
  * @type {string}
  */
 export const POSTING_ROLE_SENTENCE =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
 
 /**
  * What a caller is told when their write lost a deadlock or a write conflict

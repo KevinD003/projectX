@@ -298,7 +298,7 @@ test.describe.serial('the platform’s own door', () => {
     await platform.getByRole('button', { name: 'Look up' }).click()
 
     await expect(
-      platform.getByRole('heading', { name: 'Already admitted — do not admit again' }),
+      platform.getByRole('heading', { name: 'Already admitted: do not admit again' }),
     ).toBeVisible()
     await expect(platform.getByRole('button', { name: 'Admit', exact: true })).toHaveCount(0)
     expect(await admissions()).toHaveLength(1)

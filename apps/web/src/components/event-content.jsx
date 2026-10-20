@@ -79,7 +79,7 @@ export function EventLineUp({ performers = [], artists = [] }) {
               <p className="font-semibold text-ink">
                 {performer.name}
                 {performer.role ? (
-                  <span className="font-normal text-ink-muted"> — {performer.role}</span>
+                  <span className="font-normal text-ink-muted">: {performer.role}</span>
                 ) : null}
               </p>
               {performer.bio ? (

@@ -236,7 +236,7 @@ export function ModerationDecision({
         setPending(null)
         setNotes({})
         setReason('')
-        setAnnouncement(`${decision.label} — this event is now ${parsed.data.status}.`)
+        setAnnouncement(`${decision.label}: this event is now ${parsed.data.status}.`)
         onDecided?.(parsed.data.status)
         router.refresh()
         return
@@ -386,7 +386,7 @@ export function ModerationDecision({
                         ? NO_EDITOR_WORDING.reason
                         : NO_EDITOR_WORDING.note
                       : decision.needsReason
-                        ? 'Sent to the organiser. Write something they can act on — "see guidelines" is not a decision anybody can do anything with.'
+                        ? 'Sent to the organiser. Write something they can act on: "see guidelines" is not a decision anybody can do anything with.'
                         : 'Optional. Kept on the record and sent to the organiser.'
                   }
                 >

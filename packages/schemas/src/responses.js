@@ -47,7 +47,7 @@ import {
   ticketStatusSchema,
 } from './enums.js'
 import { invitationDeliverySchema } from './teams.js'
-import { PAYMENT_MODES } from './payments.js'
+import { DEMO_LABEL, PAYMENT_MODES, PRODUCTION_PAYMENTS_DISABLED_MESSAGE } from './payments.js'
 import { utcDaySchema } from './traffic.js'
 import { CARD_PLACEMENTS, TRAFFIC_SOURCES } from './traffic-vocabulary.js'
 import { WEBSITE_LIMITS, publicWebsiteLinkSchema, websiteRedirectStateSchema } from './website.js'
@@ -900,11 +900,12 @@ export const organizationResponseSchema = z.object({
 /**
  * `GET /health` and `GET /ready`.
  *
- * The `examples` on uptime, version and log level are what the published
- * document shows a reader. Without them Swagger UI invents `0`, `"string"`
- * and the first log level in the list, `fatal`, which is the one value an
- * instance in rotation never reports. They are annotations and validate
- * nothing.
+ * The `examples` on uptime, version, log level and the payments block's
+ * label and message are what the published document shows a reader. Without
+ * them Swagger UI invents `0`, `"string"` and the first log level in the
+ * list, `fatal`, which is the one value an instance in rotation never
+ * reports. The payments examples are the words a demonstration instance
+ * really sends. They are annotations and validate nothing.
  */
 export const healthResponseSchema = z.object({
   status: z.enum(['ok', 'degraded', 'error']),
@@ -940,8 +941,17 @@ export const healthResponseSchema = z.object({
       mode: z.enum([PAYMENT_MODES.MOCK, PAYMENT_MODES.STRIPE_TEST]),
       demo: z.literal(true),
       live: z.literal(false).optional(),
-      label: z.string().min(1).max(16).optional(),
-      message: z.string().min(1).max(200),
+      label: z
+        .string()
+        .min(1)
+        .max(16)
+        .meta({ examples: [DEMO_LABEL] })
+        .optional(),
+      message: z
+        .string()
+        .min(1)
+        .max(200)
+        .meta({ examples: [PRODUCTION_PAYMENTS_DISABLED_MESSAGE] }),
     })
     .optional(),
 })

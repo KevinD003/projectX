@@ -287,7 +287,7 @@ export const privacyAuditEventListResponseSchema = z.object({
  *
  * `approval` is not stored. It is attached by the server on the way out,
  * because a duration that reaches a reader without
- * `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW` beside it is a duration somebody
+ * `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW` beside it is a duration somebody
  * will eventually mistake for policy. Carrying it in the payload means the
  * label travels with the number instead of living in a document beside it.
  *

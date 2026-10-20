@@ -156,7 +156,7 @@ describe('approving', () => {
     await user.click(screen.getByRole('button', { name: /yes, approve/i }))
 
     await waitFor(() =>
-      expect(screen.getByText(/approve — this event is now APPROVED/i)).toBeInTheDocument(),
+      expect(screen.getByText(/approve: this event is now APPROVED/i)).toBeInTheDocument(),
     )
   })
 })
@@ -397,7 +397,7 @@ describe('once the event has left review', () => {
     await user.click(screen.getByRole('button', { name: 'Approve' }))
     await user.click(screen.getByRole('button', { name: /yes, approve/i }))
 
-    const region = (await screen.findByText(/approve — this event is now APPROVED/i)).closest(
+    const region = (await screen.findByText(/approve: this event is now APPROVED/i)).closest(
       '[role="status"]',
     )
 
@@ -405,7 +405,7 @@ describe('once the event has left review', () => {
     rerender(<ModerationDecision event={{ ...event, status: 'APPROVED' }} />)
 
     expect(region).toBeInTheDocument()
-    expect(region).toHaveTextContent('Approve — this event is now APPROVED.')
+    expect(region).toHaveTextContent('Approve: this event is now APPROVED.')
     expect(screen.getByText('Nothing to decide')).toBeInTheDocument()
     expect(screen.getByText(/this event is approved, not public\./i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull()

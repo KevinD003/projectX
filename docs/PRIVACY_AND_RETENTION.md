@@ -4,7 +4,7 @@ What this system holds about a person, what happens to it when they ask to be
 removed, and how long the rest of it is kept.
 
 **This document is not legal advice.** Every duration in it is marked
-**PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW** and no claim of compliance with any
+**PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW** and no claim of compliance with any
 statute or regime is made anywhere in this repository. Nothing here has been
 reviewed by counsel.
 
@@ -78,7 +78,7 @@ ONLY`", is no longer the whole story: the privacy surface is now nine
 >   rejection and rolls back. Its `mode` column has no default, so there is no
 >   "default mode" to rely on either. Nothing is scheduled and nothing deletes.
 > - **Blocked, not merely undone:** retention durations remain
->   `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`. This is a legal decision and no
+>   `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`. This is a legal decision and no
 >   engineering work substitutes for it.
 > - **A standing limitation, not a defect:** historic `AuditLog` rows are
 >   immutable by database trigger and may contain personal data in identifiers
@@ -123,7 +123,7 @@ ONLY`", is no longer the whole story: the privacy surface is now nine
 > up — see "Visit counting" below. It is not a retention sweep.)
 >
 > The three bullets that did **not** change are the three that matter most: the
-> durations remain `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`, historic
+> durations remain `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`, historic
 > `AuditLog` rows remain unredactable, and **no personal data has been redacted
 > by this system outside test fixtures.**
 
@@ -303,7 +303,7 @@ assumed:
 
 ## 5. Retention
 
-Every duration below is **PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW**. None is
+Every duration below is **PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW**. None is
 enforced. The sweeper that would enforce them is `NOT IMPLEMENTED`, and
 `retention_sweep_dry_run_changes_nothing` means the database refuses a rehearsal
 that claims to have changed something.
@@ -408,7 +408,7 @@ tenant at once. The platform administrators hold it: `SUPER_ADMIN`, through
 roles (ADR 0018, the owner's decision of 2026-10-16).
 
 Each row carries its own approval status rather than the page stating it once, so
-a number lifted into a ticket or a screenshot brings `PROPOSED — REQUIRES
+a number lifted into a ticket or a screenshot brings `PROPOSED: REQUIRES
 LEGAL/PRIVACY REVIEW` with it.
 
 ### 5B. The export register — added 2026-09-18, Phase 3 / Phase 3
