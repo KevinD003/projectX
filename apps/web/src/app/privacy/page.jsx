@@ -117,7 +117,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
       {requests && requests.length === 0 ? (
         <Empty
           title="No requests"
-          description="Nothing has been raised in this organisation. That is the expected resting state — an empty queue is not a broken one."
+          description="Nothing has been raised in this organisation. That is the expected resting state: an empty queue is not a broken one."
         />
       ) : null}
 
@@ -176,7 +176,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
                     </td>
                     <td className="py-3 text-ink-muted">
                       {outcomeLabel(request.outcomeCode) ?? (
-                        <span className="text-ink-subtle">—</span>
+                        <span className="text-ink-subtle">None yet</span>
                       )}
                     </td>
                   </tr>

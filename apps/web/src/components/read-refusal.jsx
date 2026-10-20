@@ -141,7 +141,7 @@ export function ReadRefusal({ error, what, action, backHref, backLabel }) {
         <RefusalNotice
           tone="neutral"
           title="Not for this account"
-          detail={`${what} is not something this account can open. If you think it should be, ask whoever runs the organisation — nothing on this page can grant it.`}
+          detail={`${what} is not something this account can open. If you think it should be, ask whoever runs the organisation: nothing on this page can grant it.`}
           action={back}
         />
       )

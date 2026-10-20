@@ -65,7 +65,7 @@ const ACTIONS = Object.freeze([
     key: 'submit',
     label: 'Send it to the provider',
     description:
-      'The step that moves money. The provider is called with no database transaction open, and the outcome — including “the provider did not answer” — is recorded as it arrives rather than assumed.',
+      'The step that moves money. The provider is called with no database transaction open, and the outcome (including “the provider did not answer”) is recorded as it arrives rather than assumed.',
     states: ['APPROVED'],
     tone: 'primary',
     seatPolicy: true,
@@ -74,7 +74,7 @@ const ACTIONS = Object.freeze([
     key: 'cancel',
     label: 'Cancel it',
     description:
-      'Ends this refund without sending it. A refund already sent cannot be cancelled — by then the question is what the provider did, not what we intended.',
+      'Ends this refund without sending it. A refund already sent cannot be cancelled: by then the question is what the provider did, not what we intended.',
     states: ['REQUESTED', 'APPROVED', 'DECLINED', 'FAILED'],
     tone: 'danger',
     seatPolicy: false,
@@ -193,7 +193,7 @@ export function RefundActions({ refund, mayApprove, maySubmit }) {
       if (response.ok) {
         setPending(null)
         setReason('')
-        setAnnouncement(`${action.label} — this refund is now ${parsed.data.status}.`)
+        setAnnouncement(`${action.label}: this refund is now ${parsed.data.status}.`)
         router.refresh()
         return
       }
@@ -215,7 +215,7 @@ export function RefundActions({ refund, mayApprove, maySubmit }) {
   if (available.length === 0) {
     return (
       <p className="mt-4 rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink-muted">
-        There is nothing to do here — either this refund has reached a state nothing follows, or the
+        There is nothing to do here: either this refund has reached a state nothing follows, or the
         next step is somebody else’s. Its history stays readable either way.
       </p>
     )

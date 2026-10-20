@@ -386,7 +386,7 @@ export function MaterialChangePanel({
     <FormField
       label={`${label} (${zoneAbbreviation(zone, new Date(values[field] || Date.now()))})`}
       required
-      description={`Local time at the venue — ${zone}.`}
+      description={`Local time at the venue: ${zone}.`}
       {...at(field)}
     >
       <Input
@@ -530,7 +530,7 @@ export function MaterialChangePanel({
                     <option value="">Choose a venue…</option>
                     {venues.map((venue) => (
                       <option key={venue.id} value={venue.id}>
-                        {venue.name} — {venue.city}
+                        {venue.name}, {venue.city}
                       </option>
                     ))}
                   </Select>

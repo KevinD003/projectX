@@ -141,7 +141,7 @@ describe('what the pages say', () => {
       SESSION_CANCELLED: 'Night cancelled',
       TICKETS_REVOKED: 'Tickets withdrawn',
     })
-    expect(returnedText({ useReturned: null })).toBe('—')
+    expect(returnedText({ useReturned: null })).toBe('Not given back')
     expect(
       returnedText({ useReturned: { at: '2026-10-08T15:00:00.000Z', cause: 'REFUNDED' } }),
     ).toBe('Oct 8, 2026: Refunded in full')

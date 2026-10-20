@@ -399,7 +399,7 @@ export function MapEditor({ version, initialLayout, readOnly }) {
             <div className="mt-3 space-y-3 text-ink-muted">
               <p>
                 Publishing freezes this layout permanently. After it, no section, row or seat in
-                this version can be changed, renamed or removed — by you or by anybody else.
+                this version can be changed, renamed or removed: by you or by anybody else.
               </p>
               <p>
                 That is not a policy we could relax later: once a session sells against a version,
@@ -478,7 +478,7 @@ function PlanView({ sections, selected, onSelect }) {
 
           {section.kind === 'STANDING' ? (
             <p className="mt-2 text-ink-muted">
-              Standing, capacity {section.standingCapacity ?? '—'}. No numbered seats.
+              Standing, capacity {section.standingCapacity ?? 'not set'}. No numbered seats.
             </p>
           ) : null}
 
@@ -597,7 +597,8 @@ function PreviewView({ layout }) {
 
             {section.kind === 'STANDING' ? (
               <p className="mt-2 text-ink-muted">
-                Standing room for {section.standingCapacity ?? '—'}. No numbered seats.
+                Standing room for {section.standingCapacity ?? 'a number not set yet'}. No numbered
+                seats.
               </p>
             ) : null}
 
@@ -780,8 +781,8 @@ function ListView({ sections, selected, onSelect }) {
                   {seat.label}
                 </th>
                 <td className="py-2 pr-4">{section.name}</td>
-                <td className="py-2 pr-4">{row?.label ?? '—'}</td>
-                <td className="py-2 pr-4">{seat.zoneKey ?? '—'}</td>
+                <td className="py-2 pr-4">{row?.label ?? 'None'}</td>
+                <td className="py-2 pr-4">{seat.zoneKey ?? 'None'}</td>
                 <td className="py-2 pr-4">
                   {[
                     seat.accessible ? 'Accessible space' : null,
@@ -790,7 +791,7 @@ function ListView({ sections, selected, onSelect }) {
                     seat.restricted ? 'Restricted' : null,
                   ]
                     .filter(Boolean)
-                    .join(', ') || '—'}
+                    .join(', ') || 'None'}
                 </td>
                 <td className="py-2">
                   <Button

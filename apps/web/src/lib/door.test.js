@@ -142,9 +142,9 @@ describe('the group door', () => {
       organization: { name: 'Rangoli' },
     }
 
-    expect(doorEventLabel(entry)).toMatch(/^Garba Night — Oct 1, 2026/u)
+    expect(doorEventLabel(entry)).toMatch(/^Garba Night · Oct 1, 2026/u)
     expect(doorEventLabel(entry, { withOrganization: true })).toMatch(
-      /^Garba Night — Rangoli — Oct 1, 2026/u,
+      /^Garba Night · Rangoli · Oct 1, 2026/u,
     )
   })
 })
@@ -227,11 +227,11 @@ describe('money at the door (SPEC3 §12.8, SPEC3-XI §12.8)', () => {
   })
 
   it('labels the one step that takes the payment and admits, and its retry', () => {
-    expect(admitWithPaymentLabel('$40.00')).toBe('Payment taken: $40.00 — admit')
+    expect(admitWithPaymentLabel('$40.00')).toBe('Payment taken: $40.00, admit')
     expect(admitWithPaymentLabel('$40.00', { retry: true })).toBe(
-      'Retry: payment taken $40.00 — admit',
+      'Retry: payment taken $40.00, admit',
     )
-    expect(admitWithPaymentLabel('$80.00', { count: 2 })).toBe('Payment taken: $80.00 — admit 2')
+    expect(admitWithPaymentLabel('$80.00', { count: 2 })).toBe('Payment taken: $80.00, admit 2')
     expect(groupPaymentLine('$80.00')).toBe('Payment to take for the ticked tickets: $80.00')
     expect(paymentRecordedSentence('$40.00')).toBe('Admitted. Payment recorded: $40.00.')
     expect(paymentRecordedSentence('$40.00', { retried: true })).toBe(

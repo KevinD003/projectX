@@ -168,6 +168,11 @@ describe('the docs theme', () => {
     expect(properties.version.examples).toEqual(['0.1.0'])
     expect(properties.logLevel.examples).toEqual(['info'])
     expect(properties.uptimeSeconds.examples).toEqual([3600])
+    // The payments block says what a demonstration instance sends, not "string".
+    expect(properties.payments.properties.label.examples).toEqual(['DEMO'])
+    expect(properties.payments.properties.message.examples).toEqual([
+      'Production payments disabled: Phase 2 integration required.',
+    ])
 
     await app.close()
   })

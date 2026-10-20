@@ -206,9 +206,9 @@ describe('what the listing says, as the moderator reads it', () => {
     expect(screen.getByText('Chai').tagName).toBe('LI')
     expect(screen.getByText('Instagram: https://instagram.com/banyan.nights')).toBeInTheDocument()
     expect(
-      screen.getByText(/Chai Point \(Gold\) — https:\/\/chai\.example\/sponsor/),
+      screen.getByText(/Chai Point \(Gold\): https:\/\/chai\.example\/sponsor/),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Nizami Bandhu — Qawwals/)).toBeInTheDocument()
+    expect(screen.getByText(/Nizami Bandhu: Qawwals/)).toBeInTheDocument()
     expect(screen.getByText('Comfortable.')).toBeInTheDocument()
   })
 
@@ -279,7 +279,7 @@ describe('what the listing says, as the moderator reads it', () => {
 
     expect(screen.getByText('Hidden')).toBeInTheDocument()
     expect(screen.getByText('Complimentary')).toBeInTheDocument()
-    expect(screen.getByText(/General — \$35\.00/)).toBeInTheDocument()
+    expect(screen.getByText(/General: \$35\.00/)).toBeInTheDocument()
   })
 })
 
@@ -300,7 +300,7 @@ describe('the decision, once it is taken', () => {
     await user.click(screen.getByRole('button', { name: 'Approve' }))
     await user.click(screen.getByRole('button', { name: /yes, approve/i }))
 
-    const said = await screen.findByText('Approve — this event is now APPROVED.')
+    const said = await screen.findByText('Approve: this event is now APPROVED.')
     const region = said.closest('[role="status"]')
 
     // What `router.refresh()` does: the server renders the page again, now
@@ -312,7 +312,7 @@ describe('the decision, once it is taken', () => {
     rerender(await ReviewEventPage(params))
 
     expect(region).toBeInTheDocument()
-    expect(region).toHaveTextContent('Approve — this event is now APPROVED.')
+    expect(region).toHaveTextContent('Approve: this event is now APPROVED.')
     expect(screen.getByText('Nothing to decide')).toBeInTheDocument()
     expect(
       screen.getByText(

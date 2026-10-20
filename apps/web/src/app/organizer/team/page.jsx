@@ -562,7 +562,7 @@ export default async function TeamPage({ searchParams }) {
                           <td className={TD}>{roleLabel(member.role)}</td>
                           <td className={`${TD} text-ink-muted`}>
                             <time dateTime={member.joinedAt}>
-                              {formatInstant(member.joinedAt) ?? '—'}
+                              {formatInstant(member.joinedAt) ?? 'Not recorded'}
                             </time>
                           </td>
                           <td className={TD}>
@@ -709,12 +709,12 @@ export default async function TeamPage({ searchParams }) {
                           </td>
                           <td className={`${TD} text-ink-muted`}>
                             <time dateTime={invitation.createdAt}>
-                              {formatInstant(invitation.createdAt) ?? '—'}
+                              {formatInstant(invitation.createdAt) ?? 'Not recorded'}
                             </time>
                           </td>
                           <td className={TD}>
                             <time dateTime={invitation.expiresAt}>
-                              {formatInstant(invitation.expiresAt) ?? '—'}
+                              {formatInstant(invitation.expiresAt) ?? 'Not set'}
                             </time>
                             {expired ? (
                               <span className="block text-status-warning">

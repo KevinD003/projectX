@@ -27,7 +27,7 @@ export const SHARE_IMAGE = Object.freeze({
   width: 1200,
   height: 630,
   type: 'image/jpeg',
-  alt: `The Desi Events — ${TAGLINE}`,
+  alt: `The Desi Events: ${TAGLINE}`,
 })
 
 /** The square logo at 512 × 512, for structured data. */

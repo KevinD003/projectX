@@ -15,7 +15,7 @@
  * The retention rehearsal is deliberately **not** here, and its absence is the
  * design rather than an omission. A retention sweep on a timer is the first
  * step towards a retention sweep that deletes on a timer, and every duration it
- * would apply is `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`. It is enqueued by
+ * would apply is `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`. It is enqueued by
  * an operator who has decided to run one, through `enqueueSweepRetention`, and
  * by nothing else. If a scheduler for it ever seems warranted, the durations
  * have to be approved first.

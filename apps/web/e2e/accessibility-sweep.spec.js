@@ -2959,8 +2959,8 @@ test.describe.serial('the Phase 2 screens, swept', () => {
     // nobody, and there is nothing kept to hand over.
     const row = page.getByRole('row').filter({ hasText: 'analytics' }).first()
 
-    await expect(row).toContainText(/Nobody — aggregate figures only/i)
-    await expect(row).toContainText(/No — streamed and not kept/i)
+    await expect(row).toContainText(/Nobody: aggregate figures only/i)
+    await expect(row).toContainText(/No: streamed and not kept/i)
 
     // And there is no way to get the bytes back.
     expect(await page.locator('a[download], a[href*="export.csv"]').count()).toBe(0)
@@ -5965,9 +5965,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
     // The confirmation never reaches the server: the steward is told to keep
     // the money in hand and retry, and nothing was recorded.
     await scanner.route('**/api/v1/tickets/check-in', (route) => route.abort('failed'))
-    await scanner
-      .getByRole('button', { name: 'Payment taken: $40.00 — admit', exact: true })
-      .click()
+    await scanner.getByRole('button', { name: 'Payment taken: $40.00, admit', exact: true }).click()
     await expect(main).toContainText(
       'No answer from the server. The payment may or may not have been recorded',
     )
@@ -6014,9 +6012,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
 
     await openVenueDoor(scanner, ga.title)
     await lookUp(scanner, paid.code)
-    await scanner
-      .getByRole('button', { name: 'Payment taken: $40.00 — admit', exact: true })
-      .click()
+    await scanner.getByRole('button', { name: 'Payment taken: $40.00, admit', exact: true }).click()
     await expect(main).toContainText('Admitted. Payment recorded: $40.00.')
   })
 

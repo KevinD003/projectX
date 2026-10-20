@@ -119,7 +119,7 @@ export const AREAS = Object.freeze({
     admits: (session) =>
       ORGANIZER_CAPABILITIES.some((capability) => canInAnyOrganization(session, capability)),
     refusal:
-      'This workspace is for people who run events: organisers, their staff and the people on their doors. Your account is not a member of any organisation that puts events on here. If you should be, ask whoever runs the organisation to add you — nothing on this page can grant it.',
+      'This workspace is for people who run events: organisers, their staff and the people on their doors. Your account is not a member of any organisation that puts events on here. If you should be, ask whoever runs the organisation to add you: nothing on this page can grant it.',
     // Organisations are not made from an account here: organisers join by an
     // invitation from the team at The Desi Events. Accepting that invitation, or
     // joining a team with a code somebody in it gave you, is not a way round
@@ -141,7 +141,7 @@ export const AREAS = Object.freeze({
     admits: (session) =>
       inSomeMembership(session, 'report:view') || sessionCan(session, 'analytics:view_all'),
     refusal:
-      'Analytics is not something this account can open. If you think it should be, ask whoever runs the organisation — nothing on this page can grant it to you.',
+      'Analytics is not something this account can open. If you think it should be, ask whoever runs the organisation: nothing on this page can grant it to you.',
   },
   finance: {
     key: 'finance',
@@ -150,7 +150,7 @@ export const AREAS = Object.freeze({
     admits: (session) =>
       sessionCan(session, 'finance:view') || inSomeMembership(session, 'finance:view'),
     refusal:
-      'This area shows what an organisation is owed and what has been paid out. If you think you should have access, ask whoever runs the organisation — nothing here can grant it to you.',
+      'This area shows what an organisation is owed and what has been paid out. If you think you should have access, ask whoever runs the organisation: nothing here can grant it to you.',
   },
   operations: {
     key: 'operations',
@@ -159,7 +159,7 @@ export const AREAS = Object.freeze({
     admits: (session) =>
       sessionCan(session, 'finance:view') || inSomeMembership(session, 'finance:view'),
     refusal:
-      'This area shows the work the machine could not finish: unresolved payments, messages that did not go, refunds waiting. If you think you should have access, ask whoever runs the organisation — nothing here can grant it to you.',
+      'This area shows the work the machine could not finish: unresolved payments, messages that did not go, refunds waiting. If you think you should have access, ask whoever runs the organisation: nothing here can grant it to you.',
   },
   moderation: {
     key: 'moderation',
@@ -167,7 +167,7 @@ export const AREAS = Object.freeze({
     href: '/moderation/events',
     admits: (session) => sessionCan(session, 'moderation:review'),
     refusal:
-      'This area is for platform moderators. If you think you should have access, ask an administrator — nothing here can grant it to you.',
+      'This area is for platform moderators. If you think you should have access, ask an administrator: nothing here can grant it to you.',
   },
   privacy: {
     key: 'privacy',
@@ -178,7 +178,7 @@ export const AREAS = Object.freeze({
     admits: (session) =>
       inSomeMembership(session, 'privacy:redact') || sessionCan(session, 'privacy:redact'),
     refusal:
-      'This area erases people from an organisation’s records, which is not something that can be undone. It is held by organisation owners alone. If you think you should have access, ask whoever runs the organisation — nothing on this page can grant it to you.',
+      'This area erases people from an organisation’s records, which is not something that can be undone. It is held by organisation owners alone. If you think you should have access, ask whoever runs the organisation: nothing on this page can grant it to you.',
   },
   admin: {
     key: 'admin',

@@ -7,7 +7,7 @@
  *     rehearse against a client that fails the test if anything other than a
  *     `count` is called on it.
  *   - **It carries its own approval status.** A duration that reaches an
- *     operator without `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW` attached is a
+ *     operator without `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW` attached is a
  *     duration somebody will eventually mistake for policy.
  *   - **It never reads a personal value.** The queries ask about timestamps and
  *     about whether a column is null. They never ask what is in one.

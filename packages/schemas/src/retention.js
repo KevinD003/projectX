@@ -31,7 +31,7 @@
  * without its status beside it is a duration somebody will eventually mistake
  * for policy.
  */
-export const RETENTION_APPROVAL = 'PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW'
+export const RETENTION_APPROVAL = 'PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW'
 
 /**
  * The classes a rehearsal evaluates, as proposals.

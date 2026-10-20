@@ -5,7 +5,7 @@ import { AgingBadge, Figure, FigureList, ModeBanner } from './money-figure.jsx'
 
 describe('ModeBanner', () => {
   it('says a mock figure is a demonstration, as a status rather than an alert', () => {
-    render(<ModeBanner mode="MOCK" notice="DEMO — no money moved." />)
+    render(<ModeBanner mode="MOCK" notice="No money moved." />)
 
     const banner = screen.getByRole('status')
 
@@ -13,17 +13,20 @@ describe('ModeBanner', () => {
     // would interrupt a screen reader on every page load for a fact that is
     // true all the time.
     expect(banner).toHaveTextContent('Demonstration data')
-    expect(banner).toHaveTextContent('no money moved')
+    expect(banner).toHaveTextContent('No money moved')
+    // The label and the notice read as one sentence, with no stray token.
+    expect(banner.textContent).toBe('Demonstration data: No money moved.')
   })
 
   it('distinguishes the sandbox from the mock', () => {
-    render(<ModeBanner mode="STRIPE_TEST" notice="SANDBOX — test mode." />)
+    render(<ModeBanner mode="STRIPE_TEST" notice="Settled in test mode." />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Sandbox data')
+    expect(screen.getByRole('status').textContent).toBe('Sandbox data: Settled in test mode.')
   })
 
   it('marks the banner with a shape that says nothing on its own', () => {
-    const { container } = render(<ModeBanner mode="MOCK" notice="DEMO — no money moved." />)
+    const { container } = render(<ModeBanner mode="MOCK" notice="No money moved." />)
 
     // The glyph is decoration; the words carry the meaning.
     expect(container.querySelector('[aria-hidden="true"]').textContent).toBe('')

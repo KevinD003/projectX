@@ -36,7 +36,7 @@ describe('the line-up', () => {
 
     const items = screen.getAllByRole('listitem')
 
-    expect(items[0]).toHaveTextContent('Falguni Pathak — Lead vocals')
+    expect(items[0]).toHaveTextContent('Falguni Pathak: Lead vocals')
     expect(items[0]).toHaveTextContent('Thirty years of garba.')
     expect(items[1]).toHaveTextContent('Dhol Collective')
     expect(screen.queryByText('Somebody else')).not.toBeInTheDocument()

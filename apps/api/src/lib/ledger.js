@@ -226,7 +226,7 @@ export async function postBatch(db, batch, context) {
     if (fields.length === 0 || !onIdempotencyKey) {
       throw new LedgerError(
         'ALREADY_POSTED',
-        `A ledger batch already uses ${fields.join(', ') || 'a unique value'} — references must be unique`,
+        `A ledger batch already uses ${fields.join(', ') || 'a unique value'}: references must be unique`,
         { details: { fields, reference }, cause: error },
       )
     }

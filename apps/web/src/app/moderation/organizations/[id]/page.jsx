@@ -159,7 +159,9 @@ export default async function ReviewOrganizationPage({ params }) {
                   {verificationReading(event.toStatus).label}
                 </p>
                 <p className="mt-1 text-ink-muted">
-                  <time dateTime={event.createdAt}>{formatInstant(event.createdAt) ?? '—'}</time>
+                  <time dateTime={event.createdAt}>
+                    {formatInstant(event.createdAt) ?? 'Not recorded'}
+                  </time>
                 </p>
                 {event.reason ? (
                   <p className="mt-1 whitespace-pre-line text-ink">{event.reason}</p>

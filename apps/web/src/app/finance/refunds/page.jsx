@@ -90,7 +90,7 @@ const STATUSES = Object.freeze({
   REQUESTED: { label: 'Requested', tone: 'pending' },
   APPROVED: { label: 'Approved', tone: 'pending' },
   SUBMITTED: { label: 'Submitted', tone: 'info' },
-  SUCCEEDED: { label: 'Settled — simulated', tone: 'success' },
+  SUCCEEDED: { label: 'Settled: simulated', tone: 'success' },
   DECLINED: { label: 'Declined', tone: 'danger' },
   FAILED: { label: 'Failed', tone: 'danger' },
   TIMEOUT: { label: 'Timeout', tone: 'warning' },
@@ -255,7 +255,7 @@ export default async function RefundListPage({ searchParams }) {
         <p className="mt-4 max-w-3xl rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink">
           Refunds are listed one organisation at a time, and this account holds finance access in no
           organisation, so there is no list to show here. If it should, ask whoever runs the
-          organisation — nothing on this page can grant it.
+          organisation: nothing on this page can grant it.
         </p>
       </div>
     )
@@ -375,8 +375,8 @@ export default async function RefundListPage({ searchParams }) {
 
       {badReference ? (
         <p className="mt-3 text-sm text-ink-muted">
-          That order reference is not in the form references take — letters, digits and dashes, 4 to
-          32 of them — so the list is not narrowed by it.
+          That order reference is not in the form references take (letters, digits and dashes, 4 to
+          32 of them) so the list is not narrowed by it.
         </p>
       ) : null}
 
@@ -469,14 +469,14 @@ export default async function RefundListPage({ searchParams }) {
                       </td>
                       <td className={`${TD} text-ink-muted`}>
                         <time dateTime={refund.createdAt}>
-                          {formatInstant(refund.createdAt) ?? '—'}
+                          {formatInstant(refund.createdAt) ?? 'Not recorded'}
                         </time>
                       </td>
                       <td className={`${TD} text-ink-muted`}>
                         {refund.updatedAt ? (
                           <time dateTime={refund.updatedAt}>{formatInstant(refund.updatedAt)}</time>
                         ) : (
-                          '—'
+                          'Not changed'
                         )}
                       </td>
                     </tr>

@@ -282,7 +282,7 @@ export async function generateMetadata({ params }) {
       : { index: false, follow: false },
     openGraph: {
       type: 'article',
-      title: `${event.title} — ${when}, ${where}`,
+      title: `${event.title} · ${when}, ${where}`,
       description: event.summary,
       url: `/events/${event.slug}`,
     },
@@ -708,7 +708,7 @@ export default async function EventDetailPage({ params }) {
                   <p className="mt-4 text-ink-muted">
                     <span className="font-bold text-ink">Age {event.ageRestriction} and over.</span>{' '}
                     {policies.ageNote ??
-                      'Bring photo identification — the door may ask for it, and a ticket is not a way in without it.'}
+                      'Bring photo identification: the door may ask for it, and a ticket is not a way in without it.'}
                   </p>
                 ) : null}
 

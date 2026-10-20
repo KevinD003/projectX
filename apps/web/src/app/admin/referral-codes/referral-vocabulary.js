@@ -283,13 +283,13 @@ export function copyLabel(code) {
 }
 
 /**
- * When and why an order gave its use back: "—" or "{date}: {cause}".
+ * When and why an order gave its use back: "Not given back" or "{date}: {cause}".
  *
  * @param {{useReturned: {at: string, cause: string}|null}} use The use.
  * @returns {string} The words.
  */
 export function returnedText(use) {
-  if (!use.useReturned) return '—'
+  if (!use.useReturned) return 'Not given back'
 
   const cause = RETURN_CAUSE_WORDS[use.useReturned.cause] ?? use.useReturned.cause
 

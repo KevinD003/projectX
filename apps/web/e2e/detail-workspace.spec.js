@@ -822,7 +822,7 @@ test.describe('the refund list', () => {
       ),
     ).toBeVisible()
     // Simulated, and said before any figure is read.
-    await expect(statusSaying(owner, 'DEMO — no money moved.')).toBeVisible()
+    await expect(statusSaying(owner, 'Demonstration data: No money moved.')).toBeVisible()
 
     const link = owner.locator(`main a[href="/finance/refunds/${refundId}"]`)
 

@@ -25,7 +25,7 @@ const SHARE = {
   width: 1200,
   height: 630,
   type: 'image/jpeg',
-  alt: 'The Desi Events — Every moment, one place.',
+  alt: 'The Desi Events: Every moment, one place.',
 }
 
 describe('root layout metadata', () => {

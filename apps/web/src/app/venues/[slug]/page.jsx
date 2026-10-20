@@ -64,7 +64,7 @@ export async function generateMetadata({ params }) {
   }
 
   const description =
-    venue.description ?? `${venue.name} in ${venue.city} — events and tickets on The Desi Events.`
+    venue.description ?? `${venue.name} in ${venue.city}: events and tickets on The Desi Events.`
   const canonical = `/venues/${venue.canonicalSlug ?? venue.slug}`
 
   return {

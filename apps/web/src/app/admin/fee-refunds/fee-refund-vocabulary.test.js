@@ -76,7 +76,7 @@ describe('reading a reference', () => {
     expect(readReference('DE/7K2M')).toBeNull()
     expect(readReference(null)).toBeNull()
     expect(MALFORMED_REFERENCE).toBe(
-      'That order reference is not in the form references take — letters, digits and dashes, 4 to 32 of them.',
+      'That order reference is not in the form references take: letters, digits and dashes, 4 to 32 of them.',
     )
   })
 })

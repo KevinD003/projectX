@@ -62,7 +62,7 @@ export function ModeBanner({ mode, notice }) {
       />
       <span>
         <span className="font-semibold">
-          {demonstration ? 'Demonstration data' : 'Sandbox data'}
+          {demonstration ? 'Demonstration data:' : 'Sandbox data:'}
         </span>{' '}
         {notice}
       </span>

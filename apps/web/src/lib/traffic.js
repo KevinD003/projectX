@@ -142,10 +142,10 @@ export function formatCount(value) {
  *
  * @param {number} part The part.
  * @param {number} whole The whole.
- * @returns {string} A percentage, or a dash when there is nothing to share.
+ * @returns {string} A percentage, or “None” when there is nothing to share.
  */
 export function formatShare(part, whole) {
-  if (!whole) return '—'
+  if (!whole) return 'None'
 
   return `${(Math.round((part / whole) * 1000) / 10).toFixed(1)}%`
 }

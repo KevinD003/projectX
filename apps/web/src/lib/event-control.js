@@ -820,7 +820,7 @@ export function venueStatusText(venuePayment) {
   if (!venuePayment?.enabled) return 'Off'
   if (!Number.isInteger(venuePayment.limit)) return 'On'
 
-  return `On — ${venueLimitWords(venuePayment.limit)}`
+  return `On, ${venueLimitWords(venuePayment.limit)}`
 }
 
 /**
@@ -900,29 +900,29 @@ export function historyLine(
 
   if (entry.kind === 'FEE') {
     if (entry.source === 'SITE_DEFAULT') {
-      return `${when} — ${who} returned the booking fee to the site default: ${why}`
+      return `${when} · ${who} returned the booking fee to the site default: ${why}`
     }
 
     // Always the two numbers, 0.00% + $0.00 included, so the line says
     // exactly what was set.
     const terms = `${percentText(entry.percentageBps ?? 0)}% + ${formatAmount(entry.flatCentsPerTicket ?? 0, entry.currency ?? currency)}`
 
-    return `${when} — ${who} set the booking fee to ${terms}: ${why}`
+    return `${when} · ${who} set the booking fee to ${terms}: ${why}`
   }
 
   const limit = Number(entry.limit ?? 0).toLocaleString('en-US')
 
-  if (!entry.enabled) return `${when} — ${who} turned paying at the venue off: ${why}`
+  if (!entry.enabled) return `${when} · ${who} turned paying at the venue off: ${why}`
 
   // On after on is a new limit; on after off, or with nothing before it, is a
   // switch-on. With older changes this page does not hold, which it was is
   // not known, so the line says only what it set.
-  if (previousVenue?.enabled) return `${when} — ${who} changed the limit to ${limit}: ${why}`
+  if (previousVenue?.enabled) return `${when} · ${who} changed the limit to ${limit}: ${why}`
   if (!previousVenue && olderUnknown) {
-    return `${when} — ${who} set paying at the venue on, up to ${limit} unpaid: ${why}`
+    return `${when} · ${who} set paying at the venue on, up to ${limit} unpaid: ${why}`
   }
 
-  return `${when} — ${who} turned paying at the venue on, up to ${limit} unpaid: ${why}`
+  return `${when} · ${who} turned paying at the venue on, up to ${limit} unpaid: ${why}`
 }
 
 /**

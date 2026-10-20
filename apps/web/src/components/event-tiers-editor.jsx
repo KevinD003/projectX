@@ -321,7 +321,7 @@ export function EventTiersEditor({
     const session = sessions[index]
     const zone = session?.priceZones?.find((candidate) => candidate.id === tier.priceZoneId)
 
-    return `Reserved — ${zone?.name ?? 'a price zone'}${session ? ` at ${sessionLabel(session, index)}` : ''}`
+    return `Reserved: ${zone?.name ?? 'a price zone'}${session ? ` at ${sessionLabel(session, index)}` : ''}`
   }
 
   return (

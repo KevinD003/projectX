@@ -60,7 +60,7 @@ export const FORBIDDEN = Object.freeze({
   'packages/schemas/src/jobs.js':
     'worker queue and job payload schemas. The browser does not enqueue work.',
   'packages/schemas/src/index.js':
-    'the schemas barrel. It excludes env.js and jobs.js above, which is why it looked harmless, but it re-exports entities.js, requests.js and responses.js — so one status constant imported from it ships every model\u2019s column names. Import a narrow subpath instead.',
+    'the schemas barrel. It excludes env.js and jobs.js above, which is why it looked harmless, but it re-exports entities.js, requests.js and responses.js: so one status constant imported from it ships every model\u2019s column names. Import a narrow subpath instead.',
   'packages/schemas/src/entities.js':
     'every persisted model\u2019s shape, column by column: Organization.payoutCurrency and contactEmail, auditLogSchema, and the rest of the database as the browser has no business knowing it.',
   'packages/schemas/src/requests.js':

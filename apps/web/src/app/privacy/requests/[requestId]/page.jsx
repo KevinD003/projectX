@@ -184,7 +184,7 @@ export default async function PrivacyRequestPage({ params, searchParams }) {
                   {request.completedAt ? (
                     <time dateTime={request.completedAt}>{request.completedAt}</time>
                   ) : (
-                    '—'
+                    'Not completed'
                   )}
                 </dd>
               </div>
@@ -197,9 +197,9 @@ export default async function PrivacyRequestPage({ params, searchParams }) {
             </h2>
             <p className="mt-1 max-w-3xl text-sm text-ink-muted">
               Counts by category, as computed when this request was raised. Categories rather than
-              columns, and counts rather than values — a preview an operator reads must not double
-              as a map of where the personal data lives. This is a snapshot: nothing recomputes it
-              at confirmation time.
+              columns, and counts rather than values: a preview an operator reads must not double as
+              a map of where the personal data lives. This is a snapshot: nothing recomputes it at
+              confirmation time.
             </p>
 
             {Array.isArray(request.scope) && request.scope.length > 0 ? (
