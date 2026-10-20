@@ -119,9 +119,12 @@ const SIGNED_OUT = Object.freeze({
  * this row, which is how an owner came to be offered eleven header links
  * before Phase 4.
  *
+ * @param {object} [props] Component props.
+ * @param {boolean} [props.logoPriority] Fetch the logo first (the default): it
+ *   is above the fold on every public page.
  * @returns {Promise<JSX.Element>} The rendered header.
  */
-export async function SiteHeader() {
+export async function SiteHeader({ logoPriority = true } = {}) {
   const session = await readSession()
   const groups = navigationGroups(session)
   const layout = session ? SIGNED_IN : SIGNED_OUT
@@ -130,7 +133,7 @@ export async function SiteHeader() {
     <HeaderFrame>
       <div className={layout.row}>
         <Link href="/" className={layout.brand}>
-          <BrandLogo variant="light" priority className={layout.logo} />
+          <BrandLogo variant="light" priority={logoPriority} className={layout.logo} />
         </Link>
 
         <PrimaryNav

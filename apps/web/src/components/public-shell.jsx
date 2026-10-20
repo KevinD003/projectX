@@ -34,6 +34,8 @@ import { SiteHeader } from './site-header.jsx'
 /**
  * @typedef {object} PublicShellProps
  * @property {ReactNode} children The page.
+ * @property {boolean} [logoPriority] Fetch the header's logo first. Defaults
+ *   to true; the root not-found page passes false (see `app/not-found.jsx`).
  */
 
 /**
@@ -42,10 +44,10 @@ import { SiteHeader } from './site-header.jsx'
  * @param {PublicShellProps} props Component props.
  * @returns {JSX.Element} The header, the page in `main`, and the footer.
  */
-export function PublicShell({ children }) {
+export function PublicShell({ children, logoPriority = true }) {
   return (
     <>
-      <SiteHeader />
+      <SiteHeader logoPriority={logoPriority} />
       <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col">
         <PageTransition kind="public">{children}</PageTransition>
       </main>

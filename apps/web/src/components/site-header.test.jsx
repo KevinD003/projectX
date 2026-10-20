@@ -58,6 +58,17 @@ describe('SiteHeader', () => {
     expect(image).toHaveAttribute('loading', 'eager')
   })
 
+  it('lets the logo wait for layout, not fetched first, when told the page may never be shown', async () => {
+    readSession.mockResolvedValue(null)
+    render(await SiteHeader({ logoPriority: false }))
+
+    const image = within(screen.getByRole('link', { name: 'The Desi Events' })).getByRole('img')
+
+    expect(image).toHaveAttribute('data-logo', 'light')
+    expect(image).not.toHaveAttribute('fetchpriority')
+    expect(image).toHaveAttribute('loading', 'lazy')
+  })
+
   it('offers the four ways into the catalogue, marking the current one', async () => {
     readSession.mockResolvedValue(null)
     render(await SiteHeader())
