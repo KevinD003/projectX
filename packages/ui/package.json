@@ -9,6 +9,11 @@
     ".": "./src/index.js",
     "./classes": "./src/classes.js",
     "./icons": "./src/icons/index.js",
+    "./primitives": "./src/primitives.js",
+    "./popover": "./src/Popover.jsx",
+    "./menu": "./src/Menu.jsx",
+    "./tooltip": "./src/Tooltip.jsx",
+    "./toast": "./src/Toast.jsx",
     "./styles.css": "./src/styles.css",
     "./package.json": "./package.json"
   },

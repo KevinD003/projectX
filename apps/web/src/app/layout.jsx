@@ -9,7 +9,6 @@ import './globals.css'
 import { MotionProvider } from '../components/motion.jsx'
 import { NavigationMark } from '../components/navigation-mark.jsx'
 import { RegisterSync } from '../components/register-sync.jsx'
-import { Toaster } from '../components/ui.jsx'
 import { ViewTransitionGuard } from '../components/view-transition-guard.jsx'
 import { SHARE_IMAGE } from '../lib/brand.js'
 import { registerFor } from '../lib/register.js'
@@ -84,7 +83,7 @@ export const viewport = {
  */
 
 /**
- * The document: `<html>`, `<body>`, the skip link and the toaster.
+ * The document: `<html>`, `<body>` and the skip link.
  *
  * The skip link is first in the tab order on every page. Its target, `main`
  * with `tabIndex={-1}` so that following it actually moves focus rather than
@@ -121,9 +120,6 @@ export default async function RootLayout({ children }) {
             Skip to main content
           </a>
           {children}
-          {/* Short, non-critical confirmations ("Copied"), announced politely;
-              everything a reader must know stays in the page. */}
-          <Toaster />
         </MotionProvider>
       </body>
     </html>

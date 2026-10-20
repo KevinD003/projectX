@@ -32,9 +32,12 @@
  */
 
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
+  Suspense,
   createContext,
+  forwardRef,
+  lazy,
   useCallback,
   useContext,
   useEffect,
@@ -47,7 +50,23 @@ import { Icon } from '@desi-event/ui/icons'
 
 import { currentHref, isActivePath } from '../lib/active-path.js'
 import { navIcon } from '../lib/nav-icons.js'
-import { Menu, Popover, Tooltip } from './ui.jsx'
+
+/**
+ * Where the bar's menu, the page finder's popover and the folded rail's
+ * tooltips live, fetched on first use. They are Base UI's floating layers,
+ * which bring its positioning with them; drawn statically here, they put
+ * about 68 KB (gzipped) in the first load of every workspace page, the
+ * wallet and the door included, for controls few visits open.
+ */
+const loadFloating = () => import('./workspace-floating.jsx')
+
+const LazyAreaMenu = lazy(() => loadFloating().then((module) => ({ default: module.AreaMenu })))
+const LazyFinderPopover = lazy(() =>
+  loadFloating().then((module) => ({ default: module.FinderPopover })),
+)
+const LazyRailTooltip = lazy(() =>
+  loadFloating().then((module) => ({ default: module.RailTooltip })),
+)
 
 /** Where the rail's folded state is remembered, in this browser only. */
 export const RAIL_STORAGE_KEY = 'desi-event:rail'
@@ -232,11 +251,11 @@ function RailLink({ item, current, collapsed }) {
   )
 
   // Folded, the words are hidden from sight but not from the link's name; the
-  // tooltip repeats them for somebody looking.
+  // tooltip repeats them for somebody looking, once its module has arrived.
   return collapsed ? (
-    <Tooltip content={item.label} side="right">
-      {link}
-    </Tooltip>
+    <Suspense fallback={link}>
+      <LazyRailTooltip content={item.label}>{link}</LazyRailTooltip>
+    </Suspense>
   ) : (
     link
   )
@@ -439,34 +458,71 @@ export function WorkspaceRail({ groups, label = 'Workspace' }) {
  * @returns {JSX.Element} The switcher.
  */
 export function AreaSwitcher({ areas, current }) {
+  const [asked, setAsked] = useState(false)
+  const [open, setOpen] = useState(false)
   const here = areas.find((area) => area.key === current)
   const label = here?.label ?? 'Workspace'
-  const words =
-    'min-w-0 truncate font-display text-title font-bold tracking-heading text-ink-inverse [font-stretch:86%]'
 
-  if (areas.length < 2) return <span className={`${words} px-1`}>{label}</span>
+  if (areas.length < 2) return <span className={`${AREA_WORDS} px-1`}>{label}</span>
+
+  // A plain button until it is first pressed; the menu's module is fetched
+  // when a pointer comes over it or focus lands on it (`loadFloating`).
+  if (!asked) {
+    return (
+      <AreaTrigger
+        label={label}
+        aria-haspopup="menu"
+        aria-expanded="false"
+        onPointerEnter={loadFloating}
+        onFocus={loadFloating}
+        onClick={() => {
+          setAsked(true)
+          setOpen(true)
+        }}
+      />
+    )
+  }
 
   return (
-    <Menu
-      align="start"
-      linkAs={Link}
-      items={areas.map((area) => ({
-        href: area.href,
-        label: area.key === current ? `${area.label} (here)` : area.label,
-      }))}
-      trigger={
-        <button
-          type="button"
-          aria-label={`${label}. Switch area`}
-          className="inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-control px-2 transition-colors duration-(--duration-fast) ease-standard hover:bg-ink-inverse/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-        >
-          <span className={words}>{label}</span>
-          <Icon name="chevron-down" className="h-4 w-4 text-ink-inverse-muted" />
-        </button>
-      }
-    />
+    <Suspense fallback={<AreaTrigger label={label} aria-expanded="true" aria-busy="true" />}>
+      <LazyAreaMenu
+        open={open}
+        onOpenChange={setOpen}
+        items={areas.map((area) => ({
+          href: area.href,
+          label: area.key === current ? `${area.label} (here)` : area.label,
+        }))}
+        trigger={<AreaTrigger label={label} />}
+      />
+    </Suspense>
   )
 }
+
+/** The area's name in the bar, as words or on its switcher's button. */
+const AREA_WORDS =
+  'min-w-0 truncate font-display text-title font-bold tracking-heading text-ink-inverse [font-stretch:86%]'
+
+/**
+ * The area switcher's button, the same before and after its menu has loaded.
+ *
+ * @param {object} props Button props, and `label`, the current area's name.
+ * @param {object} ref Its element.
+ * @returns {JSX.Element} The button.
+ */
+const AreaTrigger = forwardRef(function AreaTrigger({ label, ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={`${label}. Switch area`}
+      className="inline-flex min-h-11 min-w-0 items-center gap-1.5 rounded-control px-2 transition-colors duration-(--duration-fast) ease-standard hover:bg-ink-inverse/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      {...props}
+    >
+      <span className={AREA_WORDS}>{label}</span>
+      <Icon name="chevron-down" className="h-4 w-4 text-ink-inverse-muted" />
+    </button>
+  )
+})
 
 /**
  * The bar's page finder: type part of a page's name, and go.
@@ -480,84 +536,54 @@ export function AreaSwitcher({ areas, current }) {
  * @returns {JSX.Element} The finder.
  */
 export function PageFinder({ items }) {
+  const [asked, setAsked] = useState(false)
   const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const router = useRouter()
-  const inputId = useId()
-  const words = query.trim().toLocaleLowerCase('en-US')
-  const matches = words
-    ? items.filter((item) => item.label.toLocaleLowerCase('en-US').includes(words))
-    : items
 
-  /**
-   * Open or close, starting each opening with an empty box.
-   *
-   * @param {boolean} next Whether it should be open.
-   * @returns {void}
-   */
-  function onOpenChange(next) {
-    setOpen(next)
-    if (next) setQuery('')
+  // A plain button until it is first pressed, as the area switcher is.
+  if (!asked) {
+    return (
+      <FinderTrigger
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        onPointerEnter={loadFloating}
+        onFocus={loadFloating}
+        onClick={() => {
+          setAsked(true)
+          setOpen(true)
+        }}
+      />
+    )
   }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={onOpenChange}
-      align="end"
-      className="w-80"
-      trigger={
-        <button
-          type="button"
-          className="hidden min-h-11 items-center gap-2 rounded-control px-3 text-label font-semibold text-ink-inverse transition-colors duration-(--duration-fast) ease-standard hover:bg-ink-inverse/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:inline-flex"
-        >
-          <Icon name="search" className="h-5 w-5" />
-          Find a page
-        </button>
-      }
-    >
-      <form
-        role="search"
-        aria-label="Find a page in the workspace"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (matches[0]) {
-            setOpen(false)
-            router.push(matches[0].href)
-          }
-        }}
-      >
-        <label htmlFor={inputId} className="text-label font-semibold text-ink">
-          Page name
-        </label>
-        <input
-          id={inputId}
-          type="search"
-          autoComplete="off"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className="mt-1.5 block min-h-11 w-full rounded-control border border-line-strong bg-surface px-3 text-base text-ink shadow-control focus:outline-2 focus:outline-offset-2 focus:outline-focus sm:text-sm"
-        />
-      </form>
-      <p role="status" className="text-caption text-ink-muted">
-        {matches.length === 1 ? '1 page' : `${matches.length} pages`}
-      </p>
-      {matches.length > 0 ? (
-        <ul className="-mx-1 flex max-h-72 flex-col gap-0.5 overflow-y-auto">
-          {matches.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="flex min-h-11 items-center gap-3 rounded-control px-2 text-label font-semibold text-ink transition-colors duration-(--duration-fast) hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
-              >
-                <Icon name={navIcon(item.href)} className="h-5 w-5 text-ink-muted" />
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </Popover>
+    <Suspense fallback={<FinderTrigger aria-expanded="true" aria-busy="true" />}>
+      <LazyFinderPopover
+        items={items}
+        open={open}
+        onOpenChange={setOpen}
+        trigger={<FinderTrigger />}
+      />
+    </Suspense>
   )
 }
+
+/**
+ * The page finder's button, the same before and after its popover has loaded.
+ *
+ * @param {object} props Button props.
+ * @param {object} ref Its element.
+ * @returns {JSX.Element} The button.
+ */
+const FinderTrigger = forwardRef(function FinderTrigger(props, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className="hidden min-h-11 items-center gap-2 rounded-control px-3 text-label font-semibold text-ink-inverse transition-colors duration-(--duration-fast) ease-standard hover:bg-ink-inverse/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:inline-flex"
+      {...props}
+    >
+      <Icon name="search" className="h-5 w-5" />
+      Find a page
+    </button>
+  )
+})

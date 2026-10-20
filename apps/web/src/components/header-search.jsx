@@ -18,62 +18,69 @@
  * @module components/header-search
  */
 
-import Form from 'next/form'
-import { useId, useState } from 'react'
+import { Suspense, forwardRef, lazy, useState } from 'react'
 import { Icon } from '@desi-event/ui/icons'
 
-import { Button, Input, Popover } from './ui.jsx'
+/** Where the popover and its form live, fetched on first use. */
+const load = () => import('./header-search-popover.jsx')
 
-/** The longest search the listing reads; more is cut there anyway. */
-const MAX_QUERY_LENGTH = 100
+const HeaderSearchPopover = lazy(load)
+
+/** The trigger's look, the same before and after the popover has loaded. */
+const TRIGGER =
+  'hidden min-h-11 items-center gap-2 rounded-control px-3 text-label font-semibold text-ink transition-colors duration-(--duration-fast) ease-standard hover:bg-surface-subtle hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus lg:inline-flex'
+
+/**
+ * The Search button.
+ *
+ * @param {object} props Button props.
+ * @param {object} ref Its element.
+ * @returns {JSX.Element} The button.
+ */
+const SearchTrigger = forwardRef(function SearchTrigger(props, ref) {
+  return (
+    <button ref={ref} type="button" className={TRIGGER} {...props}>
+      <Icon name="search" className="h-5 w-5" />
+      Search
+    </button>
+  )
+})
 
 /**
  * The search trigger and its form.
  *
- * @returns {JSX.Element} The trigger, with the form in its popover.
+ * Until somebody reaches for it, this is a plain button and nothing else: the
+ * popover's module (and the positioning library under it) is fetched when a
+ * pointer comes over the button or focus lands on it, and drawn when it is
+ * pressed, already open. Every page draws the header; few pages are searched
+ * from it.
+ *
+ * @returns {JSX.Element} The trigger, with the form in its popover once asked for.
  */
 export function HeaderSearch() {
+  const [asked, setAsked] = useState(false)
   const [open, setOpen] = useState(false)
-  const inputId = useId()
+
+  if (!asked) {
+    return (
+      <SearchTrigger
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        onPointerEnter={load}
+        onFocus={load}
+        onClick={() => {
+          setAsked(true)
+          setOpen(true)
+        }}
+      />
+    )
+  }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      align="end"
-      className="w-[min(26rem,calc(100vw-2rem))]"
-      trigger={
-        <button
-          type="button"
-          className="hidden min-h-11 items-center gap-2 rounded-control px-3 text-label font-semibold text-ink transition-colors duration-(--duration-fast) ease-standard hover:bg-surface-subtle hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus lg:inline-flex"
-        >
-          <Icon name="search" className="h-5 w-5" />
-          Search
-        </button>
-      }
+    <Suspense
+      fallback={<SearchTrigger aria-haspopup="dialog" aria-expanded="true" aria-busy="true" />}
     >
-      <Form
-        action="/events"
-        role="search"
-        aria-label="Search events"
-        onSubmit={() => setOpen(false)}
-        className="flex flex-col gap-3"
-      >
-        <label htmlFor={inputId} className="text-label font-semibold text-ink">
-          Search events, venues, cities and organisers
-        </label>
-        <div className="flex gap-2">
-          <Input
-            id={inputId}
-            name="q"
-            type="search"
-            maxLength={MAX_QUERY_LENGTH}
-            autoComplete="off"
-            className="min-w-0 flex-1"
-          />
-          <Button type="submit">Search</Button>
-        </div>
-      </Form>
-    </Popover>
+      <HeaderSearchPopover open={open} onOpenChange={setOpen} trigger={<SearchTrigger />} />
+    </Suspense>
   )
 }
