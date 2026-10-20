@@ -169,7 +169,7 @@ function analytics(overrides = {}) {
     to: null,
     timeZone: 'UTC',
     mode: 'MOCK',
-    modeNotice: 'DEMO — no money moved.',
+    modeNotice: 'No money moved.',
     moneyVisible: false,
     moneyWithheld: 'CAPABILITY',
     money: null,
@@ -408,6 +408,54 @@ describe('the organisation view', () => {
     expect(href.searchParams.get('organizationId')).toBe(ORG)
     expect(href.searchParams.get('from')).toMatch(/T00:00:00\.000Z$/u)
     expect(screen.getByText(/no visitor code/u)).toBeTruthy()
+  })
+
+  it('marks both disclosures with a chevron that turns once open, in place of the dropped triangle', async () => {
+    getAnalytics.mockResolvedValue(analytics())
+    await renderPage(OWNER)
+
+    for (const name of ['How these are counted', 'Visits per day, as a table']) {
+      const summary = screen.getByText(name, { selector: 'summary' })
+      const chevron = summary.querySelector('[data-slot="disclosure-chevron"]')
+
+      expect(summary.textContent, name).toBe(name)
+      expect(summary, name).toHaveClass('inline-flex', 'list-none')
+      expect(chevron, name).toHaveAttribute('data-icon', 'chevron-down')
+      expect(chevron, name).toHaveAttribute('aria-hidden', 'true')
+      expect(chevron, name).toHaveClass('group-open/disclosure:rotate-180')
+      expect(summary.closest('details'), name).toHaveClass('group/disclosure')
+    }
+  })
+
+  it('writes each day of the sales by date in words, keeping the day in a time element', async () => {
+    getAnalytics.mockResolvedValue(
+      analytics({
+        sales: {
+          byEvent: [],
+          bySession: [],
+          byTicketType: [],
+          byDate: [
+            {
+              id: '2026-10-04',
+              label: '2026-10-04',
+              currency: 'USD',
+              quantity: 3,
+              lineValueCents: 13500,
+              refundedQuantity: 0,
+              cancelledQuantity: 0,
+            },
+          ],
+        },
+      }),
+    )
+    await renderPage(OWNER)
+
+    const table = screen.getByRole('table', { name: 'Sales by date' })
+    const header = within(within(table).getAllByRole('row')[1]).getByRole('rowheader')
+
+    expect(header).toHaveTextContent(/^Oct 4, 2026$/u)
+    expect(header.querySelector('time')).toHaveAttribute('datetime', '2026-10-04')
+    expect(table.textContent).not.toContain('2026-10-04')
   })
 })
 
