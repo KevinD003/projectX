@@ -80625,7 +80625,7 @@
                           },
                           "referralCode": {
                             "type": "string",
-                            "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                            "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                             "examples": [
                               "DIWALI-2026"
                             ]
@@ -81024,7 +81024,7 @@
       "post": {
         "operationId": "referralCodes.create",
         "summary": "Make a referral code",
-        "description": "A code that removes the whole booking fee from one order, and any tax that fee would have carried, and nothing else: never the ticket price or the tax on it. Exactly one of `referralCode` (typed: trimmed and upper-cased, 6 to 32 letters, digits and single hyphens, starting and ending with a letter or digit) or `generate: true` (two groups of five from a 31-character alphabet without 0, O, 1, I or L; a generated code that clashes is drawn again, up to five times, then 503 `TRY_AGAIN`). `scope` ALL_EVENTS, or SELECTED_EVENTS with 1 to 50 distinct `eventIds`, none deleted (422 `REFERRAL_EVENT_NOT_ELIGIBLE` with `error.details.eventIds`). An optional expiry in the future and an optional total limit of 1 to 1,000,000 orders. A typed code another code already has answers 409 `REFERRAL_CODE_TAKEN`. The code’s maker cannot use it. Held by `referral_code:manage` (ADMIN and SUPER_ADMIN) with a second factor within the PAYMENT_TERMS window; sixty referral-code changes an hour per administrator, together. Answers 201 with the code, its text named `referralCode`. Audited `referral_code.created` without the text or the label; answers `cache-control: no-store, private`.\n\nRequires the `referral_code:manage` capability.\n\nRequires a recent step-up authentication: see `POST /v1/auth/step-up`.",
+        "description": "A code that removes the whole booking fee from one order, and any tax that fee would have carried, and nothing else: never the ticket price or the tax on it. Exactly one of `referralCode` (typed: trimmed and upper-cased, 10 to 32 letters, digits and single hyphens, starting and ending with a letter or digit) or `generate: true` (two groups of five from a 31-character alphabet without 0, O, 1, I or L; a generated code that clashes is drawn again, up to five times, then 503 `TRY_AGAIN`). `scope` ALL_EVENTS, or SELECTED_EVENTS with 1 to 50 distinct `eventIds`, none deleted (422 `REFERRAL_EVENT_NOT_ELIGIBLE` with `error.details.eventIds`). An optional expiry in the future and an optional total limit of 1 to 1,000,000 orders. A typed code another code already has answers 409 `REFERRAL_CODE_TAKEN`. The code’s maker cannot use it. Held by `referral_code:manage` (ADMIN and SUPER_ADMIN) with a second factor within the PAYMENT_TERMS window; sixty referral-code changes an hour per administrator, together. Answers 201 with the code, its text named `referralCode`. Audited `referral_code.created` without the text or the label; answers `cache-control: no-store, private`.\n\nRequires the `referral_code:manage` capability.\n\nRequires a recent step-up authentication: see `POST /v1/auth/step-up`.",
         "tags": [
           "referral-codes"
         ],
@@ -81049,7 +81049,7 @@
                         },
                         "referralCode": {
                           "type": "string",
-                          "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                          "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                           "examples": [
                             "DIWALI-2026"
                           ]
@@ -81407,7 +81407,7 @@
                 "properties": {
                   "referralCode": {
                     "type": "string",
-                    "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                    "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                     "examples": [
                       "DIWALI-2026"
                     ]
@@ -81660,7 +81660,7 @@
                         },
                         "referralCode": {
                           "type": "string",
-                          "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                          "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                           "examples": [
                             "DIWALI-2026"
                           ]
@@ -82189,7 +82189,7 @@
                         },
                         "referralCode": {
                           "type": "string",
-                          "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                          "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                           "examples": [
                             "DIWALI-2026"
                           ]
@@ -82692,7 +82692,7 @@
                         },
                         "referralCode": {
                           "type": "string",
-                          "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                          "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                           "examples": [
                             "DIWALI-2026"
                           ]
@@ -83096,7 +83096,7 @@
                         },
                         "referralCode": {
                           "type": "string",
-                          "pattern": "^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$",
+                          "pattern": "^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$",
                           "examples": [
                             "DIWALI-2026"
                           ]

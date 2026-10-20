@@ -59,7 +59,7 @@ const STRING_SAMPLES = Object.freeze([
     value: () => '+1 732 555 0142',
   },
   {
-    test: (schema) => schema.pattern === '^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$',
+    test: (schema) => schema.pattern === '^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$',
     value: () => 'DIWALI-2026',
   },
   {

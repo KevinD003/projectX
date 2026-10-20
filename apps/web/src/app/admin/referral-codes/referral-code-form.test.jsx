@@ -140,7 +140,7 @@ describe('making a referral code', () => {
     const typed = screen.getByLabelText('Referral code')
 
     expect(typed).toHaveAccessibleDescription(
-      '6 to 32 letters, numbers or single hyphens. Short or common words are easy to guess.',
+      '10 to 32 letters, numbers or single hyphens. Short or common words are easy to guess.',
     )
     await user.type(typed, 'ab')
     await user.type(screen.getByLabelText('Limit (optional)'), '0')
@@ -153,7 +153,7 @@ describe('making a referral code', () => {
     await waitFor(() => expect(summary).toHaveFocus())
     expect(
       within(summary).getByRole('link', {
-        name: '6 to 32 letters, numbers or single hyphens, starting and ending with a letter or number.',
+        name: '10 to 32 letters, numbers or single hyphens, starting and ending with a letter or number.',
       }),
     ).toHaveAttribute('href', expect.stringMatching(/-code$/u))
     expect(within(summary).getByRole('link', { name: 'From 1 to 1,000,000.' })).toBeInTheDocument()

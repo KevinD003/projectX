@@ -102,7 +102,7 @@ export const NOT_FOR_THIS_ACCOUNT =
 
 /** The typed code's hint. */
 export const TYPED_CODE_HINT =
-  '6 to 32 letters, numbers or single hyphens. Short or common words are easy to guess.'
+  '10 to 32 letters, numbers or single hyphens. Short or common words are easy to guess.'
 
 /** The limit's hint. */
 export const LIMIT_HINT = 'How many orders can use it in all.'

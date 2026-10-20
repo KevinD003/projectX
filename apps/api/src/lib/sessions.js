@@ -31,6 +31,8 @@ import {
   windowStart,
 } from '@desi-event/auth'
 
+import { clientAddressOf } from './traffic.js'
+
 /**
  * Joins the parts of a device fingerprint.
  *
@@ -81,6 +83,26 @@ export function deviceFingerprint(request, key) {
  */
 export function callerAddress(request) {
   return String(request.ip ?? '')
+}
+
+/**
+ * The address the login and step-up throttles ration by.
+ *
+ * Finding F2. `request.ip` is the web app's same-origin proxy for every browser
+ * user when `trustProxy` is off, so the per-address half of the throttle — and
+ * the shared auth rate limit — collapsed to one bucket for the whole audience:
+ * one target's failures throttled everyone's sign-in. This prefers the address
+ * the trusted web tier forwards (`clientAddressOf`, believed only from
+ * `TRAFFIC_TRUSTED_FORWARDERS`), so each real client is counted on its own, and
+ * falls back to the socket peer for a caller the API talks to directly. The
+ * per-account half of the throttle keys on the submitted email regardless, so it
+ * was never the collapsing one.
+ *
+ * @param {object} request The incoming request.
+ * @returns {string} The address, or an empty string.
+ */
+export function loginRateAddress(request) {
+  return clientAddressOf(request) ?? callerAddress(request)
 }
 
 /**
