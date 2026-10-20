@@ -24,8 +24,13 @@ export const metadata = {
  * @returns {JSX.Element} The rendered page.
  */
 export default function NotFound() {
+  // The root layout's not-found boundary is rendered on the server with every
+  // page, the workspace's and the door's included, whether or not it is
+  // shown; a logo fetched first from here was a preload of the public header's
+  // logo on pages that draw the dark bar. Shown, the logo is in the first
+  // screen, and loads as soon as the page is laid out.
   return (
-    <PublicShell>
+    <PublicShell logoPriority={false}>
       <NotFoundView />
     </PublicShell>
   )
