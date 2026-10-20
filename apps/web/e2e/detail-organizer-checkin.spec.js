@@ -205,7 +205,7 @@ test.describe('the door screen', () => {
     await typeCode(scanner, ids().doorCodes[0])
 
     await expect(
-      scanner.getByRole('heading', { name: 'Already admitted — do not admit again' }),
+      scanner.getByRole('heading', { name: 'Already admitted: do not admit again' }),
     ).toBeVisible()
     await expect(scanner.getByRole('button', { name: 'Admit', exact: true })).toHaveCount(0)
     expect(await admissions(ticketId)).toHaveLength(1)
@@ -419,7 +419,23 @@ test.describe('the pass, from the holder’s screen to the door’s camera', () 
 
     await expect(drawing).toBeVisible()
     await expect(holder.getByRole('button', { name: 'Hide pass' })).toBeFocused()
-    await expect(holder.getByText(/as a screenshot — can use it to get in once/iu)).toBeVisible()
+    await expect(holder.getByText(/as a screenshot, can use it to get in once/iu)).toBeVisible()
+
+    // Once the reveal has run, nothing clips the pass, so the focus outline
+    // drawn outside "Hide pass" is whole: the reveal's clip-path is gone at
+    // rest rather than held at its last frame.
+    await expect
+      .poll(() =>
+        holder.getByRole('button', { name: 'Hide pass' }).evaluate((button) => {
+          const reveal = button.closest('.ticket-reveal')
+          if (!reveal) return 'no reveal'
+          if (reveal.getAnimations().some((animation) => animation.playState === 'running')) {
+            return 'still revealing'
+          }
+          return getComputedStyle(reveal).clipPath
+        }),
+      )
+      .toBe('none')
 
     const path = await drawing.locator('path').getAttribute('d')
     const size = Number((await drawing.getAttribute('viewBox')).split(' ')[2])
@@ -514,7 +530,7 @@ test.describe('the pass, from the holder’s screen to the door’s camera', () 
     // Presented again: already in.
     await scanner.getByRole('button', { name: 'Next ticket' }).click()
     await expect(
-      scanner.getByRole('heading', { name: 'Already admitted — do not admit again' }),
+      scanner.getByRole('heading', { name: 'Already admitted: do not admit again' }),
     ).toBeVisible()
     expect(await admissions(ticketId)).toHaveLength(1)
 

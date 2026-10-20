@@ -83,10 +83,10 @@ export const metadata = {
  * Render a date as a plain ISO day, or a dash when there is none.
  *
  * @param {string|null} value An ISO timestamp.
- * @returns {string} The day, or an em dash.
+ * @returns {string} The day, or “Not recorded”.
  */
 function day(value) {
-  return typeof value === 'string' && value !== '' ? value.slice(0, 10) : '—'
+  return typeof value === 'string' && value !== '' ? value.slice(0, 10) : 'Not recorded'
 }
 
 /**
@@ -106,7 +106,7 @@ function standing(entry) {
   if (!latest) return 'No rehearsal has ever covered this class.'
 
   if (latest.state === 'SKIPPED_DISABLED') {
-    return `Last run declined — enforcement is not activated where it ran. ${runCount} run${runCount === 1 ? '' : 's'} recorded.`
+    return `Last run declined: enforcement is not activated where it ran. ${runCount} run${runCount === 1 ? '' : 's'} recorded.`
   }
 
   if (latest.state === 'FAILED') {
@@ -165,10 +165,7 @@ export default async function RetentionPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Retention rehearsals</h1>
+        <h1 className="text-h2 font-semibold text-ink">Retention rehearsals</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           What a retention sweep <em>would</em> reach, if the proposed durations were adopted.
           Nothing on this page has deleted anything, and nothing on this page can: the retention job
@@ -216,7 +213,7 @@ export default async function RetentionPage({ searchParams }) {
                 <p className="mt-1 text-sm text-ink-muted">{standing(entry)}</p>
                 {entry.latest ? (
                   <p className="mt-1 text-xs text-ink-muted">
-                    Cut-off {day(entry.latest.olderThan)} — {entry.latest.approval}
+                    Cut-off {day(entry.latest.olderThan)}. {entry.latest.approval}
                   </p>
                 ) : null}
               </li>
@@ -322,7 +319,7 @@ export default async function RetentionPage({ searchParams }) {
                 <p className="font-medium text-ink">{retentionClassLabel(entry.retentionClass)}</p>
                 <p className="mt-1 text-sm text-ink-muted">{entry.reason}</p>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Proposed at {entry.proposedDays} days — {entry.approval}
+                  Proposed at {entry.proposedDays} days. {entry.approval}
                 </p>
               </li>
             ))}

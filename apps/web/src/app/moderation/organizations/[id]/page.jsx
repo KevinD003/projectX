@@ -16,8 +16,8 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../../components/read-refusal.jsx'
-import { Badge } from '../../../../components/ui.jsx'
 import { VerificationDecision } from '../../../../components/verification-decision.jsx'
 import { PANEL, TEXT_LINK } from '../../../../components/workspace-kit.jsx'
 import { verificationReading } from '../../../../lib/organization-vocabulary.js'
@@ -103,14 +103,11 @@ export default async function ReviewOrganizationPage({ params }) {
           Back to organisation checks
         </Link>
       </p>
-      <p className="mt-4 text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold break-words text-ink">{organization.name}</h1>
+      <h1 className="mt-4 text-h2 font-semibold break-words text-ink">{organization.name}</h1>
       <p className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge variant={reading.tone} size="lg" srLabel="State:">
+        <StatusWord tone={reading.tone} srLabel="State:">
           {reading.label}
-        </Badge>
+        </StatusWord>
         <span className="text-sm text-ink-muted">
           {verification.eligible
             ? 'It may publish events and be paid.'
@@ -162,7 +159,9 @@ export default async function ReviewOrganizationPage({ params }) {
                   {verificationReading(event.toStatus).label}
                 </p>
                 <p className="mt-1 text-ink-muted">
-                  <time dateTime={event.createdAt}>{formatInstant(event.createdAt) ?? '—'}</time>
+                  <time dateTime={event.createdAt}>
+                    {formatInstant(event.createdAt) ?? 'Not recorded'}
+                  </time>
                 </p>
                 {event.reason ? (
                   <p className="mt-1 whitespace-pre-line text-ink">{event.reason}</p>

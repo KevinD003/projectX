@@ -35,6 +35,48 @@ export function isActivePath(href, pathname) {
 }
 
 /**
+ * Whether a path's percent-escapes decode.
+ *
+ * @param {string} pathname The path.
+ * @returns {boolean} True when they do.
+ */
+function decodes(pathname) {
+  try {
+    decodeURIComponent(pathname)
+
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Pages that live at their own address but belong to another entry's
+ * section. A seating map's version (`/organizer/map-versions/abc`) is reached
+ * from a venue and is about that venue, so the rail marks "Venues" rather
+ * than letting the prefix rule fall back to "Overview".
+ *
+ * @type {ReadonlyArray<Array<string>>}
+ */
+export const SECTION_OF = Object.freeze([['/organizer/map-versions', '/organizer/venues']])
+
+/**
+ * The path a page is filed under for navigation.
+ *
+ * @param {string|null|undefined} pathname The current path.
+ * @returns {string|null|undefined} The section's path, or the path itself.
+ */
+function filedUnder(pathname) {
+  if (!pathname) return pathname
+
+  for (const [prefix, section] of SECTION_OF) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return section
+  }
+
+  return pathname
+}
+
+/**
  * The one entry, out of a list, that names the current page.
  *
  * `isActivePath` ignores the query string, which is right for a single link
@@ -52,11 +94,18 @@ export function isActivePath(href, pathname) {
  * @returns {string|null} The href of the current entry, or null when none is.
  */
 export function currentHref(items, pathname, search = null) {
+  // An address that cannot be decoded is in no section: it is answered by the
+  // page for an unreadable address (`src/proxy.js`), which the server renders
+  // at its own path, so marking a section here would also make the browser's
+  // navigation disagree with the server's.
+  if (pathname && !decodes(pathname)) return null
+
+  const filed = filedUnder(pathname)
   let best = null
   let bestScore = -1
 
   for (const item of items) {
-    if (!isActivePath(item.href, pathname)) continue
+    if (!isActivePath(item.href, filed)) continue
 
     const [path, query = ''] = item.href.split('?')
     const wanted = [...new URLSearchParams(query)]

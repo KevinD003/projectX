@@ -15,7 +15,7 @@
  * can be described — "if the proposal were adopted, this many rows would be in
  * scope" — and for nothing else.
  *
- * `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW` is carried on every class so that
+ * `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW` is carried on every class so that
  * the label travels with the number rather than living in a document beside it.
  * A duration that arrives at an operator's screen without its status attached is
  * a duration somebody will eventually mistake for policy.

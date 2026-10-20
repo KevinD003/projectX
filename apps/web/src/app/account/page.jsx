@@ -12,9 +12,10 @@
  * @module app/account/page
  */
 
+import { Icon } from '@desi-event/ui/icons'
 import Link from 'next/link'
 
-import { LINK_PANEL, PageHeader, PANEL, Section } from '../../components/workspace-kit.jsx'
+import { PageHeader, PANEL, Section } from '../../components/workspace-kit.jsx'
 import { workspaceHome } from '../../lib/navigation.js'
 import { readSession } from '../../lib/session.js'
 
@@ -23,30 +24,34 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Your account', robots: { index: false, follow: false } }
 
 /**
- * One place to go from here, drawn as a card that is a single link.
+ * One place to go from here: a row of the account's index, the whole row a
+ * single link. Rows, not a grid of cards: the places are a list to read down,
+ * and the rail beside the page names the same ones for anybody who knows
+ * where they are going.
  *
  * @param {object} props Component props.
  * @param {string} props.href Where it goes.
  * @param {string} props.title What it is called.
  * @param {string} props.children One line about what is there.
- * @returns {JSX.Element} The card.
+ * @returns {JSX.Element} The row.
  */
 function Destination({ href, title, children }) {
   return (
-    <li>
-      <Link href={href} className={`group ${LINK_PANEL}`}>
-        <span className="flex items-center justify-between gap-3">
-          <span className="font-display text-lg font-semibold text-ink">{title}</span>
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="size-5 shrink-0 text-accent-strong transition-transform duration-(--duration-fast) ease-standard motion-safe:group-hover:translate-x-0.5"
-          >
-            <path d="M7.3 4.3a1 1 0 0 1 1.4 0l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4-1.4L11.6 10 7.3 5.7a1 1 0 0 1 0-1.4Z" />
-          </svg>
+    <li className="border-b border-line">
+      <Link
+        href={href}
+        className="group flex min-h-11 items-start justify-between gap-4 rounded-sm py-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      >
+        <span className="min-w-0">
+          <span className="block font-display text-h3 font-bold text-ink underline-offset-4 decoration-2 decoration-accent group-hover:underline">
+            {title}
+          </span>
+          <span className="mt-1 block max-w-prose text-sm text-ink-muted">{children}</span>
         </span>
-        <span className="mt-1 block text-sm text-ink-muted">{children}</span>
+        <Icon
+          name="chevron-right"
+          className="mt-1 size-5 shrink-0 text-accent-strong transition-transform duration-(--duration-fast) ease-out motion-safe:group-hover:translate-x-0.5"
+        />
       </Link>
     </li>
   )
@@ -101,7 +106,7 @@ export default async function AccountPage() {
           </Fact>
           <Fact term="Two-step sign-in">
             {secondFactor.mfaEnrolled
-              ? 'On — signing in asks for a code as well as your password.'
+              ? 'On: signing in asks for a code as well as your password.'
               : 'Off.'}
             {secondFactor.mfaRequired && !secondFactor.mfaEnrolled ? (
               <span className="mt-1 block text-status-warning">
@@ -114,7 +119,7 @@ export default async function AccountPage() {
       </Section>
 
       <Section id="account-next" title="Where to go">
-        <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="mt-2 grid border-t border-line lg:grid-cols-2 lg:gap-x-10">
           <Destination href="/tickets" title="My tickets">
             Your passes, what they admit to, and what you have handed on.
           </Destination>
@@ -122,7 +127,7 @@ export default async function AccountPage() {
             What you bought, what it cost, and the tickets each order gave you.
           </Destination>
           <Destination href="/account/transfers" title="Transfers">
-            Tickets you are offering, have handed on, or were given — and where to accept one.
+            Tickets you are offering, have handed on, or were given, and where to accept one.
           </Destination>
           <Destination href="/account/security" title="Security">
             Your password, two-step sign-in, and where you are signed in.

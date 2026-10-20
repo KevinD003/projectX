@@ -403,13 +403,13 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
 
     await expect(tickets.locator('p').filter({ hasText: /^From / })).toHaveText(`From ${FACE}`)
 
-    // "₹X all in — includes ₹F booking fee and ₹T GST (18%)." The tax clause
+    // "₹X all in, including the ₹F booking fee and ₹T GST (18%)." The tax clause
     // is drawn only when there is tax, so it is optional here and its absence
     // is then checked against the order.
     const quote = normalise(
       await tickets.locator('p').filter({ hasText: 'all in' }).textContent(),
     ).match(
-      /^(₹[\d,]+\.\d{2}) all in — includes (₹[\d,]+\.\d{2}) booking fee(?: and (₹[\d,]+\.\d{2}) ([^.(]+?)(?: \([^)]*\))?)?\.$/u,
+      /^(₹[\d,]+\.\d{2}) all in, including the (₹[\d,]+\.\d{2}) booking fee(?: and (₹[\d,]+\.\d{2}) ([^.(]+?)(?: \([^)]*\))?)?\.$/u,
     )
 
     expect(quote, 'the event page quotes no all-in price').not.toBeNull()
@@ -429,7 +429,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     // The only simulated-payment wording on the event page itself is the
     // footer's; checkout carries the full notice, asserted next.
     await expect(visitor.getByRole('contentinfo')).toContainText(
-      'Payments on this site are simulated — no card, no money moves.',
+      'Payments on this site are simulated. No card is charged and no money moves.',
     )
 
     expect(normalise(await visitor.getByRole('main').innerText())).not.toMatch(URGENCY)
@@ -584,9 +584,16 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     const heldNotice = buyer.getByRole('status').filter({ hasText: 'Tickets held' })
 
     await expect(heldNotice).toContainText(`Held for you until ${until}.`)
-    await expect(heldNotice).toContainText(
-      'Payment on this site is simulated: you will not be asked for a card, and no money moves.',
+    await expect(heldNotice).toContainText('Give each ticket a name below if you like, then pay.')
+    // Reserve has become Pay: focus is on the held notice, not the page.
+    await expect(buyer.locator('[data-slot="held-notice"]')).toBeFocused()
+    // That payments are simulated is said once on the screen, at the head of
+    // the summary beside the money, not again in the held notice.
+    await expect(heldNotice).not.toContainText(/simulated|no money/u)
+    await expect(summary.getByTestId('payment-mode-notice')).toContainText(
+      'You will not be asked for a card, no money moves',
     )
+    await expect(buyer.getByTestId('payment-mode-notice')).toHaveCount(1)
 
     // The hold is real: the API counts it against what anybody else can buy.
     expect((await liveTier(buyer.request, alphaEventId)).availableQuantity).toBe(
@@ -681,6 +688,8 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
       .filter({ has: buyer.getByRole('heading', { name: 'Booked' }) })
 
     await expect(booked).toContainText(`Order ${reference} · 1 ticket · ${allIn}`)
+    // Pay has gone with the basket: focus is on "Booked", not the page.
+    await expect(buyer.getByRole('heading', { name: 'Booked', exact: true })).toBeFocused()
     await expect(booked).toContainText(
       'The payment was simulated: no card was asked for and no money moved.',
     )
@@ -781,7 +790,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
 
     await expect(card).toHaveCount(1)
     await expect(link).toHaveAttribute('href', `/account/orders/${reference}`)
-    await expect(card).toContainText('Paid — simulated')
+    await expect(card).toContainText('Paid (simulated)')
     await expect(definition(card, 'Reference')).toHaveText(reference)
     await expect(definition(card, 'Tickets')).toHaveText('1')
     await expect(definition(card, 'Total')).toHaveText(allIn)
@@ -794,7 +803,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     const facts = buyer.getByRole('region', { name: 'The order' })
 
     await expect(definition(facts, 'Reference')).toHaveText(reference)
-    await expect(definition(facts, 'Status')).toContainText('Paid — simulated')
+    await expect(definition(facts, 'Status')).toContainText('Paid (simulated)')
 
     // One line, of one ticket, at face value: the quantity bought.
     const money = buyer.getByRole('region', { name: 'What it cost' })
@@ -822,7 +831,7 @@ test.describe.serial('buying a ticket as somebody who has never been here', () =
     // The columns add up to the total, which is the figure the button named.
     expect(paise(FACE) + paise(fee) + (taxShown ? paise(taxShown) : 0)).toBe(paise(allIn))
 
-    await expect(money).toContainText('Simulated payment — no card was charged and no money moved.')
+    await expect(money).toContainText('Simulated payment: no card was charged and no money moved.')
 
     const onOrder = buyer.getByRole('region', { name: 'Tickets on this order' })
 

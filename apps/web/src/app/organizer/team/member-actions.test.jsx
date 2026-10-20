@@ -230,7 +230,7 @@ describe('changing a role', () => {
   it('shows the API’s sentence when it refuses a move into a role that posts events', async () => {
     const user = userEvent.setup()
     const sentence =
-      'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
+      'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
 
     apiFetch.mockResolvedValue(
       answer(403, { error: { code: 'POSTING_ROLE_NEEDS_PLATFORM', message: sentence } }),
@@ -769,7 +769,7 @@ describe('handing ownership on', () => {
     const user = userEvent.setup()
     // The API's own words (`HEIR_MUST_POST_EVENTS_SENTENCE` in routes/teams.js).
     const sentence =
-      'Ownership can go only to somebody who already creates events here — an event manager, manager or administrator.'
+      'Ownership can go only to somebody who already creates events here: an event manager, manager or administrator.'
 
     apiFetch.mockResolvedValue(
       answer(422, { error: { code: 'HEIR_MUST_POST_EVENTS', message: sentence } }),

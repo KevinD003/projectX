@@ -300,7 +300,7 @@ export function TwoStep({ required, factors }) {
           </p>
           <ProvisioningCode uri={enrolment.uri} />
           <details className="text-sm text-ink-muted">
-            <summary className="cursor-pointer rounded-sm font-medium text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none">
+            <summary className="cursor-pointer rounded-sm font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus">
               Cannot scan? Type this key into the app instead
             </summary>
             <p className="mt-2 font-mono text-base tracking-wider break-all text-ink">
@@ -350,7 +350,7 @@ export function TwoStep({ required, factors }) {
           </h3>
           <p className="text-ink">
             Each one works once, instead of a code from your app, if you lose your phone. They will
-            not be shown again — the service keeps only a fingerprint of each.
+            not be shown again: the service keeps only a fingerprint of each.
           </p>
           <ul className="grid grid-cols-2 gap-2 font-mono text-sm text-ink sm:grid-cols-3">
             {recoveryCodes.map((recovery) => (

@@ -11,6 +11,8 @@
 import { z } from 'zod'
 
 import { ApiContractError } from './errors.js'
+import { addSampleValues, errorExample } from './openapi-examples.js'
+import { API_DESCRIPTION } from './openapi-intro.js'
 import { pathParamNames, toOpenApiPath } from './path.js'
 import { API_ERRORS, API_TAGS, apiErrorResponseSchema, apiRoutes } from './routes.js'
 
@@ -215,6 +217,9 @@ function buildResponses(route, components) {
       content: {
         'application/json': {
           schema: { $ref: '#/components/schemas/ErrorResponse' },
+          // What the envelope looks like for this status, so the docs do not
+          // invent one from the schema's bounds (`openapi-examples.js`).
+          example: errorExample(error),
         },
       },
     }
@@ -317,7 +322,7 @@ export function buildOpenApiDocument(options = {}) {
   const {
     title = 'The Desi Events API',
     version = '1.0.0',
-    description = 'Ticketing and discovery for South-Asian cultural events.',
+    description = API_DESCRIPTION,
     servers = [{ url: 'http://127.0.0.1:4000', description: 'Local development' }],
     tags = API_TAGS,
     routes = apiRoutes,
@@ -353,7 +358,7 @@ export function buildOpenApiDocument(options = {}) {
     pathItem[method] = buildOperation(route, componentSchemas)
   }
 
-  return {
+  return addSampleValues({
     openapi: OPENAPI_VERSION,
     info: { title, version, description },
     servers: servers.map((server) => ({ ...server })),
@@ -377,7 +382,7 @@ export function buildOpenApiDocument(options = {}) {
         },
       },
     },
-  }
+  })
 }
 
 /**

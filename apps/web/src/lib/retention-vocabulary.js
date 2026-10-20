@@ -9,7 +9,7 @@
  *
  * ## Every number here is a proposal
  *
- * The durations behind these counts are `PROPOSED — REQUIRES LEGAL/PRIVACY
+ * The durations behind these counts are `PROPOSED: REQUIRES LEGAL/PRIVACY
  * REVIEW`. Nobody has approved them. The API attaches that status to each row
  * rather than storing it, and this module renders it beside every figure rather
  * than once at the top of the page, because a number that travels without its
@@ -97,7 +97,7 @@ export const CLASS_DESCRIPTIONS = Object.freeze({
   login_attempt: 'Sign-in attempts, kept for rate limiting rather than for history.',
   session: 'Sessions that have already expired. A spent token is useful to nobody.',
   session_metadata:
-    'The security metadata on a session — a hashed address and a user agent. Presence is counted; the values are never read.',
+    'The security metadata on a session: a hashed address and a user agent. Presence is counted; the values are never read.',
   notification_recipient:
     'Delivered notifications. The evidence worth keeping is that a message went, not who it went to.',
   export_artifact: 'Generated export files.',
@@ -177,7 +177,7 @@ export function summariseSweeps(sweeps) {
     return {
       kind: 'NONE_RECORDED',
       sentence:
-        'No retention rehearsal has been recorded. Nothing has run here — which is not the same as having run and found nothing.',
+        'No retention rehearsal has been recorded. Nothing has run here: which is not the same as having run and found nothing.',
     }
   }
 

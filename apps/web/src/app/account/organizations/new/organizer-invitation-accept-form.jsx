@@ -64,7 +64,7 @@ export const NO_ADDRESS_FROM_NAME =
 
 /** What every code this account cannot use is told, when the API says nothing better. */
 export const UNUSABLE_CODE =
-  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address — sign in with the address the invitation was sent to.'
+  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address. Sign in with the address the invitation was sent to.'
 
 /** What the API says when the web address asked for is another organisation's. */
 export const SLUG_TAKEN = 'That web address is taken by another organisation. Choose another.'
@@ -79,7 +79,7 @@ export const CODE_STILL_GOOD =
 
 /** A link that reads as a link. */
 const LINK =
-  'rounded-sm font-medium text-accent-strong underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'rounded-sm font-medium text-accent-strong underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /**
  * The accept form.

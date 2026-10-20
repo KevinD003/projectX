@@ -24,6 +24,8 @@
  * @module components/workspace-kit
  */
 
+import { buttonClasses, textLinkClasses } from '@desi-event/ui/classes'
+
 import { EventArt } from './event-art.jsx'
 
 /**
@@ -44,30 +46,40 @@ import { EventArt } from './event-art.jsx'
  * The eyebrow is a paragraph, not a heading, so the outline a screen reader
  * lists starts with the title.
  *
+ * In the workspace, from `lg`, the title and its actions stay in view while
+ * the page scrolls: the row sticks under the bar, full width across the
+ * page's gutters on the page's own ground, so "Create an event" or "Download"
+ * is never a scroll away. The description and anything after it scroll
+ * normally. The block itself is `display: contents`, so the row sticks within
+ * the whole page rather than within the header block. Elsewhere (the
+ * attendee's pages) nothing sticks.
+ *
  * @param {PageHeaderProps} props Component props.
  * @returns {JSX.Element} The header block.
  */
 export function PageHeader({ eyebrow, title, description, actions, titleClassName, children }) {
   return (
-    <div
-      data-slot="page-header"
-      className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4"
-    >
-      <div className="max-w-3xl min-w-0">
-        {eyebrow ? (
-          <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h1
-          className={`text-h2 font-semibold text-ink ${eyebrow ? 'mt-2' : ''} ${titleClassName ?? ''}`}
-        >
-          {title}
-        </h1>
-        {description ? <p className="mt-2 text-ink-muted">{description}</p> : null}
-        {children}
+    <div data-slot="page-header" className="contents">
+      <div
+        data-slot="page-header-row"
+        className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 lg:in-data-[page-content=workspace]:sticky lg:in-data-[page-content=workspace]:top-(--chrome-top) lg:in-data-[page-content=workspace]:z-20 lg:in-data-[page-content=workspace]:-mx-10 lg:in-data-[page-content=workspace]:bg-page lg:in-data-[page-content=workspace]:px-10 lg:in-data-[page-content=workspace]:py-3"
+      >
+        <div className="max-w-3xl min-w-0">
+          {eyebrow ? (
+            <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h1
+            className={`text-h2 font-semibold text-ink ${eyebrow ? 'mt-2' : ''} ${titleClassName ?? ''}`}
+          >
+            {title}
+          </h1>
+        </div>
+        {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+      {description ? <p className="mt-2 max-w-3xl text-ink-muted">{description}</p> : null}
+      {children}
     </div>
   )
 }
@@ -129,26 +141,26 @@ export const PANEL = 'rounded-card border border-line bg-surface-raised shadow-c
  *
  * @type {string}
  */
-export const LINK_PANEL = `${PANEL} block h-full p-5 transition-shadow duration-(--duration-base) ease-standard hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2`
+export const LINK_PANEL = `${PANEL} block h-full p-5 transition-shadow duration-(--duration-base) ease-standard hover:shadow-card-hover focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2`
 
 /**
  * The classes for a link drawn as the page's primary button.
  *
  * For navigation that should look like an action — "Create an event" — where
- * a `<button>` would be the wrong element. At least 44px tall.
+ * a `<button>` would be the wrong element. At least 44px tall. The component
+ * library's own button classes, at the medium size, so it matches the
+ * `Button` beside it exactly (`@desi-event/ui/classes`).
  *
  * @type {string}
  */
-export const PRIMARY_LINK =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-action-primary px-4 text-sm font-semibold text-action-primary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2'
+export const PRIMARY_LINK = buttonClasses({ variant: 'primary', size: 'md', element: 'link' })
 
 /**
  * The classes for a link drawn as a secondary button.
  *
  * @type {string}
  */
-export const SECONDARY_LINK =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-control border border-action-secondary-line bg-action-secondary px-4 text-sm font-semibold text-action-secondary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2'
+export const SECONDARY_LINK = buttonClasses({ variant: 'secondary', size: 'md', element: 'link' })
 
 /**
  * The classes for a link in running text or a list.
@@ -158,8 +170,7 @@ export const SECONDARY_LINK =
  *
  * @type {string}
  */
-export const TEXT_LINK =
-  'rounded-sm font-medium text-ink underline decoration-accent-line decoration-2 underline-offset-4 transition-colors duration-(--duration-fast) hover:text-accent-strong hover:decoration-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus'
+export const TEXT_LINK = textLinkClasses({ tone: 'ink' })
 
 /**
  * The classes for the panel a data table sits in.

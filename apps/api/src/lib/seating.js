@@ -264,7 +264,7 @@ export async function claimSeats(tx, { eventSeatIds, holdId }) {
   if (count !== eventSeatIds.length) {
     throw new InventoryError(
       INVENTORY_ERROR_CODES.SEAT_UNAVAILABLE,
-      'Somebody took one of those seats while you were choosing. Your selection has not been reserved — please choose again.',
+      'Somebody took one of those seats while you were choosing. Your selection has not been reserved: please choose again.',
       { requested: eventSeatIds.length, taken: count },
     )
   }
@@ -336,7 +336,7 @@ export async function sellSeats(tx, { holdId, orderItemBySeat }) {
   if (sold !== eventSeatIds.length) {
     throw new InventoryError(
       INVENTORY_ERROR_CODES.SEAT_UNAVAILABLE,
-      'This reservation expired before checkout completed. Nothing has been charged — please choose your seats again.',
+      'This reservation expired before checkout completed. Nothing has been charged: please choose your seats again.',
       { requested: eventSeatIds.length, sold },
     )
   }

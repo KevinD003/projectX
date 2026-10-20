@@ -12,8 +12,8 @@
 import Link from 'next/link'
 
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { Badge, Card, CardBody } from '../../../components/ui.jsx'
-import { PRIMARY_LINK } from '../../../components/workspace-kit.jsx'
+import { Badge, EmptyState } from '../../../components/ui.jsx'
+import { PRIMARY_LINK, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { listVenues } from '../../../lib/organizer-api.js'
 import { authoringOrganizations, readSession } from '../../../lib/session.js'
 
@@ -52,10 +52,7 @@ export default async function OrganizerVenuesPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-            Workspace · Events and venues
-          </p>
-          <h1 className="mt-2 text-h2 font-semibold text-ink">Your venues</h1>
+          <h1 className="text-h2 text-ink">Your venues</h1>
         </div>
         <Link href="/organizer/venues/new" className={PRIMARY_LINK}>
           Add a venue
@@ -72,58 +69,48 @@ export default async function OrganizerVenuesPage() {
       ) : null}
 
       {!failure && organizations.length > 0 && venues.length === 0 ? (
-        <p className="mt-6 text-ink-muted">
-          You have no venues of your own. You can still list an event at a shared venue — adding one
-          here is for a hall you run.
-        </p>
+        <div className="mt-8">
+          <EmptyState
+            title="No venues of your own"
+            description="You can still list an event at a shared venue: choose it when you create the event. Adding a venue here is for a hall you run, with its own seating maps."
+          />
+        </div>
       ) : null}
 
       {venues.length > 0 ? (
-        <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ul data-slot="venue-rows" className="mt-8 divide-y divide-line border-y border-line">
           {venues.map((venue) => (
-            <li key={venue.id}>
-              <Card>
-                <CardBody>
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <h2 className="font-display text-lg font-semibold text-ink">
-                      <Link
-                        href={`/organizer/venues/${venue.id}/maps`}
-                        className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
-                      >
-                        {venue.name}
-                      </Link>
-                    </h2>
-                    {venue.shared ? (
-                      <Badge variant="info" srLabel="Ownership:">
-                        Shared
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {venue.city}
-                    {venue.region ? `, ${venue.region}` : ''}
-                  </p>
-                  {venue.capacity ? (
-                    <p className="mt-2 text-sm text-ink-muted">
-                      Capacity {venue.capacity.toLocaleString('en-US')}
-                    </p>
+            <li
+              key={venue.id}
+              className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:px-3"
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h2 className="font-display text-title leading-snug font-bold break-words text-ink">
+                    <Link href={`/organizer/venues/${venue.id}/maps`} className={TEXT_LINK}>
+                      {venue.name}
+                    </Link>
+                  </h2>
+                  {venue.shared ? (
+                    <Badge variant="info" srLabel="Ownership:">
+                      Shared
+                    </Badge>
                   ) : null}
-                  <p className="mt-4 flex flex-wrap gap-3 text-sm">
-                    <Link
-                      href={`/organizer/venues/${venue.id}/maps`}
-                      className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
-                    >
-                      Seating maps
-                    </Link>
-                    <Link
-                      href={`/organizer/venues/${venue.id}/edit`}
-                      className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
-                    >
-                      Edit details
-                    </Link>
-                  </p>
-                </CardBody>
-              </Card>
+                </div>
+                <p className="mt-1 text-sm text-ink-muted tabular-nums">
+                  {venue.city}
+                  {venue.region ? `, ${venue.region}` : ''}
+                  {venue.capacity ? ` · Capacity ${venue.capacity.toLocaleString('en-US')}` : ''}
+                </p>
+              </div>
+              <p className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                <Link href={`/organizer/venues/${venue.id}/maps`} className={TEXT_LINK}>
+                  Seating maps
+                </Link>
+                <Link href={`/organizer/venues/${venue.id}/edit`} className={TEXT_LINK}>
+                  Edit details
+                </Link>
+              </p>
             </li>
           ))}
         </ul>

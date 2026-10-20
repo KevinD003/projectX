@@ -7,7 +7,7 @@ describe('availabilityLabel', () => {
   it('does not call a seated tier sold out, and says it is not sold on this site', () => {
     // Its quantity is zero by design: a seated tier's stock is its seats.
     expect(availabilityLabel({ reserved: true, availableQuantity: 0, isSoldOut: true })).toEqual({
-      text: 'Seated — not sold on this site',
+      text: 'Seated: not sold on this site',
       variant: 'neutral',
     })
   })

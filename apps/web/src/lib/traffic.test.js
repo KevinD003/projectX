@@ -81,7 +81,7 @@ describe('formatting', () => {
     expect(formatCount(12345)).toBe('12,345')
     expect(formatCount(undefined)).toBe('0')
     expect(formatShare(1, 3)).toBe('33.3%')
-    expect(formatShare(0, 0)).toBe('—')
+    expect(formatShare(0, 0)).toBe('None')
     expect(formatDay('2026-10-01')).toBe('Oct 1')
     expect(formatDay('2026-10-01', { withYear: true })).toBe('Oct 1, 2026')
   })

@@ -45,7 +45,7 @@ export function DoorEventFilter({ organizations, organizationId = '', q = '' }) 
       action="/organizer/check-in"
       role="search"
       aria-label="Find an event"
-      className="mt-6 flex max-w-3xl flex-wrap items-end gap-3 rounded-card border border-line bg-surface-raised p-4 shadow-card"
+      className="mt-6 flex max-w-3xl flex-wrap items-end gap-3 rounded-plate bg-surface-raised p-4"
     >
       <FormField label="Organisation" className="min-w-0 flex-1 basis-56">
         <Select name="organizationId" defaultValue={organizationId}>
@@ -64,7 +64,7 @@ export function DoorEventFilter({ organizations, organizationId = '', q = '' }) 
         <Button type="submit">Show events</Button>
         <Link
           href="/organizer/check-in"
-          className="inline-flex min-h-11 items-center rounded-sm font-medium text-accent-strong underline underline-offset-4 hover:no-underline focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="inline-flex min-h-11 items-center rounded-sm font-medium text-accent-strong underline underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
         >
           Clear
         </Link>

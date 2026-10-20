@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../lib/api-fetch.js', () => ({ apiFetch: vi.fn() }))
@@ -100,6 +100,30 @@ describe('the readiness checklist', () => {
     )
 
     expect(screen.getAllByText('Ready')).toHaveLength(4)
+  })
+
+  it('sets the four checks as one ruled list, a state word and a title per line', () => {
+    const { container } = render(
+      <EventLifecyclePanel
+        event={event}
+        readiness={{ ...ready, ready: false, sellable: ['Nothing is on sale.'] }}
+        transitions={transitions([])}
+        history={[]}
+      />,
+    )
+
+    const list = container.querySelector('[data-slot="readiness"]')
+    const lines = [...list.children]
+
+    expect(list.className).toContain('divide-y')
+    expect(lines.map((line) => line.className)).toEqual(Array(4).fill('py-3'))
+    expect(lines.map((line) => line.querySelector('div').textContent)).toEqual([
+      'Status: ReadyYour organisation is verified',
+      'Status: ReadyThe event is complete',
+      'Status: Not readyThere is something to sell',
+      'Status: ReadyInventory is prepared',
+    ])
+    expect(within(lines[2]).getByText('Nothing is on sale.')).toBeInTheDocument()
   })
 
   it('lists every blocker rather than the first', () => {

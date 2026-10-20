@@ -105,13 +105,13 @@ export default async function VenueMapsPage({ params }) {
       <nav aria-label="Breadcrumb" className="text-sm text-ink-muted">
         <Link
           href="/organizer/venues"
-          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="inline-flex min-h-11 items-center rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
         >
           Your venues
         </Link>
       </nav>
 
-      <h1 className="mt-4 text-h2 font-semibold text-ink">Seating maps — {venue.name}</h1>
+      <h1 className="mt-4 text-h2 font-semibold text-ink">Seating maps at {venue.name}</h1>
       <p className="mt-2 text-ink-muted">
         A map is one way of laying the hall out. Each map keeps every version it has ever had.
       </p>
@@ -159,7 +159,7 @@ export default async function VenueMapsPage({ params }) {
                               <>
                                 <Link
                                   href={`/organizer/map-versions/${version.id}`}
-                                  className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                                  className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                                 >
                                   View layout
                                 </Link>
@@ -168,7 +168,7 @@ export default async function VenueMapsPage({ params }) {
                             ) : (
                               <Link
                                 href={`/organizer/map-versions/${version.id}`}
-                                className="rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                                className="rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                               >
                                 Edit layout
                               </Link>

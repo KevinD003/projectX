@@ -32,7 +32,7 @@ import { InvitationAcceptForm } from './invitation-accept-form.jsx'
 
 /** A link that reads as a link. */
 const LINK =
-  'rounded-sm font-medium text-accent-strong underline underline-offset-4 hover:no-underline focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'rounded-sm font-medium text-accent-strong underline underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /**
  * How a team code reaches the person typing it, per delivery mode.
@@ -61,10 +61,7 @@ export default async function JoinOrganisationPage() {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Your account
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Join an organisation</h1>
+      <h1 className="text-h2 font-semibold text-ink">Join an organisation</h1>
       <p className="mt-2 max-w-2xl text-ink-muted">
         Somebody who runs an organisation on this site has invited you to its team. Type the
         invitation code they gave you. It works once, and only for the email address it was issued
@@ -77,7 +74,7 @@ export default async function JoinOrganisationPage() {
         </Link>
       </p>
       <p className="mt-2 max-w-2xl text-sm text-ink-muted">
-        The code is only ever typed in, never carried in a web address — an address with a secret in
+        The code is only ever typed in, never carried in a web address: an address with a secret in
         it survives in your history and in somebody’s server log long after the invitation is used.
       </p>
 

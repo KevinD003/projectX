@@ -25,7 +25,7 @@ import Link from 'next/link'
 
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
 import { EmptyState } from '../../../components/ui.jsx'
-import { PRIMARY_LINK } from '../../../components/workspace-kit.jsx'
+import { PRIMARY_LINK, PageHeader } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
 import { readSession } from '../../../lib/session.js'
 import {
@@ -45,6 +45,7 @@ import {
   NOT_FOR_THIS_ACCOUNT,
   REFERRAL_CODES_PATH,
   STACKED,
+  STACKED_FRAME,
   STATUS_FILTERS,
   makerName,
   readListFilters,
@@ -57,22 +58,18 @@ export const metadata = { title: 'Referral codes', robots: { index: false, follo
 
 /** The classes of the filter form's selects. */
 const SELECT =
-  'min-h-11 rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'min-h-11 rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /**
  * The heading every state of the page shares.
  *
- * @returns {JSX.Element} The eyebrow and the heading.
+ * @param {object} props Component props.
+ * @param {string} [props.description] The introduction, once the page may be used.
+ * @param {ReactNode} [props.actions] The way to make a code, beside the title.
+ * @returns {JSX.Element} The page header.
  */
-function Heading() {
-  return (
-    <>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Referral codes</h1>
-    </>
-  )
+function Heading({ description, actions }) {
+  return <PageHeader title="Referral codes" description={description} actions={actions} />
 }
 
 /** The columns of "By administrator", after the administrator's own. */
@@ -104,7 +101,7 @@ function ByAdministrator({ rows }) {
       <h2 id="by-administrator-heading" className="text-lg font-semibold text-ink">
         By administrator
       </h2>
-      <div className="mt-3">
+      <div className={`mt-3 ${STACKED_FRAME}`}>
         <table className={STACKED.table}>
           <caption className="sr-only">Referral codes by the administrator who made them</caption>
           <thead className={STACKED.thead}>
@@ -202,13 +199,14 @@ export default async function ReferralCodesPage({ searchParams } = {}) {
 
   return (
     <div>
-      <Heading />
-      <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>
-      <p className="mt-4">
-        <Link href={`${REFERRAL_CODES_PATH}/new`} className={PRIMARY_LINK}>
-          Make a referral code
-        </Link>
-      </p>
+      <Heading
+        description={INTRODUCTION}
+        actions={
+          <Link href={`${REFERRAL_CODES_PATH}/new`} className={PRIMARY_LINK}>
+            Make a referral code
+          </Link>
+        }
+      />
 
       {makers.status === 'rejected' ? (
         <ReadRefusal
@@ -221,7 +219,7 @@ export default async function ReferralCodesPage({ searchParams } = {}) {
       )}
 
       <section aria-labelledby="codes-heading" className="mt-10">
-        <h2 id="codes-heading" className="text-lg font-semibold text-ink">
+        <h2 id="codes-heading" className="text-h3 font-semibold text-ink">
           Codes
         </h2>
         <p className="mt-1 max-w-3xl text-sm text-ink-muted">{LIST_NOTE}</p>

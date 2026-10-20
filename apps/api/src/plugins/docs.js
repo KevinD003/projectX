@@ -10,6 +10,9 @@
  * @module @desi-event/api/plugins/docs
  */
 
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import { buildOpenApiDocument } from '@desi-event/api-contract'
@@ -19,6 +22,100 @@ export const DOCS_ROUTE_PREFIX = '/docs'
 
 /** Where the raw document is served. */
 export const OPENAPI_ROUTE = '/openapi.json'
+
+/** The page title, in the browser tab and the history list. */
+export const DOCS_TITLE = 'The Desi Events API'
+
+/** Where Swagger UI serves a theme's files (`<prefix>/static/theme/<file>`). */
+export const DOCS_THEME_PATH = `${DOCS_ROUTE_PREFIX}/static/theme`
+
+/**
+ * The typefaces the theme sets, by file name, served beside `theme.css` so
+ * its relative `url(./fonts/…)` resolves to this host. Latin subsets of the
+ * web app's own faces (Anek Latin for display, Mukta for text), copied from
+ * the `@fontsource` packages the web app installs, under the SIL Open Font
+ * Licence that sits beside them (`docs-theme/fonts/OFL-*.txt`).
+ */
+export const DOCS_FONT_FILES = Object.freeze([
+  'anek-latin-latin-wdth-normal.woff2',
+  'mukta-latin-400-normal.woff2',
+  'mukta-latin-600-normal.woff2',
+  'mukta-latin-700-normal.woff2',
+])
+
+/**
+ * Read one file of the docs theme. Synchronous on purpose: it runs once,
+ * while the server boots, before it listens.
+ *
+ * @param {string} name A path inside `src/docs-theme/`.
+ * @param {BufferEncoding} [encoding] Text encoding; omit for bytes.
+ * @returns {string|Buffer} The file's contents.
+ */
+function readThemeFile(name, encoding) {
+  return readFileSync(fileURLToPath(new URL(`../docs-theme/${name}`, import.meta.url)), encoding)
+}
+
+/**
+ * The theme for Swagger UI, read from `src/docs-theme/` once.
+ *
+ * Everything is served by this host from the plugin's own theme routes, so
+ * the page's `default-src 'self'` holds and nothing loads from a third party:
+ *
+ * - `theme.css`, the brand: the web app's colours and type, the method
+ *   plates, focus outlines, narrow screens, reduced motion and a dark mode;
+ * - `theme.js`, which adds the viewport declaration the stock page lacks and
+ *   follows the reader's light or dark setting;
+ * - the favicon and the logo in the bar: the brand kit's D
+ *   (`apps/web/public/icons/icon-192.png`) and the logo for a dark ground
+ *   (`apps/web/public/brand/logo-dark-2x.webp`), copied unchanged.
+ *
+ * @returns {{theme: object, logo: object, fonts: Array<{name: string, content: Buffer}>}} The plugin options and the font files.
+ */
+export function loadDocsTheme() {
+  return {
+    theme: {
+      title: DOCS_TITLE,
+      css: [{ filename: 'theme.css', content: readThemeFile('theme.css', 'utf8') }],
+      js: [{ filename: 'theme.js', content: readThemeFile('theme.js', 'utf8') }],
+      favicon: [
+        {
+          filename: 'favicon.png',
+          rel: 'icon',
+          sizes: '192x192',
+          type: 'image/png',
+          content: readThemeFile('favicon.png'),
+        },
+      ],
+    },
+    logo: {
+      type: 'image/webp',
+      content: readThemeFile('logo.webp'),
+      href: DOCS_ROUTE_PREFIX,
+    },
+    fonts: DOCS_FONT_FILES.map((name) => ({ name, content: readThemeFile(`fonts/${name}`) })),
+  }
+}
+
+/**
+ * How Swagger UI behaves, beyond how it looks.
+ *
+ * Every tag starts folded, so the page opens on the introduction and a list
+ * of areas rather than three hundred operations; the filter box finds an
+ * operation by tag; links deep-link to an operation; a request sent from the
+ * page shows how long it took. Authorisation is never persisted: a pasted
+ * token lives only as long as the tab.
+ *
+ * @type {Readonly<object>}
+ */
+export const DOCS_UI_CONFIG = Object.freeze({
+  docExpansion: 'none',
+  deepLinking: true,
+  filter: true,
+  displayRequestDuration: true,
+  defaultModelsExpandDepth: 0,
+  persistAuthorization: false,
+  syntaxHighlight: { activated: true, theme: 'nord' },
+})
 
 /**
  * Build the OpenAPI document for a running instance.
@@ -52,11 +149,27 @@ export async function registerDocs(app, options = {}) {
 
   await app.register(swagger, { mode: 'static', specification: { document } })
 
+  const { theme, logo, fonts } = loadDocsTheme()
+
   await app.register(swaggerUi, {
     routePrefix: DOCS_ROUTE_PREFIX,
     staticCSP: true,
-    uiConfig: { docExpansion: 'list', deepLinking: true },
+    uiConfig: { ...DOCS_UI_CONFIG },
+    theme,
+    logo,
   })
+
+  for (const font of fonts) {
+    app.get(
+      `${DOCS_THEME_PATH}/fonts/${font.name}`,
+      { schema: { hide: true } },
+      (_request, reply) =>
+        reply
+          .header('content-type', 'font/woff2')
+          .header('cache-control', 'public, max-age=31536000, immutable')
+          .send(font.content),
+    )
+  }
 
   app.get(OPENAPI_ROUTE, { schema: {} }, async () => document)
 

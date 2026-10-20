@@ -24,7 +24,7 @@
 import Link from 'next/link'
 import { useId, useState } from 'react'
 
-import { Badge } from '../../../components/ui.jsx'
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { formatInstantIn } from '../../../lib/format.js'
 import { CopyCodeButton } from './copy-code-button.jsx'
@@ -32,6 +32,7 @@ import {
   NO_MATCH,
   REFERRAL_CODES_PATH,
   REFERRAL_EXPIRY_ZONE,
+  STACKED_FRAME_WIDE,
   STACKED_WIDE as STACKED,
   STATUS_WORDS,
   makerName,
@@ -120,7 +121,7 @@ export function ReferralCodeList({ codes, caption }) {
             setFind(changed.target.value)
             setCopied((last) => ({ words: '', said: last.said }))
           }}
-          className="min-h-11 w-72 max-w-full rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="min-h-11 w-72 max-w-full rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
         />
       </div>
 
@@ -129,100 +130,106 @@ export function ReferralCodeList({ codes, caption }) {
       </p>
 
       {shown.length > 0 ? (
-        <table className={STACKED.table}>
-          <caption className="sr-only">{caption}</caption>
-          <thead className={STACKED.thead}>
-            <tr>
-              {[
-                'Code',
-                'Label',
-                'Works for',
-                'Uses',
-                'Booking fees waived',
-                'Expires',
-                'Status',
-                'Made by',
-                'Open',
-              ].map((heading) => (
-                <th key={heading} scope="col" className={STACKED.th}>
-                  {heading}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className={STACKED.tbody}>
-            {shown.map((code) => {
-              const status = STATUS_WORDS[code.status] ?? { label: code.status, tone: 'neutral' }
-              const detail = usesDetail(code)
+        <div className={STACKED_FRAME_WIDE}>
+          <table className={STACKED.table}>
+            <caption className="sr-only">{caption}</caption>
+            <thead className={STACKED.thead}>
+              <tr>
+                {[
+                  'Code',
+                  'Label',
+                  'Works for',
+                  'Uses',
+                  'Booking fees waived',
+                  'Expires',
+                  'Status',
+                  'Made by',
+                  'Open',
+                ].map((heading) => (
+                  <th key={heading} scope="col" className={STACKED.th}>
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className={STACKED.tbody}>
+              {shown.map((code) => {
+                const status = STATUS_WORDS[code.status] ?? { label: code.status, tone: 'neutral' }
+                const detail = usesDetail(code)
 
-              return (
-                <tr key={code.id} className={STACKED.row}>
-                  {/* The text columns may break a long word anywhere: a table
+                return (
+                  <tr key={code.id} className={STACKED.row}>
+                    {/* The text columns may break a long word anywhere: a table
                       column is never narrower than its longest unbreakable
                       word, and one long name or typed code would otherwise
                       push the nine columns past a 1024 px screen. */}
-                  <Cell name="Code">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono wrap-anywhere text-ink">{code.referralCode}</span>
-                      <CopyCodeButton
-                        code={code}
-                        onAnnounce={(words) =>
-                          setCopied((last) => ({ words, said: last.said + 1 }))
-                        }
-                      />
-                    </span>
-                  </Cell>
-                  <Cell name="Label">
-                    {code.label ? (
-                      <span className="wrap-anywhere">{code.label}</span>
-                    ) : (
-                      <span className="text-ink-muted">None</span>
-                    )}
-                  </Cell>
-                  <Cell name="Works for">
-                    <span className="wrap-anywhere">{worksForText(code)}</span>
-                  </Cell>
-                  <Cell name="Uses">
-                    <span className="tabular-nums">{usesText(code)}</span>
-                    {detail ? <span className="block text-xs text-ink-muted">{detail}</span> : null}
-                  </Cell>
-                  <Cell name="Booking fees waived">
-                    <span className="tabular-nums">{waivedText(code.waived)}</span>
-                  </Cell>
-                  <Cell name="Expires">
-                    {code.expiresAt ? (
-                      <time dateTime={code.expiresAt}>
-                        {formatInstantIn(code.expiresAt, REFERRAL_EXPIRY_ZONE)}
-                      </time>
-                    ) : (
-                      <span className="text-ink-muted">Never</span>
-                    )}
-                  </Cell>
-                  <Cell name="Status">
-                    <Badge variant={status.tone} srLabel="Status:">
-                      {status.label}
-                    </Badge>
-                  </Cell>
-                  <Cell name="Made by">
-                    <span className="wrap-anywhere">{makerName(code.createdBy)}</span>
-                  </Cell>
-                  <Cell name="Open">
-                    <Link
-                      href={`${REFERRAL_CODES_PATH}/${encodeURIComponent(code.id)}`}
-                      className={TEXT_LINK}
-                    >
-                      Open
-                      <span className="sr-only">
-                        {' '}
-                        the code {code.label ? `for ${code.label}` : 'without a label'}
+                    <Cell name="Code">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono wrap-anywhere text-ink">
+                          {code.referralCode}
+                        </span>
+                        <CopyCodeButton
+                          code={code}
+                          onAnnounce={(words) =>
+                            setCopied((last) => ({ words, said: last.said + 1 }))
+                          }
+                        />
                       </span>
-                    </Link>
-                  </Cell>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    </Cell>
+                    <Cell name="Label">
+                      {code.label ? (
+                        <span className="wrap-anywhere">{code.label}</span>
+                      ) : (
+                        <span className="text-ink-muted">None</span>
+                      )}
+                    </Cell>
+                    <Cell name="Works for">
+                      <span className="wrap-anywhere">{worksForText(code)}</span>
+                    </Cell>
+                    <Cell name="Uses">
+                      <span className="tabular-nums">{usesText(code)}</span>
+                      {detail ? (
+                        <span className="block text-xs text-ink-muted">{detail}</span>
+                      ) : null}
+                    </Cell>
+                    <Cell name="Booking fees waived">
+                      <span className="tabular-nums">{waivedText(code.waived)}</span>
+                    </Cell>
+                    <Cell name="Expires">
+                      {code.expiresAt ? (
+                        <time dateTime={code.expiresAt}>
+                          {formatInstantIn(code.expiresAt, REFERRAL_EXPIRY_ZONE)}
+                        </time>
+                      ) : (
+                        <span className="text-ink-muted">Never</span>
+                      )}
+                    </Cell>
+                    <Cell name="Status">
+                      <StatusWord tone={status.tone} srLabel="Status:">
+                        {status.label}
+                      </StatusWord>
+                    </Cell>
+                    <Cell name="Made by">
+                      <span className="wrap-anywhere">{makerName(code.createdBy)}</span>
+                    </Cell>
+                    <Cell name="Open">
+                      <Link
+                        href={`${REFERRAL_CODES_PATH}/${encodeURIComponent(code.id)}`}
+                        className={TEXT_LINK}
+                      >
+                        Open
+                        <span className="sr-only">
+                          {' '}
+                          the code {code.label ? `for ${code.label}` : 'without a label'}
+                        </span>
+                      </Link>
+                    </Cell>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   )

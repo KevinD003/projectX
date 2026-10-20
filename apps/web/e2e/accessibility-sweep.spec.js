@@ -1456,12 +1456,16 @@ const PHASE_4_SURFACES = Object.freeze([
     heading: () => 'Your orders',
     title: () => 'Orders',
     async arrived(page) {
-      await expect(page.getByText('Payments on this site are simulated.')).toBeVisible()
+      // The orders page's own notice. The footer plate's line opens with the
+      // same sentence, so the page's is the one in main, word for word.
+      await expect(
+        page.getByRole('main').getByText('Payments on this site are simulated.', { exact: true }),
+      ).toBeVisible()
 
       const card = page.getByRole('listitem').filter({ hasText: commerce.orderReference })
 
       await expect(card.getByRole('link', { name: EVENT_TITLE, exact: true })).toBeVisible()
-      await expect(card).toContainText('Paid — simulated')
+      await expect(card).toContainText('Paid (simulated)')
     },
   },
   {
@@ -1475,7 +1479,7 @@ const PHASE_4_SURFACES = Object.freeze([
         commerce.orderReference,
       )
       await expect(
-        page.getByText('Simulated payment — no card was charged and no money moved.', {
+        page.getByText('Simulated payment: no card was charged and no money moved.', {
           exact: true,
         }),
       ).toBeVisible()
@@ -2269,6 +2273,9 @@ const PHASE_4_SURFACES = Object.freeze([
       await expect(
         page.getByRole('img', { name: 'Page views and visitors per day (UTC)', exact: true }),
       ).toBeVisible()
+      // The per-day table is folded under the chart; opened, it is measured too.
+      await expect(page.getByRole('table', { name: 'Visits per day (UTC)' })).toBeHidden()
+      await page.getByText('Visits per day, as a table', { exact: true }).click()
       await expect(page.getByRole('table', { name: 'Visits per day (UTC)' })).toBeVisible()
       await expect(
         page.getByRole('table', { name: 'Where page views came from', exact: true }),
@@ -2413,16 +2420,16 @@ test.describe.serial('the Phase 2 screens, swept', () => {
       // slot and one question (`seedEventContent`), so the line-up and guest
       // steps are measured with their repeating rows drawn, not empty.
       for (const [step, heading, drawn] of [
-        [/^Step 3\s*Sessions$/u, 'Sessions', null],
-        [/^Step 4\s*Tickets$/u, 'Tickets', null],
-        [/^Step 5\s*Policies and access$/u, 'Policies and access', null],
-        [/^Step 6\s*Media$/u, 'Media', null],
+        [/^Step 3 Sessions$/u, 'Sessions', null],
+        [/^Step 4 Tickets$/u, 'Tickets', null],
+        [/^Step 5 Policies and access$/u, 'Policies and access', null],
+        [/^Step 6 Media$/u, 'Media', null],
         [
-          /^Step 7\s*Line-up and running order$/u,
+          /^Step 7 Line-up and running order$/u,
           'Line-up and running order',
           draftContent.performers[0].name,
         ],
-        [/^Step 8\s*Guest information$/u, 'Guest information', draftContent.faq[0].question],
+        [/^Step 8 Guest information$/u, 'Guest information', draftContent.faq[0].question],
       ]) {
         const button = steps.getByRole('button', { name: step })
 
@@ -2474,7 +2481,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
       const schedule = page
         .getByRole('navigation', { name: 'Editor steps' })
-        .getByRole('button', { name: /^Step 2\s*When and where$/u })
+        .getByRole('button', { name: /^Step 2 When and where$/u })
 
       await schedule.click()
       await expect(schedule).toHaveAttribute('aria-current', 'step')
@@ -2505,7 +2512,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
       const review = page
         .getByRole('navigation', { name: 'Editor steps' })
-        .getByRole('button', { name: /^Step 9\s*Review$/u })
+        .getByRole('button', { name: /^Step 9 Review$/u })
 
       await review.click()
       await expect(review).toHaveAttribute('aria-current', 'step')
@@ -2805,7 +2812,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
         const media = page
           .getByRole('navigation', { name: 'Editor steps' })
-          .getByRole('button', { name: /^Step 6\s*Media$/u })
+          .getByRole('button', { name: /^Step 6 Media$/u })
 
         await media.click()
         await expect(media).toHaveAttribute('aria-current', 'step')
@@ -2952,8 +2959,8 @@ test.describe.serial('the Phase 2 screens, swept', () => {
     // nobody, and there is nothing kept to hand over.
     const row = page.getByRole('row').filter({ hasText: 'analytics' }).first()
 
-    await expect(row).toContainText(/Nobody — aggregate figures only/i)
-    await expect(row).toContainText(/No — streamed and not kept/i)
+    await expect(row).toContainText(/Nobody: aggregate figures only/i)
+    await expect(row).toContainText(/No: streamed and not kept/i)
 
     // And there is no way to get the bytes back.
     expect(await page.locator('a[download], a[href*="export.csv"]').count()).toBe(0)
@@ -3054,6 +3061,129 @@ test.describe.serial('the Phase 2 screens, swept', () => {
     expect(invisible).toEqual([])
 
     await context.close()
+  })
+
+  test('the colour register follows a soft navigation, both ways', async ({ browser }) => {
+    // The root layout sets `data-register` from the request path and is not
+    // rendered again on a client navigation, so a `<Link>` between a public
+    // page and a signed-in area used to leave <body> in the register it was
+    // loaded in. `components/register-sync.jsx` now moves it.
+    const context = await browser.newContext()
+    const page = await context.newPage()
+
+    await signIn(page, seeded.betaOwnerEmail)
+    // Signing in may finish with a full load of the account page; let it
+    // land before counting loads, so only the two moves below are counted.
+    await page.waitForLoadState('load')
+    await expect(page.locator('body')).toHaveAttribute('data-register', 'courtyard')
+
+    // Out: the brand link to the home page is a soft navigation.
+    const loads = []
+    page.on('load', () => loads.push(page.url()))
+    await page
+      .getByRole('banner')
+      .getByRole('link', { name: 'The Desi Events', exact: true })
+      .click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('body')).not.toHaveAttribute('data-register')
+
+    // And back in, through the account menu's link to the wallet.
+    await page.getByRole('button', { name: /, account$/ }).click()
+    await page.getByRole('link', { name: 'My tickets', exact: true }).click()
+    await expect(page).toHaveURL(/\/tickets$/)
+    await expect(page.locator('body')).toHaveAttribute('data-register', 'courtyard')
+
+    // Neither move was a full page load, or this would prove nothing.
+    expect(loads).toEqual([])
+    // And the ground really changed: the courtyard paints its own page colour.
+    const ground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+    await page.goBack()
+    await expect(page.locator('body')).not.toHaveAttribute('data-register')
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe(
+      ground,
+    )
+
+    await context.close()
+  })
+
+  test('a soft navigation crossfades the workspace content, holds the shell still, and runs no transition under reduced motion', async () => {
+    // `components/page-transition.jsx` wraps each shell's content in a view
+    // transition; the theme stops every `::view-transition-*` animation for a
+    // reader who asked for reduced motion. The door case counts running
+    // animations, so a crossfade left running there would fail it; this
+    // proves the rule, and proves the count can see a transition at all.
+    /**
+     * Count, frame by frame for a while, the most view-transition animations
+     * running at once.
+     *
+     * @param {object} page The page.
+     * @returns {Promise<void>} Resolves once counting has started.
+     */
+    const startCounting = (page) =>
+      page.evaluate(() => {
+        window.__viewTransitions = 0
+        const until = performance.now() + 4000
+        const tick = () => {
+          const running = document
+            .getAnimations()
+            .filter(
+              (animation) =>
+                String(animation.effect?.pseudoElement ?? '').startsWith('::view-transition') &&
+                animation.playState === 'running',
+            ).length
+
+          window.__viewTransitions = Math.max(window.__viewTransitions, running)
+          if (performance.now() < until) requestAnimationFrame(tick)
+        }
+
+        requestAnimationFrame(tick)
+      })
+
+    for (const reducedMotion of ['reduce', 'no-preference']) {
+      // The window already signed in: another sign-in here would spend the
+      // credential limiter's budget the cases below need.
+      const page = organiser
+
+      await page.emulateMedia({ reducedMotion })
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await page.goto('/organizer')
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'Organiser workspace', exact: true }),
+      ).toBeVisible()
+
+      const loads = []
+      const counted = () => loads.push(page.url())
+
+      page.on('load', counted)
+      await startCounting(page)
+      await page
+        .getByRole('navigation', { name: 'Workspace', exact: true })
+        .getByRole('link', { name: 'Events', exact: true })
+        .click()
+      await expect(page).toHaveURL((url) => url.pathname === '/organizer/events')
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'Your events', exact: true }),
+      ).toBeVisible()
+      await page.waitForTimeout(600)
+
+      const most = await page.evaluate(() => window.__viewTransitions)
+
+      if (reducedMotion === 'reduce') {
+        expect(most, 'view-transition animations under reduced motion').toBe(0)
+      } else {
+        expect(most, 'the crossfade a soft navigation draws').toBeGreaterThan(0)
+      }
+
+      // A soft navigation, and still one shell: the bar, the page, the footer.
+      page.off('load', counted)
+      expect(loads).toEqual([])
+      await expect(page.getByRole('banner')).toHaveCount(1)
+      await expect(page.getByRole('main')).toHaveCount(1)
+      await expect(page.getByRole('contentinfo')).toHaveCount(1)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+    }
+
+    await organiser.emulateMedia({ reducedMotion: null })
   })
 
   test('the editor can be reached and operated by keyboard alone', async () => {
@@ -3663,7 +3793,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
     }
 
     test('at 320 px the header’s way into the catalogue is reached, opened and walked by keyboard', async () => {
-      // `components/primary-nav.jsx`: below 768 px the four discovery links
+      // `components/primary-nav.jsx`: below 1024 px the four discovery links
       // are not drawn in the header row at all; a disclosure button reveals
       // them. So what a keyboard has to reach is that button, and then the
       // links it reveals — and the focus contract the component states:
@@ -4314,7 +4444,7 @@ test.describe.serial('the Phase 2 screens, swept', () => {
 
           const step = page
             .getByRole('navigation', { name: 'Editor steps' })
-            .getByRole('button', { name: /^Step 4\s*Tickets$/u })
+            .getByRole('button', { name: /^Step 4 Tickets$/u })
 
           await step.click()
           await expect(step).toHaveAttribute('aria-current', 'step')
@@ -5760,7 +5890,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
       .click()
 
     const booked = buyer1.getByRole('status').filter({
-      has: buyer1.getByRole('heading', { name: 'Booked — pay at the door', exact: true }),
+      has: buyer1.getByRole('heading', { name: 'Booked, pay at the door', exact: true }),
     })
 
     await expect(booked).toBeVisible({ timeout: 30_000 })
@@ -5835,9 +5965,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
     // The confirmation never reaches the server: the steward is told to keep
     // the money in hand and retry, and nothing was recorded.
     await scanner.route('**/api/v1/tickets/check-in', (route) => route.abort('failed'))
-    await scanner
-      .getByRole('button', { name: 'Payment taken: $40.00 — admit', exact: true })
-      .click()
+    await scanner.getByRole('button', { name: 'Payment taken: $40.00, admit', exact: true }).click()
     await expect(main).toContainText(
       'No answer from the server. The payment may or may not have been recorded',
     )
@@ -5875,7 +6003,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
 
     await openVenueDoor(scanner, ga.title)
     await lookUp(scanner, venue.cancelledCode)
-    await expect(scanner.getByRole('heading', { name: 'Cancelled — not paid' })).toBeVisible()
+    await expect(scanner.getByRole('heading', { name: 'Cancelled, not paid' })).toBeVisible()
 
     await measuredEverywhere(scanner, 'the door, a ticket cancelled unpaid')
 
@@ -5884,9 +6012,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
 
     await openVenueDoor(scanner, ga.title)
     await lookUp(scanner, paid.code)
-    await scanner
-      .getByRole('button', { name: 'Payment taken: $40.00 — admit', exact: true })
-      .click()
+    await scanner.getByRole('button', { name: 'Payment taken: $40.00, admit', exact: true }).click()
     await expect(main).toContainText('Admitted. Payment recorded: $40.00.')
   })
 
@@ -6008,7 +6134,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
       [
         buyer3,
         venue.b3Ga,
-        'Passed on — its new holder pays $40.00 at the door',
+        'Passed on, its new holder pays $40.00 at the door',
         'an order paid at the door, with a ticket passed on',
       ],
       [
@@ -6046,7 +6172,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue, swep
 
     await buyer2.setViewportSize({ width: 1280, height: 900 })
     await buyer2.goto('/tickets')
-    await expect(buyer2.locator('main')).toContainText('Cancelled — not paid')
+    await expect(buyer2.locator('main')).toContainText('Cancelled, not paid')
 
     await measuredEverywhere(buyer2, 'the wallet, with a ticket cancelled unpaid')
   })

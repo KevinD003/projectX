@@ -29,20 +29,18 @@
 
 import Link from 'next/link'
 
-import { GarbaRings } from '../../components/festive-decor.jsx'
-import { Stagger, StaggerItem } from '../../components/motion.jsx'
 import { Empty } from '../../components/page-state.jsx'
 import { PageHero } from '../../components/page-hero.jsx'
 import { SampleDataNotice } from '../../components/sample-data-notice.jsx'
 import { deriveOrganizers, organizerCountLabel } from '../../lib/directory.js'
-import { initialOf } from '../../lib/initial.js'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Organisers',
   description:
-    'The collectives and promoters with upcoming garba, dandiya and Navratri events listed on The Desi Events — open one to see everything they have on.',
+    'The collectives and promoters with events coming up on The Desi Events: concerts, comedy, Durga Puja, garba and more. Open one to see everything they have on.',
+  alternates: { canonical: '/organizers' },
 }
 
 /**
@@ -82,13 +80,11 @@ export default async function OrganizersPage() {
     <div>
       <PageHero
         headingId="organisers-heading"
-        eyebrow="Organisers"
         title="Who is putting on the nights"
-        lead="These are the organisers with upcoming events listed on The Desi Events, and how many each has coming up. Open one to see what they have on and their refund policy."
-        art={<GarbaRings className="h-[30rem] w-[30rem]" />}
+        lead="The organisers with upcoming events listed on The Desi Events, and how many each has coming up. Open one to see what they have on and how they handle refunds."
       />
 
-      <div className="mx-auto max-w-content px-4 pt-10 sm:px-6">
+      <div className="mx-auto max-w-content px-4 pt-2 pb-20 sm:px-6 lg:pb-28">
         <SampleDataNotice show={directory.usedFallback} className="mb-6" />
 
         {coverage ? (
@@ -103,39 +99,29 @@ export default async function OrganizersPage() {
             description="An organiser appears here while at least one of their upcoming events is listed."
           />
         ) : (
-          <Stagger
-            as="ul"
+          <ul
             aria-label="Organisers"
-            className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 border-t-2 border-ink md:grid-cols-2 md:gap-x-12"
           >
             {directory.organizers.map((organizer) => (
-              <StaggerItem
-                as="li"
+              <li
                 key={organizer.slug}
-                className="flex items-start gap-4 rounded-card bg-surface-raised p-6 shadow-card"
+                className="flex items-baseline justify-between gap-4 border-b border-line py-4"
               >
-                <span
-                  aria-hidden="true"
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft font-display text-xl font-bold text-accent-strong"
-                >
-                  {initialOf(organizer.name)}
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-h3 font-semibold text-ink">
-                    <Link
-                      href={`/organizers/${encodeURIComponent(organizer.slug)}`}
-                      className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 hover:text-accent-strong hover:underline"
-                    >
-                      {organizer.name}
-                    </Link>
-                  </h2>
-                  <p className="text-sm text-ink-muted">
-                    {organizerCountLabel(organizer.eventCount)}
-                  </p>
-                </div>
-              </StaggerItem>
+                <h2 className="min-w-0 text-h3 text-ink sm:text-h2">
+                  <Link
+                    href={`/organizers/${encodeURIComponent(organizer.slug)}`}
+                    className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 transition-[color,font-stretch] duration-(--duration-base) ease-out hover:text-accent-strong hover:underline motion-safe:pointer-fine:hover:[font-stretch:100%]"
+                  >
+                    {organizer.name}
+                  </Link>
+                </h2>
+                <p className="shrink-0 text-right text-caption text-ink-muted tabular-nums sm:text-label">
+                  {organizerCountLabel(organizer.eventCount)}
+                </p>
+              </li>
             ))}
-          </Stagger>
+          </ul>
         )}
       </div>
     </div>

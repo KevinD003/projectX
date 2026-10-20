@@ -162,7 +162,7 @@ export function describeConnectRefusal(error) {
     return {
       title: 'That step is not available',
       detail:
-        'The simulation is not in a state this step can be taken from — either it has moved on since this page was loaded, or it has reached the last step it offers.',
+        'The simulation is not in a state this step can be taken from: either it has moved on since this page was loaded, or it has reached the last step it offers.',
       recoverable: true,
     }
   }

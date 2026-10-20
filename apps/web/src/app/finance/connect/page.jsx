@@ -88,10 +88,7 @@ export default async function ConnectPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Money
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Payout setup</h1>
+      <h1 className="text-h2 font-semibold text-ink">Payout setup</h1>
 
       <p
         role="note"
@@ -114,7 +111,7 @@ export default async function ConnectPage({ searchParams }) {
                   <Link
                     href={`/finance/connect?organizationId=${encodeURIComponent(organization.organizationId)}`}
                     aria-current={current ? 'page' : undefined}
-                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
+                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
                       current
                         ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
                         : 'border border-line-strong bg-surface-raised text-ink hover:bg-surface-subtle'
@@ -182,7 +179,7 @@ export default async function ConnectPage({ searchParams }) {
               way to bring it into view without a pointer.
             */}
             <div
-              className={`mt-4 ${TABLE_FRAME} focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:outline-none`}
+              className={`mt-4 ${TABLE_FRAME} focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2`}
               tabIndex={0}
               role="region"
               aria-labelledby="detail-heading"

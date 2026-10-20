@@ -26,10 +26,13 @@
 
 import Link from 'next/link'
 
+import { formatInstantIn } from '../lib/format.js'
+
 /**
  * @typedef {object} BreadcrumbsProps
  * @property {Array<{href: string|null, label: string}>} trail Oldest ancestor first, current page last.
  * @property {'default'|'inverse'} [tone] `inverse` for a trail drawn on a night band.
+ * @property {boolean} [structured] Mark the trail up as a schema.org `BreadcrumbList` for search engines (public pages).
  */
 
 /** The trail's colours, per ground. Every pairing is a measured one. */
@@ -51,20 +54,40 @@ const CRUMB_TONES = Object.freeze({
 /**
  * Where this page sits.
  *
+ * With `structured`, the trail carries schema.org microdata, a
+ * `BreadcrumbList` of `ListItem`s, in the markup that is already on screen
+ * rather than in a second copy a search engine might read differently. A
+ * crumb's link is its `item` (a reader resolves the `href` against the page);
+ * the current page, last, has a name and a position and no link, as the
+ * vocabulary allows.
+ *
  * @param {BreadcrumbsProps} props Component props.
  * @returns {JSX.Element} The trail.
  */
-export function Breadcrumbs({ trail, tone = 'default' }) {
+export function Breadcrumbs({ trail, tone = 'default', structured = false }) {
   const colours = CRUMB_TONES[tone] ?? CRUMB_TONES.default
+  const list = structured ? { itemScope: true, itemType: 'https://schema.org/BreadcrumbList' } : {}
 
   return (
     <nav aria-label="Breadcrumb" className="text-sm">
-      <ol className={`flex flex-wrap items-center gap-x-2 ${colours.list}`}>
+      <ol className={`flex flex-wrap items-center gap-x-2 ${colours.list}`} {...list}>
         {trail.map((crumb, index) => {
           const last = index === trail.length - 1
+          const item = structured
+            ? {
+                itemProp: 'itemListElement',
+                itemScope: true,
+                itemType: 'https://schema.org/ListItem',
+              }
+            : {}
+          const name = structured ? { itemProp: 'name' } : {}
 
           return (
-            <li key={`${crumb.label}-${index}`} className="flex min-w-0 items-center gap-2">
+            <li
+              key={`${crumb.label}-${index}`}
+              className="flex min-w-0 items-center gap-2"
+              {...item}
+            >
               {index > 0 ? (
                 <span aria-hidden="true" className={colours.separator}>
                   /
@@ -74,17 +97,20 @@ export function Breadcrumbs({ trail, tone = 'default' }) {
                 <Link
                   href={crumb.href}
                   className={`inline-flex min-h-11 items-center rounded-sm font-semibold underline underline-offset-4 ${colours.link}`}
+                  {...(structured ? { itemProp: 'item' } : {})}
                 >
-                  {crumb.label}
+                  <span {...name}>{crumb.label}</span>
                 </Link>
               ) : (
                 <span
                   aria-current={last ? 'page' : undefined}
                   className={`font-semibold ${colours.current}`}
+                  {...name}
                 >
                   {crumb.label}
                 </span>
               )}
+              {structured ? <meta itemProp="position" content={String(index + 1)} /> : null}
             </li>
           )
         })}
@@ -137,7 +163,7 @@ export function Failure({ what, detail }) {
       role="status"
       className="mt-6 rounded-card border border-status-danger/25 bg-status-danger-soft p-4 text-sm text-status-danger"
     >
-      {what} could not be loaded.{detail ? ` ${asSentence(detail)}` : ''} Nothing here is stale — it
+      {what} could not be loaded.{detail ? ` ${asSentence(detail)}` : ''} Nothing here is stale: it
       is absent, and a figure guessed from a cache would be worse than none.
     </p>
   )
@@ -164,7 +190,7 @@ export function Forbidden({ area, backHref = '/', backLabel = 'Back to the site'
       <h1 className="text-h2 font-semibold text-ink">Not for you</h1>
       <p className="mt-2 text-ink-muted">
         {area} is not something this account can open. If you think it should be, ask whoever runs
-        the organisation — nothing on this page can grant it to you.
+        the organisation: nothing on this page can grant it to you.
       </p>
       <p className="mt-4">
         <Link
@@ -228,7 +254,8 @@ export function Loading({ label }) {
 
 /**
  * @typedef {object} StaleProps
- * @property {string} asOf When the data was read, already formatted.
+ * @property {string} asOf When the data was read: an ISO-8601 instant, which is shown to
+ *   the reader in words ("Oct 19, 2026, 7:13 PM UTC") and kept whole in `dateTime`.
  */
 
 /**
@@ -244,8 +271,8 @@ export function Loading({ label }) {
 export function AsOf({ asOf }) {
   return (
     <p className="mt-2 text-sm text-ink-muted">
-      Read at <time dateTime={asOf}>{asOf}</time>. This page does not refresh itself; reload it to
-      see anything that has changed since.
+      Read at <time dateTime={asOf}>{formatInstantIn(asOf) ?? asOf}</time>. This page does not
+      refresh itself; reload it to see anything that has changed since.
     </p>
   )
 }

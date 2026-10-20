@@ -442,7 +442,7 @@ export const workerEnvSchema = z.object({
    * Whether retention enforcement has been activated in this environment.
    *
    * Defaults to off and is expected to stay off. The durations a sweep would
-   * apply are `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`, so an environment
+   * apply are `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`, so an environment
    * that has not been told otherwise refuses to execute and records
    * `SKIPPED_DISABLED` — the state the schema already anticipated and nothing
    * previously implemented.

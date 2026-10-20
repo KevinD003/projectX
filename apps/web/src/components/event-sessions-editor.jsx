@@ -340,7 +340,7 @@ export function EventSessionsEditor({
         // as a failure. A general-admission session counts a quantity; there
         // are no seat rows, and inventing some would create rows nothing reads.
         setNotice(
-          'This session is general admission, so there are no seats to prepare — its capacity is its inventory. Give it a published seating map to sell reserved seats.',
+          'This session is general admission, so there are no seats to prepare: its capacity is its inventory. Give it a published seating map to sell reserved seats.',
         )
         return
       }
@@ -455,7 +455,7 @@ export function EventSessionsEditor({
                         </h3>
                         <p className="mt-1 text-sm text-ink-muted">
                           {toLocalInputValue(session.startsAt, session.timezone).replace('T', ' ')}{' '}
-                          — {toLocalInputValue(session.endsAt, session.timezone).replace('T', ' ')}{' '}
+                          to {toLocalInputValue(session.endsAt, session.timezone).replace('T', ' ')}{' '}
                           <span className="text-ink-muted">
                             ({session.timezone}{' '}
                             {zoneAbbreviation(session.timezone, new Date(session.startsAt))})

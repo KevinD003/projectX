@@ -49,6 +49,23 @@ describe('PageHeader', () => {
     expect(screen.getByRole('link', { name: 'Download' })).toBeTruthy()
   })
 
+  it('keeps the title and its actions in view in the workspace, and nowhere else', () => {
+    render(<PageHeader title="Your events" actions={<a href="/new">Create an event</a>} />)
+
+    const row = screen.getByRole('heading', { level: 1 }).closest('[data-slot="page-header-row"]')
+
+    // Sticky under the workspace's bar from lg, on the page's own ground; the
+    // attendee's pages are not marked `workspace`, so nothing sticks there.
+    expect(row.className).toContain('lg:in-data-[page-content=workspace]:sticky')
+    expect(row.className).toContain('lg:in-data-[page-content=workspace]:top-(--chrome-top)')
+    expect(row.className).toContain('lg:in-data-[page-content=workspace]:bg-page')
+    expect(row.className).not.toMatch(/(^|\s)sticky(\s|$)/u)
+    expect(row).toContainElement(screen.getByRole('link', { name: 'Create an event' }))
+    // The block itself is `display: contents`, so the row sticks within the page.
+    expect(row.parentElement.getAttribute('data-slot')).toBe('page-header')
+    expect(row.parentElement.className).toBe('contents')
+  })
+
   it('draws no eyebrow and no empty description when none is given', () => {
     const { container } = render(<PageHeader title="Your account" />)
 
@@ -102,7 +119,7 @@ describe('PosterThumb', () => {
     const thumb = container.querySelector('[data-slot="poster-thumb"]')
 
     expect(thumb.getAttribute('aria-hidden')).toBe('true')
-    expect(thumb.querySelector('svg[data-slot="poster"]')).not.toBeNull()
+    expect(thumb.querySelector('[data-slot="poster"]')).not.toBeNull()
     // Hidden, so it is not announced as an image before the card's heading.
     expect(screen.queryByRole('img')).toBeNull()
   })
@@ -128,7 +145,7 @@ describe('PosterThumb', () => {
 
     const thumb = container.querySelector('[data-slot="poster-thumb"]')
 
-    expect(thumb.querySelector('svg[data-slot="poster"]')).toBeNull()
+    expect(thumb.querySelector('[data-slot="poster"]')).toBeNull()
     expect(thumb.querySelector('img')).toHaveAttribute('alt', '')
     expect(screen.queryByRole('img')).toBeNull()
   })
@@ -140,11 +157,16 @@ describe('class sets', () => {
     ['SECONDARY_LINK', SECONDARY_LINK],
   ])('%s is a 44px target with a visible focus ring', (_name, classes) => {
     expect(classes).toContain('min-h-11')
-    expect(classes).toContain('focus-visible:ring-focus')
+    // An outline, which forced-colours mode keeps; a box-shadow ring it drops.
+    expect(classes).toContain('focus-visible:outline-2')
+    expect(classes).toContain('focus-visible:outline-focus')
+    expect(classes).not.toMatch(/focus-visible:(ring-|outline-none)/)
   })
 
-  it('draws a focus ring round a destination card', () => {
-    expect(LINK_PANEL).toContain('focus-visible:ring-focus')
+  it('draws a focus outline round a destination card', () => {
+    expect(LINK_PANEL).toContain('focus-visible:outline-2')
+    expect(LINK_PANEL).toContain('focus-visible:outline-focus')
+    expect(LINK_PANEL).not.toMatch(/focus-visible:(ring-|outline-none)/)
   })
 
   it('lets a framed table scroll inside itself rather than widen the page', () => {

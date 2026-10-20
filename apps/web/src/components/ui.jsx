@@ -19,6 +19,15 @@
  * presentational leaves are hydrated on the client; the alternative is
  * reimplementing them, which would be worse.
  *
+ * It re-exports the light primitives only (`@desi-event/ui/primitives`).
+ * Every route loads this module, so whatever it names is in every route's
+ * first chunk: when it named the whole library, Base UI (behind Popover, Menu
+ * and Tooltip) and Sonner (behind a Toaster nothing called) shipped to the
+ * home page for the sake of one header popover. Those layers are imported
+ * from their own subpaths (`@desi-event/ui/popover`, `/menu`, `/tooltip`,
+ * `/toast`) by the few components that draw them, and the header's search
+ * loads its popover only when first asked for (`header-search.jsx`).
+ *
  * @module components/ui
  */
 
@@ -26,19 +35,26 @@ export {
   Alert,
   Badge,
   Button,
+  ButtonLink,
   Card,
   CardBody,
   CardFooter,
   CardHeader,
   EmptyState,
   FormField,
+  Icon,
   Input,
+  Kbd,
   Label,
   Modal,
+  SegmentedControl,
   Select,
+  Sheet,
   Skeleton,
   Spinner,
+  Stat,
   StatusIcon,
+  TextLink,
   Textarea,
   VisuallyHidden,
-} from '@desi-event/ui'
+} from '@desi-event/ui/primitives'

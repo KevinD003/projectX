@@ -360,6 +360,43 @@ describe('loadCatalogueOverview', () => {
 
     expect(list.mock.calls[0][0]).toMatchObject({ page: 1, perPage: 48 })
   })
+
+  it('reads from a day before now, so finished nights cannot fill the page and a night on now stays', async () => {
+    const list = vi.fn().mockResolvedValue(liveListing)
+
+    await loadCatalogueOverview({
+      client: stubClient({ list }),
+      now: new Date('2026-10-19T21:00:00.000Z'),
+    })
+
+    expect(list.mock.calls[0][0]).toMatchObject({
+      sort: 'startsAt:asc',
+      startsAfter: '2026-10-18T21:00:00.000Z',
+    })
+  })
+
+  it('asks for no start bound on an ordinary listing read', async () => {
+    const list = vi.fn().mockResolvedValue(liveListing)
+
+    await loadEventList({ page: 2 }, { client: stubClient({ list }) })
+
+    expect(list.mock.calls[0][0]).not.toHaveProperty('startsAfter')
+    expect(list.mock.calls[0][0]).not.toHaveProperty('startsBefore')
+  })
+
+  it('passes a window bounded on both sides through as the API spells it', async () => {
+    const list = vi.fn().mockResolvedValue(liveListing)
+
+    await loadEventList(
+      { startsAfter: '2026-10-18T21:00:00.000Z', startsBefore: '2026-10-19T21:00:00.000Z' },
+      { client: stubClient({ list }) },
+    )
+
+    expect(list.mock.calls[0][0]).toMatchObject({
+      startsAfter: '2026-10-18T21:00:00.000Z',
+      startsBefore: '2026-10-19T21:00:00.000Z',
+    })
+  })
 })
 
 describe('withTicketTypeAvailability', () => {

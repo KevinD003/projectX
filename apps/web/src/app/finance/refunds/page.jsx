@@ -54,7 +54,7 @@ import { ModeBanner, ScrollableTable } from '../../../components/money-figure.js
 import { AsOf, Breadcrumbs, Empty } from '../../../components/page-state.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
 import { getFinanceSummary } from '../../../lib/organizer-api.js'
-import { formatPrice } from '../../../lib/pricing.js'
+import { formatAmount } from '../../../lib/pricing.js'
 import { membershipsWith, readSession } from '../../../lib/session.js'
 import {
   LIST_PAGE_SIZE,
@@ -90,7 +90,7 @@ const STATUSES = Object.freeze({
   REQUESTED: { label: 'Requested', tone: 'pending' },
   APPROVED: { label: 'Approved', tone: 'pending' },
   SUBMITTED: { label: 'Submitted', tone: 'info' },
-  SUCCEEDED: { label: 'Settled — simulated', tone: 'success' },
+  SUCCEEDED: { label: 'Settled: simulated', tone: 'success' },
   DECLINED: { label: 'Declined', tone: 'danger' },
   FAILED: { label: 'Failed', tone: 'danger' },
   TIMEOUT: { label: 'Timeout', tone: 'warning' },
@@ -108,15 +108,15 @@ const TD = 'border-b border-line px-3 py-3 align-top text-ink'
 
 /** A filter control. */
 const CONTROL =
-  'min-h-11 rounded-control border border-line-strong bg-surface px-3.5 py-2 text-base text-ink shadow-control sm:text-sm focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'min-h-11 rounded-control border border-line-strong bg-surface px-3.5 py-2 text-base text-ink shadow-control sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /** A quiet text link. */
 const LINK =
-  'rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /** "Clear the filters": a quiet link, with a 44-pixel target. */
 const CLEAR_LINK =
-  'inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-ink underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-ink underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /**
  * A count with its noun, singular or plural.
@@ -255,7 +255,7 @@ export default async function RefundListPage({ searchParams }) {
         <p className="mt-4 max-w-3xl rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink">
           Refunds are listed one organisation at a time, and this account holds finance access in no
           organisation, so there is no list to show here. If it should, ask whoever runs the
-          organisation — nothing on this page can grant it.
+          organisation: nothing on this page can grant it.
         </p>
       </div>
     )
@@ -362,7 +362,7 @@ export default async function RefundListPage({ searchParams }) {
         </div>
         <button
           type="submit"
-          className="inline-flex min-h-11 items-center justify-center rounded-control bg-action-primary px-4 text-sm font-semibold text-action-primary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-primary-hover focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="inline-flex min-h-11 items-center justify-center rounded-control bg-action-primary px-4 text-sm font-semibold text-action-primary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-primary-hover focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2"
         >
           Apply
         </button>
@@ -375,8 +375,8 @@ export default async function RefundListPage({ searchParams }) {
 
       {badReference ? (
         <p className="mt-3 text-sm text-ink-muted">
-          That order reference is not in the form references take — letters, digits and dashes, 4 to
-          32 of them — so the list is not narrowed by it.
+          That order reference is not in the form references take (letters, digits and dashes, 4 to
+          32 of them) so the list is not narrowed by it.
         </p>
       ) : null}
 
@@ -441,7 +441,7 @@ export default async function RefundListPage({ searchParams }) {
 
                   return (
                     <tr key={refund.id}>
-                      <th scope="row" className={`${TD} font-normal`}>
+                      <th scope="row" className={`${TD} text-left font-normal`}>
                         <Link
                           href={`/finance/refunds/${encodeURIComponent(refund.id)}`}
                           className={`${LINK} font-medium`}
@@ -451,7 +451,7 @@ export default async function RefundListPage({ searchParams }) {
                         </Link>
                       </th>
                       <td className={`${TD} text-right tabular-nums`}>
-                        {formatPrice(refund.amountCents, refund.currency)}
+                        {formatAmount(refund.amountCents, refund.currency)}
                       </td>
                       <td className={TD}>
                         <span
@@ -469,14 +469,14 @@ export default async function RefundListPage({ searchParams }) {
                       </td>
                       <td className={`${TD} text-ink-muted`}>
                         <time dateTime={refund.createdAt}>
-                          {formatInstant(refund.createdAt) ?? '—'}
+                          {formatInstant(refund.createdAt) ?? 'Not recorded'}
                         </time>
                       </td>
                       <td className={`${TD} text-ink-muted`}>
                         {refund.updatedAt ? (
                           <time dateTime={refund.updatedAt}>{formatInstant(refund.updatedAt)}</time>
                         ) : (
-                          '—'
+                          'Not changed'
                         )}
                       </td>
                     </tr>

@@ -10,7 +10,7 @@
  *     against this file, because the claim is about the whole API.
  *   - **No payload carries a worker's identity.** `leaseOwner` names a process.
  *   - **No number travels without its approval status.** Every row says
- *     `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`, including one written before
+ *     `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`, including one written before
  *     the class had a proposal at all.
  *
  * @module @desi-event/api/tests/retention-sweeps.test

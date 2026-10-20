@@ -191,7 +191,7 @@ describe('the body it sends', () => {
 
 describe('a session in a select', () => {
   it('reads as a day and a time where it is held', () => {
-    expect(sessionLabel(SEATED, 1)).toBe('Session 2 — Tue, Oct 5, 6:00 PM CDT')
-    expect(sessionLabel({ ...GA, label: 'Night 1' }, 0)).toBe('Night 1 — Mon, Oct 4, 7:00 PM EDT')
+    expect(sessionLabel(SEATED, 1)).toBe('Session 2: Tue, Oct 5, 6:00 PM CDT')
+    expect(sessionLabel({ ...GA, label: 'Night 1' }, 0)).toBe('Night 1: Mon, Oct 4, 7:00 PM EDT')
   })
 })

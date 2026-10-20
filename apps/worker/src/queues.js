@@ -342,7 +342,7 @@ export function enqueueIndexEvent(queues, payload, options = {}) {
  *
  * There is deliberately no scheduler calling this. A retention sweep that runs
  * on a timer is the first step towards a retention sweep that deletes on a
- * timer, and every duration it would apply is `PROPOSED — REQUIRES
+ * timer, and every duration it would apply is `PROPOSED: REQUIRES
  * LEGAL/PRIVACY REVIEW`. Somebody has to ask for each run, on purpose.
  *
  * What the run then does is decided by the worker, not by the caller:

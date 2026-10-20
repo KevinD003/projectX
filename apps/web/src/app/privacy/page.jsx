@@ -92,10 +92,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Privacy requests</h1>
+        <h1 className="text-h2 font-semibold text-ink">Privacy requests</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           Erasures raised in this organisation. A request changes nothing until somebody types back
           the phrase the server issued, and what it can reach is limited to this
@@ -120,7 +117,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
       {requests && requests.length === 0 ? (
         <Empty
           title="No requests"
-          description="Nothing has been raised in this organisation. That is the expected resting state — an empty queue is not a broken one."
+          description="Nothing has been raised in this organisation. That is the expected resting state: an empty queue is not a broken one."
         />
       ) : null}
 
@@ -160,7 +157,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
                     <td className="py-3 pr-4">
                       <Link
                         href={`/privacy/requests/${request.id}?organizationId=${selected.organizationId}`}
-                        className="rounded-sm font-mono text-xs break-all underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                        className="rounded-sm font-mono text-xs break-all underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                       >
                         {request.subjectId}
                       </Link>
@@ -179,7 +176,7 @@ export default async function PrivacyRequestsPage({ searchParams }) {
                     </td>
                     <td className="py-3 text-ink-muted">
                       {outcomeLabel(request.outcomeCode) ?? (
-                        <span className="text-ink-subtle">—</span>
+                        <span className="text-ink-subtle">None yet</span>
                       )}
                     </td>
                   </tr>

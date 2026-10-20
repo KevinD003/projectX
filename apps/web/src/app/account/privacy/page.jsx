@@ -44,7 +44,7 @@ export const metadata = { title: 'Privacy', robots: { index: false, follow: fals
 
 /** Classes for an in-text link. */
 const LINK =
-  'font-medium text-accent-strong underline underline-offset-2 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-sm'
+  'font-medium text-accent-strong underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus rounded-sm'
 
 /**
  * A titled block of the page.
@@ -76,9 +76,10 @@ function Section({ id, title, children }) {
  */
 function Unavailable({ title, children }) {
   return (
-    <li className="rounded-card border border-line bg-surface-raised shadow-card p-4">
+    <li className="border-b border-line py-4">
       <p className="font-semibold text-ink">
-        {title} <span className="font-normal text-ink-muted">— not available in this build.</span>
+        {title}
+        <span className="font-normal text-ink-muted">: not available in this build.</span>
       </p>
       <p className="mt-1 text-sm text-ink-muted">{children}</p>
     </li>
@@ -93,10 +94,7 @@ function Unavailable({ title, children }) {
 export default function AccountPrivacyPage() {
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Your account
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Privacy</h1>
+      <h1 className="text-h2 font-semibold text-ink">Privacy</h1>
       <p className="mt-2 max-w-prose text-ink-muted">
         What this site keeps about you, who can see it, and what you can change from here.
       </p>
@@ -117,8 +115,7 @@ export default function AccountPrivacyPage() {
           </li>
           <li>
             Where you are signed in: when each session started and was last used, which browser it
-            was, and a scrambled form of the network address it came from — never the address
-            itself.
+            was, and a scrambled form of the network address it came from, never the address itself.
           </li>
         </ul>
       </Section>
@@ -163,7 +160,7 @@ export default function AccountPrivacyPage() {
       </Section>
 
       <Section id="privacy-missing" title="What cannot be done from here">
-        <ul className="space-y-3">
+        <ul className="mt-2 max-w-prose border-t border-line">
           <Unavailable title="Download a copy of your data">
             There is no self-service export. Your orders, tickets and sessions are each listed on
             their own page.
@@ -181,7 +178,7 @@ export default function AccountPrivacyPage() {
             password cannot be reset from this site. An invitation or a ticket offer comes with a
             code: shown once to whoever made it, who passes it on to you themselves, unless this
             site’s operator has set up a mail server to email it to you. What an email would have
-            told you — an order, a ticket, an offer — is on these pages instead.
+            told you (an order, a ticket, an offer) is on these pages instead.
           </Unavailable>
           <Unavailable title="Automatic deletion after a set time">
             Nothing about you, your orders or your tickets is deleted on a schedule. The retention

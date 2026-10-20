@@ -24,7 +24,6 @@
 import Link from 'next/link'
 import { Fragment } from 'react'
 
-import { Diamond, MirrorDivider } from '../../components/festive-decor.jsx'
 import { TEXT_LINK } from '../../components/link-classes.js'
 import { PageHero } from '../../components/page-hero.jsx'
 import { LIMITATIONS, meaningParts } from '../../lib/limitations.js'
@@ -33,6 +32,7 @@ export const metadata = {
   title: 'What this site does not do',
   description:
     'The capabilities this build of The Desi Events does not have, with the status of each and what it means for you.',
+  alternates: { canonical: '/limitations' },
 }
 
 /** Classes for an in-text link. */
@@ -102,22 +102,21 @@ export default function LimitationsPage() {
     <div>
       <PageHero
         headingId="limitations-heading"
-        eyebrow="Plainly"
         title="What this site does not do"
         lead="The Desi Events is a demonstration build. These are the things somebody might expect of a ticketing site that this one does not do, what each one’s status is, and what happens instead."
       />
 
-      <div className="mx-auto max-w-3xl px-4 pt-12 sm:px-6">
-        <ul className="space-y-4">
+      <div className="mx-auto max-w-content px-4 pt-2 pb-20 sm:px-6 lg:pb-28">
+        <ul className="border-t-2 border-ink">
           {LIMITATIONS.map((limitation) => (
             <li
               key={limitation.id}
               id={limitation.id}
               aria-labelledby={`limitation-${limitation.id}`}
-              className="scroll-mt-28 rounded-card bg-surface-raised p-6 shadow-card"
+              className="grid scroll-mt-24 grid-cols-1 gap-x-12 gap-y-2 border-b border-line py-6 lg:grid-cols-[20rem_minmax(0,1fr)]"
             >
-              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-                <h2 id={`limitation-${limitation.id}`} className="text-h3 font-semibold text-ink">
+              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 lg:flex-col lg:justify-start">
+                <h2 id={`limitation-${limitation.id}`} className="text-h3 text-ink">
                   {limitation.name}
                 </h2>
                 <p className="text-sm">
@@ -127,7 +126,7 @@ export default function LimitationsPage() {
                   </span>
                 </p>
               </div>
-              <p className="mt-3 max-w-prose text-ink">
+              <p className="max-w-prose text-ink">
                 {meaningParts(limitation).map((run, index) =>
                   run.href ? (
                     <a key={index} href={run.href} className={LINK}>
@@ -142,13 +141,14 @@ export default function LimitationsPage() {
           ))}
         </ul>
 
-        <MirrorDivider className="my-12" />
-
-        <h2 className="text-h2 font-semibold text-ink">Also in this build</h2>
+        <h2 className="mt-16 text-h2 text-ink">Also in this build</h2>
         <ul className="mt-4 max-w-prose space-y-3 text-ink">
           {ALSO.map((item) => (
             <li key={item.key} className="flex items-start gap-3">
-              <Diamond className="mt-2 h-2.5 w-2.5 fill-accent" />
+              <span
+                aria-hidden="true"
+                className="mt-2.5 size-1.5 shrink-0 rounded-plate bg-accent"
+              />
               <span>{item.text}</span>
             </li>
           ))}

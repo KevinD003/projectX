@@ -60,7 +60,7 @@ const STOPPED = Object.freeze({
  * @returns {{text: string, variant: string}} Badge text and its colour token.
  */
 function seatedAvailability(tier, session, now, counts) {
-  if (!session?.hasSeatMap) return { text: 'Seated — not sold on this site', variant: 'neutral' }
+  if (!session?.hasSeatMap) return { text: 'Seated: not sold on this site', variant: 'neutral' }
   if (tier.status === 'SOLD_OUT') return { text: 'Sold out', variant: 'danger' }
   if (STOPPED[tier.status]) return STOPPED[tier.status]
 

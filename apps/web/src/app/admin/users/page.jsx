@@ -23,7 +23,7 @@
 
 import Link from 'next/link'
 
-import { SECONDARY_LINK } from '../../../components/workspace-kit.jsx'
+import { PageHeader, SECONDARY_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
 import { readSession } from '../../../lib/session.js'
 import { UserSearch } from './user-search.jsx'
@@ -47,11 +47,7 @@ export default async function PeopleAndRolesPage() {
   if (!sessionCan(session, 'platform:admin')) {
     return (
       <div>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Platform administration
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Not for you</h1>
-        <p className="mt-2 max-w-3xl text-ink-muted">{PLATFORM_ADMINISTRATORS_ONLY}</p>
+        <PageHeader title="Not for you" description={PLATFORM_ADMINISTRATORS_ONLY} />
         <p className="mt-6">
           <Link href="/admin" className={SECONDARY_LINK}>
             Back to platform administration
@@ -65,17 +61,14 @@ export default async function PeopleAndRolesPage() {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">People and roles</h1>
-      <p className="mt-2 max-w-3xl text-ink-muted">
-        {mayChangePlatformRoles
-          ? 'Find an account by its email address, name or id. You can change its platform role, or put it into an organisation with a role — including owner, for an organisation whose only owner has left.'
-          : 'Find an account by its email address, name or id. You can put it into an organisation with a role — including owner, for an organisation whose only owner has left. Changing a platform role is for super administrators.'}{' '}
-        Every change needs a reason and a recent confirmation of your second factor, and ends every
-        session the account holds.
-      </p>
+      <PageHeader
+        title="People and roles"
+        description={`${
+          mayChangePlatformRoles
+            ? 'Find an account by its email address, name or id. You can change its platform role, or put it into an organisation with a role, owner included, for an organisation whose only owner has left.'
+            : 'Find an account by its email address, name or id. You can put it into an organisation with a role, owner included, for an organisation whose only owner has left. Changing a platform role is for super administrators.'
+        } Every change needs a reason and a recent confirmation of your second factor, and ends every session the account holds.`}
+      />
 
       <UserSearch mayChangePlatformRoles={mayChangePlatformRoles} />
     </div>

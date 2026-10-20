@@ -1598,7 +1598,7 @@ describe('the times an organiser types', () => {
     expect(screen.getByLabelText(/^Ends/)).toHaveValue('2026-11-01T23:00')
 
     // Both boxes say which zone they are in — once each, under start and end.
-    expect(screen.getAllByText(/local time at the venue — Asia\/Kolkata/i)).toHaveLength(2)
+    expect(screen.getAllByText(/local time at the venue: Asia\/Kolkata/i)).toHaveLength(2)
   })
 
   it('names the zone as it stands on the day: EDT in October, EST in December', async () => {
@@ -2076,5 +2076,73 @@ describe('the organiser’s website', () => {
     expect(
       screen.getByRole('group', { name: 'Website link on your event page' }),
     ).toHaveTextContent(`Your address does not pass the address rules: ${problem}`)
+  })
+})
+
+describe('the editor steps, as a stepper', () => {
+  const TITLES = [
+    'Details',
+    'When and where',
+    'Sessions',
+    'Tickets',
+    'Policies and access',
+    'Media',
+    'Line-up and running order',
+    'Guest information',
+    'Review',
+  ]
+
+  it('names each step "Step N Title", with the space a reader needs between them', () => {
+    render(<EventEditor event={event} venues={venues} />)
+
+    const steps = within(screen.getByRole('navigation', { name: 'Editor steps' })).getAllByRole(
+      'button',
+    )
+
+    expect(steps.map((step) => step.textContent)).toEqual(
+      TITLES.map((title, index) => `Step ${index + 1} ${index + 1}${title}`),
+    )
+    TITLES.forEach((title, index) => {
+      expect(
+        screen.getByRole('button', { name: `Step ${index + 1} ${title}`, exact: true }),
+      ).toBeTruthy()
+    })
+  })
+
+  it('draws the number in a marker that is not read a second time', () => {
+    render(<EventEditor event={event} venues={venues} />)
+
+    const first = screen.getByRole('button', { name: 'Step 1 Details' })
+    const marker = first.querySelector('[aria-hidden="true"]')
+
+    expect(marker.textContent).toBe('1')
+    expect(marker.className).toContain('rounded-full')
+  })
+
+  it('marks the step you are on, and moves the mark when another is chosen', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+    render(<EventEditor event={event} venues={venues} />)
+
+    const details = screen.getByRole('button', { name: 'Step 1 Details' })
+    const media = screen.getByRole('button', { name: 'Step 6 Media' })
+
+    expect(details).toHaveAttribute('aria-current', 'step')
+    expect(details.querySelector('[aria-hidden="true"]').className).toContain('bg-action-primary')
+    expect(media).not.toHaveAttribute('aria-current')
+
+    await user.click(media)
+
+    expect(media).toHaveAttribute('aria-current', 'step')
+    expect(details).not.toHaveAttribute('aria-current')
+  })
+
+  it('scrolls sideways inside itself on a phone instead of wrapping into rows', () => {
+    render(<EventEditor event={event} venues={venues} />)
+
+    const nav = screen.getByRole('navigation', { name: 'Editor steps' })
+
+    expect(nav.className).toContain('overflow-x-auto')
+    expect(nav.querySelector('ol').className).not.toContain('flex-wrap')
   })
 })

@@ -275,9 +275,19 @@ describe('addresses are drawn exactly as the server decided', () => {
       }),
     })
 
-    expect(screen.getByText('asha@example.com')).toBeInTheDocument()
-    expect(screen.getByText('dev@example.org')).toBeInTheDocument()
-    expect(screen.getByText('new.person@example.net')).toBeInTheDocument()
+    // Each address is one run of text, with break opportunities (<wbr>)
+    // before the @ and each domain dot so it never splits mid-word.
+    const drawn = [...container.querySelectorAll('[data-slot="email-address"]')]
+
+    expect(drawn.map((node) => node.textContent)).toEqual([
+      'asha@example.com',
+      'dev@example.org',
+      'new.person@example.net',
+    ])
+    expect(screen.getByRole('cell', { name: 'asha@example.com' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'dev@example.org' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'new.person@example.net' })).toBeInTheDocument()
+    drawn.forEach((node) => expect(node.className).not.toContain('break-all'))
     expect(container.innerHTML.match(/@/gu)).toHaveLength(3)
   })
 
@@ -499,7 +509,7 @@ describe('what is offered', () => {
 
     expect(screen.getByText(POSTING_ROLES_SENTENCE)).toBeInTheDocument()
     expect(POSTING_ROLES_SENTENCE).toMatch(
-      /event manager, manager, administrator and owner — are given by the team at The Desi Events/u,
+      /event manager, manager, administrator and owner\) are given by the team at The Desi Events/u,
     )
   })
 

@@ -1,11 +1,13 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../lib/api-fetch.js', () => ({ apiFetch: vi.fn() }))
 
 const { apiFetch } = await import('../lib/api-fetch.js')
-const { TicketPass, VenuePaymentNote } = await import('./ticket-pass.jsx')
+const { TicketPass, VenuePaymentNote, conflictSentence } = await import('./ticket-pass.jsx')
+const { TicketStanding, TicketStandingChip, TicketStandingProvider } =
+  await import('./ticket-standing.jsx')
 
 /** A pass-shaped credential, as the endpoint returns one. */
 const CREDENTIAL = 'Zx9-kQ4_wL2mN7pR1sT5vY8aB3cD6eF0gH2jK4lM6nP'
@@ -61,7 +63,7 @@ describe('TicketPass', () => {
       cache: 'no-store',
     })
     // And the honest sentence about screenshots, next to it.
-    expect(screen.getByText(/as a screenshot — can use it to get in once/iu)).toBeTruthy()
+    expect(screen.getByText(/as a screenshot, can use it to get in once/iu)).toBeTruthy()
     expect(screen.getByRole('button', { name: /hide pass/iu })).toBe(document.activeElement)
 
     // A valid figure: the code and its caption, the caption last, and the
@@ -130,6 +132,124 @@ describe('TicketPass', () => {
   })
 })
 
+describe('TicketPass refused for good (a 409)', () => {
+  it('says the API’s own sentence, takes the button away, and stops the page saying it admits', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(
+      answer(409, {
+        error: { code: 'CONFLICT', message: 'The order for this ticket is not paid.' },
+      }),
+    )
+    render(
+      <TicketStandingProvider>
+        <TicketStanding admits label="Ready to use." />
+        <TicketStandingChip admits />
+        <TicketPass ticketId="ticket0000000000000000001" />
+      </TicketStandingProvider>,
+    )
+
+    expect(screen.getByText('Admits.').parentElement).toHaveTextContent('Admits. Ready to use.')
+
+    await user.click(screen.getByRole('button', { name: /show my entry pass/iu }))
+
+    expect(
+      await screen.findByText('The order for this ticket is not paid.', {
+        selector: '[role=status] *',
+      }),
+    ).toBeInTheDocument()
+    // Asking again gets the same answer, so the button is gone.
+    expect(screen.queryByRole('button', { name: /show my entry pass/iu })).toBeNull()
+    // Every part of the page that says whether it admits now says it does not.
+    expect(screen.getByText('Does not admit.').parentElement).toHaveTextContent(
+      'Does not admit. The order for this ticket is not paid.',
+    )
+    expect(screen.queryByText('Admits.')).toBeNull()
+    expect(screen.queryByText('Admits')).toBeNull()
+    expect(screen.getByText('Does not admit', { exact: true })).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /qr code/iu })).toBeNull()
+  })
+
+  it('keeps the general sentence for a 409 that names no reason a holder can read', () => {
+    expect(conflictSentence(null)).toBe('This ticket no longer admits anybody, so it has no pass.')
+    expect(conflictSentence({ error: { code: 'NOT_FOUND', message: 'No such ticket.' } })).toBe(
+      'This ticket no longer admits anybody, so it has no pass.',
+    )
+    expect(conflictSentence({ error: { code: 'CONFLICT', message: 'x'.repeat(201) } })).toBe(
+      'This ticket no longer admits anybody, so it has no pass.',
+    )
+    expect(
+      conflictSentence({ error: { code: 'CONFLICT', message: ' This ticket has no pass. ' } }),
+    ).toBe('This ticket has no pass.')
+  })
+
+  it('outside a ticket page, still refuses quietly', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(
+      answer(409, { error: { code: 'CONFLICT', message: 'This ticket has no pass.' } }),
+    )
+    render(<TicketPass ticketId="ticket0000000000000000001" />)
+
+    await user.click(screen.getByRole('button', { name: /show my entry pass/iu }))
+
+    expect(await screen.findByText('This ticket has no pass.')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeTruthy()
+  })
+
+  it('moves focus to the refusal that took the button’s place, not to the page', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(
+      answer(409, { error: { code: 'CONFLICT', message: 'This ticket has no pass.' } }),
+    )
+    render(<TicketPass ticketId="ticket0000000000000000001" />)
+
+    await user.click(screen.getByRole('button', { name: /show my entry pass/iu }))
+    await screen.findByText('This ticket has no pass.')
+
+    const refusal = document.querySelector('[data-slot="pass-refusal"]')
+
+    expect(refusal).toHaveAttribute('tabindex', '-1')
+    expect(refusal).toHaveFocus()
+    expect(refusal).toHaveTextContent('This ticket has no pass.')
+  })
+
+  it('leaves focus on the button for a refusal that may pass on a retry', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(answer(503, {}))
+    render(<TicketPass ticketId="ticket0000000000000000001" />)
+
+    const button = screen.getByRole('button', { name: /show my entry pass/iu })
+
+    await user.click(button)
+    await waitFor(() => expect(document.querySelector('[data-slot="pass-refusal"]')).not.toBeNull())
+
+    expect(document.querySelector('[data-slot="pass-refusal"]')).not.toHaveAttribute('tabindex')
+    expect(screen.getByRole('button', { name: /show my entry pass/iu })).toBeInTheDocument()
+  })
+})
+
+describe('TicketPass, shown', () => {
+  it('uncovers the panel with a clip, never the code itself', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValue(answer(200, PASS))
+    render(<TicketPass ticketId="ticket0000000000000000001" />)
+
+    await user.click(screen.getByRole('button', { name: /show my entry pass/iu }))
+
+    const drawing = await screen.findByRole('img', { name: /entry pass, as a qr code/iu })
+
+    expect(drawing.closest('.ticket-reveal')).not.toBeNull()
+    // Exactly one path, and nothing on the code that moves.
+    expect(drawing.querySelectorAll('path')).toHaveLength(1)
+    expect(drawing.getAttribute('class')).not.toMatch(/animate|transition|ticket-reveal/u)
+    expect(drawing.closest('[data-motion]')).toBeNull()
+  })
+})
+
 describe('VenuePaymentNote (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
   /**
    * A ticket of a booking paid at the venue.
@@ -180,7 +300,7 @@ describe('VenuePaymentNote (SPEC3 §12.7, SPEC3-XI §12.7)', () => {
       />,
     )
 
-    expect(screen.getByText('Cancelled — not paid')).toHaveAttribute('data-tone', 'neutral')
+    expect(screen.getByText('Cancelled, not paid')).toHaveAttribute('data-tone', 'neutral')
     expect(
       screen.getByText(
         'The Desi Events team cancelled this ticket on Thu, Oct 8, 2026 because it had not been paid for. You no longer owe $40.00 for it.',

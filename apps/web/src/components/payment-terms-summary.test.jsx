@@ -74,7 +74,7 @@ describe('the fee, in words', () => {
 
   it('says the switch as a word, with its limit, and who decides', () => {
     expect(venuePaymentSentence(SWITCH)).toBe(
-      'Pay at the venue: On — up to 1,200 tickets waiting to be paid at the door. Only the team at The Desi Events can change this.',
+      'Pay at the venue: On, up to 1,200 tickets waiting to be paid at the door. Only the team at The Desi Events can change this.',
     )
     expect(venuePaymentSentence({ ...SWITCH, enabled: false })).toBe(
       'Pay at the venue: Off. Only the team at The Desi Events can change this.',

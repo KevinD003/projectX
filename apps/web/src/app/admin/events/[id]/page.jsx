@@ -30,6 +30,7 @@
 import Link from 'next/link'
 import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { DeleteEventDialog } from '../../../../components/delete-event-dialog.jsx'
 import { DeletedEventSummary } from '../../../../components/deleted-event-summary.jsx'
 import { EventEditor } from '../../../../components/event-editor.jsx'
@@ -38,7 +39,6 @@ import { PaymentTermsPanel } from '../../../../components/payment-terms-panel.js
 import { PlatformChangesPanel } from '../../../../components/platform-changes-panel.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../../components/read-refusal.jsx'
 import { ReassignEventDialog } from '../../../../components/reassign-event-dialog.jsx'
-import { Badge } from '../../../../components/ui.jsx'
 import { TEXT_LINK } from '../../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../../lib/capabilities.js'
 import { NOT_POSTED_SENTENCE, deletionReversibleSentences } from '../../../../lib/event-control.js'
@@ -240,9 +240,9 @@ function Header({ event }) {
       {event ? (
         <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
           <span>{event.organization?.name ?? 'Its organisation'}</span>
-          <Badge variant={reading.tone} srLabel="State:">
+          <StatusWord tone={reading.tone} srLabel="State:">
             {reading.label}
-          </Badge>
+          </StatusWord>
           {PUBLICLY_VISIBLE_STATUSES.has(event.status) && event.slug ? (
             <Link href={`/events/${encodeURIComponent(event.slug)}`} className={TEXT_LINK}>
               Public page

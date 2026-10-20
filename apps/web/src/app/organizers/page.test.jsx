@@ -174,7 +174,9 @@ describe('the organiser directory', () => {
     const container = await draw()
 
     expect(
-      screen.getByText(/These are the organisers with upcoming events listed on The Desi Events/),
+      screen.getByText(
+        'The organisers with upcoming events listed on The Desi Events, and how many each has coming up. Open one to see what they have on and how they handle refunds.',
+      ),
     ).toBeInTheDocument()
     expect(container.textContent).not.toMatch(/as soon as one of their events is published/)
   })
@@ -307,6 +309,10 @@ describe('the organiser directory', () => {
 
   it('is a public, indexable page', () => {
     expect(metadata.title).toBe('Organisers')
+    expect(metadata.description).toBe(
+      'The collectives and promoters with events coming up on The Desi Events: concerts, comedy, Durga Puja, garba and more. Open one to see everything they have on.',
+    )
+    expect(metadata.alternates).toEqual({ canonical: '/organizers' })
     expect(metadata.robots).toBeUndefined()
   })
 })

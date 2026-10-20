@@ -19,11 +19,23 @@
  *     pictures waiting has
  *     a box; the answer is reported event by event in a polite live region.
  *     A run of hundreds of listings is not ticked box by box: "Tick all {n}
- *     shown" ticks every such event at once, or the first {limit} of them when
+ *     waiting" ticks every such event at once, or the first {limit} of them when
  *     there are more, since one request approves at most `approveLimit`
  *     (`IMPORT_LIMITS.approveItems`). Once those are published the page is
  *     read again, so the same button ticks the next ones. More boxes ticked
  *     by hand than one request takes are refused before anything is sent.
+ *
+ * ## A plan of hundreds of listings
+ *
+ * The bundled North America file plans 294 listings, and one table of all of
+ * them was a 43,600px page on a phone. The rows are now shown
+ * {@link PLAN_PAGE_SIZE} at a time, with Previous and Next under the table,
+ * and can be narrowed to one kind of plan line ("New", "Skipped", …) with the
+ * buttons above it, each with its count from the rows themselves. Both are
+ * presentation only: every row is still in the plan the API holds, the
+ * import and the approval act on the whole plan, a box ticked on one page
+ * stays ticked on the next, and "Tick all" ticks every waiting event, shown
+ * or not. A listing's notes past the second fold behind "N more notes".
  *
  * There is no "Retry pictures": nothing is copied, so nothing is copied again.
  * The page is read again after every action, so what it shows is what the API
@@ -39,10 +51,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useId, useRef, useState } from 'react'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { useFocusAfterRender } from '../../../../components/focus-after-render.jsx'
 import { TEXT_LINK } from '../../../../components/link-classes.js'
 import { StepUpPrompt } from '../../../../components/step-up-prompt.jsx'
-import { Alert, Badge, Button } from '../../../../components/ui.jsx'
+import { Alert, Button } from '../../../../components/ui.jsx'
 import { apiFetch } from '../../../../lib/api-fetch.js'
 import { statusReading } from '../../../../lib/event-status.js'
 import { describeApiRefusal, parseRetryAfter, refusalSentence } from '../../../../lib/refusal.js'
@@ -56,6 +69,56 @@ import {
   ticketTypesLine,
   writtenCount,
 } from '../import-vocabulary.js'
+
+/** How many listings the plan shows at a time. */
+export const PLAN_PAGE_SIZE = 25
+
+/** How many of a listing's notes show before the rest fold away. */
+export const NOTES_SHOWN = 2
+
+/**
+ * The kinds of plan line a run holds, in the order they first appear, each
+ * with its words and how many rows have it.
+ *
+ * @param {object[]} rows The run's rows.
+ * @returns {Array<{action: string, label: string, count: number}>} One entry per kind.
+ */
+export function planKinds(rows) {
+  const kinds = new Map()
+
+  for (const row of rows ?? []) {
+    const key = row.action ?? 'UNKNOWN'
+    const known = kinds.get(key)
+
+    if (known) known.count += 1
+    else kinds.set(key, { action: key, label: planReading(row).label, count: 1 })
+  }
+
+  return [...kinds.values()]
+}
+
+/**
+ * Which rows a page of the plan shows.
+ *
+ * @param {object[]} rows The rows, already narrowed to a kind.
+ * @param {number} page The page, from 1.
+ * @param {number} [size] Rows per page.
+ * @returns {{rows: object[], page: number, pages: number, first: number, last: number}} The page, held inside the list's bounds.
+ */
+export function planPage(rows, page, size = PLAN_PAGE_SIZE) {
+  const total = rows.length
+  const pages = Math.max(1, Math.ceil(total / size))
+  const current = Math.min(Math.max(1, page), pages)
+  const start = (current - 1) * size
+
+  return {
+    rows: rows.slice(start, start + size),
+    page: current,
+    pages,
+    first: total === 0 ? 0 : start + 1,
+    last: Math.min(start + size, total),
+  }
+}
 
 /** A link in the events column: never less than a 24 px target (WCAG 2.5.8). */
 const EVENT_LINK_TARGET = 'inline-flex min-h-6 items-center'
@@ -152,6 +215,8 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
   const [refusal, setRefusal] = useState(null)
   const [done, setDone] = useState(null)
   const [results, setResults] = useState([])
+  const [kind, setKind] = useState('ALL')
+  const [pageWanted, setPageWanted] = useState(1)
 
   const previewed = run.status === 'PREVIEWED'
   const applied = run.status === 'APPLIED'
@@ -165,6 +230,9 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
   const titles = new Map(
     run.rows.filter((row) => row.event).map((row) => [row.event.id, row.title]),
   )
+  const kinds = planKinds(run.rows)
+  const narrowed = kind === 'ALL' ? run.rows : run.rows.filter((row) => row.action === kind)
+  const shown = planPage(narrowed, pageWanted)
 
   /**
    * Toggle a value in a list held in state.
@@ -275,7 +343,7 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
             </div>
           ) : null}
           {results.length > 0 ? (
-            <div className="rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink">
+            <div className="rounded-card border border-status-success/25 bg-status-success-soft p-4 text-sm text-ink">
               <p className="font-semibold">Approve and publish</p>
               <ul className="mt-1 list-disc space-y-1 pl-5">
                 {results.map((result) => (
@@ -294,6 +362,40 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
         ) : null}
       </div>
 
+      {kinds.length > 1 ? (
+        <div
+          role="group"
+          aria-label="Show listings"
+          className="mt-4 flex flex-wrap items-center gap-2"
+        >
+          {[{ action: 'ALL', label: 'All', count: run.rows.length }, ...kinds].map((each) => {
+            const current = each.action === kind
+
+            return (
+              <button
+                key={each.action}
+                type="button"
+                aria-pressed={current}
+                onClick={() => {
+                  setKind(each.action)
+                  setPageWanted(1)
+                }}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                  current
+                    ? 'bg-action-primary font-semibold text-action-primary-ink'
+                    : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
+                }`}
+              >
+                {each.label}
+                <span className="tabular-nums opacity-80">
+                  {each.count.toLocaleString('en-US')}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
+
       {/*
         Positioned, so the screen-reader-only words in the wide table (a
         badge's "Status:", the caption) scroll inside this frame: a scroll box
@@ -307,7 +409,7 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
         role="region"
         aria-label={`The plan for ${run.fileName}, scrolls sideways`}
         tabIndex={0}
-        className="relative mt-4 overflow-x-auto rounded-card border border-line bg-surface-raised shadow-card focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="relative mt-4 overflow-x-auto rounded-card border border-line bg-surface-raised shadow-card focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2"
       >
         <table className="w-full min-w-[64rem] border-collapse text-left text-sm">
           <caption className="sr-only">
@@ -338,7 +440,7 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
             </tr>
           </thead>
           <tbody>
-            {run.rows.map((row) => {
+            {shown.rows.map((row) => {
               const reading = planReading(row)
               const event = row.event
               const eventReading = event ? statusReading(event.status) : null
@@ -385,18 +487,34 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
                     ) : null}
                   </td>
                   <td className="py-3 pr-4">
-                    <Badge variant={reading.tone} srLabel="Plan:">
+                    <StatusWord tone={reading.tone} srLabel="Plan:">
                       {reading.label}
-                    </Badge>
+                    </StatusWord>
                     <p className="mt-1 max-w-xs text-xs text-ink-muted">{reading.detail}</p>
                   </td>
                   <td className="py-3 pr-4">
                     {row.importNotes.length > 0 ? (
-                      <ul className="max-w-xs list-disc space-y-1 pl-4 text-xs text-ink-muted">
-                        {row.importNotes.map((note, index) => (
-                          <li key={`${index}-${note}`}>{note}</li>
-                        ))}
-                      </ul>
+                      <>
+                        <ul className="max-w-xs list-disc space-y-1 pl-4 text-xs text-ink-muted">
+                          {row.importNotes.slice(0, NOTES_SHOWN).map((note, index) => (
+                            <li key={`${index}-${note}`}>{note}</li>
+                          ))}
+                        </ul>
+                        {row.importNotes.length > NOTES_SHOWN ? (
+                          <details className="mt-1 max-w-xs text-xs text-ink-muted">
+                            <summary className="inline-flex min-h-6 cursor-pointer items-center font-medium text-ink underline decoration-line-strong underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                              {`${row.importNotes.length - NOTES_SHOWN} more ${
+                                row.importNotes.length - NOTES_SHOWN === 1 ? 'note' : 'notes'
+                              }`}
+                            </summary>
+                            <ul className="mt-1 list-disc space-y-1 pl-4">
+                              {row.importNotes.slice(NOTES_SHOWN).map((note, index) => (
+                                <li key={`${index}-${note}`}>{note}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        ) : null}
+                      </>
                     ) : (
                       <span className="text-xs text-ink-muted">None</span>
                     )}
@@ -417,9 +535,9 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
                   <td className="py-3 pr-4">
                     {event ? (
                       <>
-                        <Badge variant={eventReading.tone} srLabel="Status:">
+                        <StatusWord tone={eventReading.tone} srLabel="Status:">
                           {eventReading.label}
-                        </Badge>
+                        </StatusWord>
                         {event.ticketTypes && event.ticketTypes.imported > 0 ? (
                           <p className="mt-1 text-xs text-ink-muted">
                             {`${event.ticketTypes.onSale} of ${ticketTypeCount(event.ticketTypes.imported)} on sale`}
@@ -462,6 +580,44 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
           </tbody>
         </table>
       </div>
+
+      {shown.pages > 1 || kind !== 'ALL' ? (
+        <nav
+          aria-label="Pages of the plan"
+          className="mt-3 flex flex-wrap items-center justify-between gap-3"
+        >
+          <p aria-live="polite" className="text-sm text-ink-muted tabular-nums">
+            {shown.first === 0
+              ? 'No listing of this kind.'
+              : `Listings ${shown.first.toLocaleString('en-US')} to ${shown.last.toLocaleString('en-US')} of ${narrowed.length.toLocaleString('en-US')}`}
+          </p>
+          {shown.pages > 1 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-11"
+                disabled={shown.page <= 1}
+                onClick={() => setPageWanted(shown.page - 1)}
+              >
+                Previous listings
+              </Button>
+              <span className="text-sm text-ink-muted tabular-nums">
+                {`Page ${shown.page} of ${shown.pages}`}
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-11"
+                disabled={shown.page >= shown.pages}
+                onClick={() => setPageWanted(shown.page + 1)}
+              >
+                Next listings
+              </Button>
+            </div>
+          ) : null}
+        </nav>
+      ) : null}
 
       {stepUp ? (
         <div className="mt-4">
@@ -507,8 +663,8 @@ export function ImportRunPlan({ run, canApprove, approveLimit = 100 }) {
             onClick={() => setChosen(nextBatch.map((row) => row.event.id))}
           >
             {approvableRows.length > approveLimit
-              ? `Tick the first ${approveLimit} of ${approvableRows.length} shown`
-              : `Tick all ${approvableRows.length} shown`}
+              ? `Tick the first ${approveLimit} of ${approvableRows.length} waiting`
+              : `Tick all ${approvableRows.length} waiting`}
           </Button>
         ) : null}
 

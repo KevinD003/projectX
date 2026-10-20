@@ -17,9 +17,12 @@
  * @file components/event-content
  */
 
+import { Icon } from '@desi-event/ui/icons'
+
 import { TEXT_LINK } from './link-classes.js'
 import { SOCIAL_HOSTS, SOCIAL_NETWORK_LABELS, SOCIAL_NETWORKS } from '../lib/event-content.js'
 import { LINK_REL, isSafeHref } from '../lib/rich-text.js'
+import { zoneWords } from '../lib/format.js'
 import { zoneAbbreviation } from '../lib/zoned-time.js'
 
 /** The heading every section here uses. */
@@ -76,7 +79,7 @@ export function EventLineUp({ performers = [], artists = [] }) {
               <p className="font-semibold text-ink">
                 {performer.name}
                 {performer.role ? (
-                  <span className="font-normal text-ink-muted"> — {performer.role}</span>
+                  <span className="font-normal text-ink-muted">: {performer.role}</span>
                 ) : null}
               </p>
               {performer.bio ? (
@@ -107,7 +110,7 @@ export function EventLineUp({ performers = [], artists = [] }) {
  * @param {string} time A 24-hour `HH:mm`.
  * @returns {string} The 12-hour reading, or the time as given when it is malformed.
  */
-function twelveHour(time) {
+export function twelveHour(time) {
   const match = /^(\d{2}):(\d{2})$/u.exec(String(time ?? ''))
 
   if (!match) return String(time ?? '')
@@ -131,6 +134,7 @@ export function EventRunningOrder({ items = [], timezone, startsAt = null }) {
   if (!Array.isArray(items) || items.length === 0) return null
 
   const zone = zoneAbbreviation(timezone, startsAt ? new Date(startsAt) : new Date())
+  const words = zoneWords(timezone, startsAt ?? new Date())
 
   return (
     <Section id="running-order-heading" title="Running order">
@@ -149,8 +153,10 @@ export function EventRunningOrder({ items = [], timezone, startsAt = null }) {
         ))}
       </ol>
       <p className="mt-4 text-sm text-ink-muted">
-        Local time at the venue ({timezone}). Where the event runs over several nights, the same
-        order applies to each.
+        {words
+          ? `Times are ${words}, the local time at the venue.`
+          : 'Times are local to the venue.'}{' '}
+        Where the event runs over several nights, the same order applies to each.
       </p>
     </Section>
   )
@@ -202,13 +208,17 @@ export function EventFaq({ items = [] }) {
 
   return (
     <Section id="faq-heading" title="Questions people ask">
-      <div className="divide-y divide-line rounded-card border border-line">
+      <div className="divide-y divide-line border-y border-line">
         {items.map((item, index) => (
-          <details key={`${item.question}-${index}`} className="group px-4 py-3">
-            <summary className="cursor-pointer rounded-sm font-semibold text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none">
+          <details key={`${item.question}-${index}`} className="group/faq">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-sm py-3 text-title font-semibold text-ink hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
               {item.question}
+              <Icon
+                name="chevron-down"
+                className="h-5 w-5 shrink-0 text-accent-strong transition-transform duration-(--duration-fast) ease-out group-open/faq:rotate-180"
+              />
             </summary>
-            <p className="mt-2 whitespace-pre-line text-ink-muted">{item.answer}</p>
+            <p className="max-w-[65ch] pb-4 whitespace-pre-line text-ink-muted">{item.answer}</p>
           </details>
         ))}
       </div>

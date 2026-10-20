@@ -56,9 +56,11 @@ describe('the list of nights', () => {
     )
     // No doors time is invented for a night that has none.
     expect(within(items[1]).queryByText('Doors')).toBeNull()
+    // The zone in words, read on the first night: no database name, no dash.
     expect(
-      screen.getByText(/the local time at the venue \(America\/New_York\), not your own/u),
+      screen.getByText('All times are Eastern Time (EDT), the local time at the venue, not yours.'),
     ).toBeInTheDocument()
+    expect(screen.queryByText(/America\/New_York/u)).toBeNull()
   })
 
   it('marks each night with its own zone when the nights are not all in one', () => {

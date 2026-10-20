@@ -40,9 +40,6 @@ export default async function NewReferralCodePage() {
           Referral codes
         </Link>
       </p>
-      <p className="mt-2 text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
       <h1 className="mt-2 text-h2 font-semibold text-ink">Make a referral code</h1>
       {allowed ? (
         <>

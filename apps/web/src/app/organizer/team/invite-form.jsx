@@ -234,7 +234,7 @@ export function InviteForm({
               <p className="mt-2">
                 <Link
                   href="/account/security"
-                  className="rounded-sm font-medium text-accent-strong underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                  className="rounded-sm font-medium text-accent-strong underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                 >
                   Set up two-step sign-in
                 </Link>
@@ -303,24 +303,42 @@ export function InviteForm({
                 : 'This organisation has no upcoming events to name.'}
             </p>
           ) : (
-            <ul className="mt-2 space-y-1">
-              {events.map((event) => (
-                <li key={event.id}>
-                  <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-                    <input
-                      type="checkbox"
-                      checked={chosen.has(event.id)}
-                      onChange={(changed) => toggle(event.id, changed.target.checked)}
-                      className="size-5 accent-action-primary focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:outline-none"
-                    />
-                    <span>
-                      {event.title}
-                      {event.when ? <span className="text-ink-muted"> · {event.when}</span> : null}
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
+            <>
+              {/* One row per event, soonest first: the title on its own line
+                  and the date under it, so a long title never pushes the
+                  date off the row. A long list scrolls inside its frame.
+                  The box is named "Title, date" outright, because two
+                  stacked lines would otherwise run together when read. */}
+              <ul
+                data-slot="door-event-picker"
+                className="mt-3 max-h-80 divide-y divide-line overflow-y-auto rounded-control border border-line bg-surface-raised"
+              >
+                {events.map((event) => (
+                  <li key={event.id}>
+                    <label className="flex min-h-12 cursor-pointer items-start gap-3 px-3 py-2.5 text-sm text-ink hover:bg-surface-subtle">
+                      <input
+                        type="checkbox"
+                        checked={chosen.has(event.id)}
+                        onChange={(changed) => toggle(event.id, changed.target.checked)}
+                        aria-label={event.when ? `${event.title}, ${event.when}` : event.title}
+                        className="mt-0.5 size-5 shrink-0 accent-action-primary focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2"
+                      />
+                      <span className="min-w-0 break-words">
+                        <span className="font-medium">{event.title}</span>
+                        {event.when ? (
+                          <span className="block text-caption text-ink-muted tabular-nums">
+                            {event.when}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-sm text-ink-muted tabular-nums">
+                {chosen.size === 0 ? 'None ticked.' : `${chosen.size} of ${events.length} ticked.`}
+              </p>
+            </>
           )}
           {laterEventCount > 0 ? (
             <p id={`${id}-events-later`} className="mt-2 text-sm text-ink-muted">

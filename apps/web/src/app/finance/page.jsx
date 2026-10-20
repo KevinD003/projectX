@@ -14,6 +14,12 @@
  * something that should be impossible, and a footnote under them would be read
  * after somebody had already believed them.
  *
+ * ## Zero is money
+ *
+ * Every amount is printed with `formatAmount`, so a zero reads "$0.00". The
+ * shop's `formatPrice` says "Free" for zero, which on a ticket is a gift and
+ * in a ledger is nonsense: "Tax payable: Free".
+ *
  * ## The organisation picker
  *
  * Links rather than a form, so it works with no JavaScript, is bookmarkable,
@@ -26,9 +32,10 @@
 
 import Link from 'next/link'
 
-import { Figure, ModeBanner, ScrollableTable } from '../../components/money-figure.jsx'
+import { Figure, FigureList, ModeBanner, ScrollableTable } from '../../components/money-figure.jsx'
 import { ReadRefusal } from '../../components/read-refusal.jsx'
-import { formatPrice } from '../../lib/pricing.js'
+import { PageHeader, SECONDARY_LINK } from '../../components/workspace-kit.jsx'
+import { formatAmount } from '../../lib/pricing.js'
 import { getFinanceSummary } from '../../lib/organizer-api.js'
 import { readSession, sessionCan } from '../../lib/session.js'
 
@@ -56,6 +63,31 @@ const ACTIVITY = Object.freeze([
   { key: 'transfers', label: 'Transfers', hint: 'Moved onward to a connected account.' },
   { key: 'payouts', label: 'Payouts', hint: 'Sent to an organiser’s bank.' },
 ])
+
+/**
+ * One amount in a ledger table: right-aligned in tabular figures, a zero
+ * printed as money and set in the muted ink.
+ *
+ * @param {object} props Component props.
+ * @param {number} props.cents The amount, in minor units.
+ * @param {string} props.currency ISO 4217 code.
+ * @param {boolean} [props.strong] Set the figure a weight heavier, for a balance.
+ * @param {boolean} [props.last] The row's last cell, which has no gap after it.
+ * @returns {JSX.Element} The cell.
+ */
+export function MoneyCell({ cents, currency, strong = false, last = false }) {
+  const tone = cents === 0 ? 'text-ink-muted' : 'text-ink'
+
+  return (
+    <td
+      className={`text-right whitespace-nowrap tabular-nums ${tone} ${strong ? 'font-semibold' : ''} ${
+        last ? '' : 'pr-4'
+      }`}
+    >
+      {formatAmount(cents, currency)}
+    </td>
+  )
+}
 
 /**
  * @typedef {object} FinancePageProps
@@ -96,16 +128,21 @@ export default async function FinancePage({ searchParams }) {
     failure = error
   }
 
+  const exportHref = `/api/v1/finance/export.csv${organizationId ? `?organizationId=${organizationId}` : ''}`
+
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Money
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Finance</h1>
-      <p className="mt-2 text-ink-muted">
-        Derived from the ledger, which is appended to and never edited. An order total is written
-        once at checkout and never corrected; nothing on this page reads one.
-      </p>
+      <PageHeader
+        title="Finance"
+        description="Read from the ledger, which is only ever added to. An order total is written once at checkout and never corrected, and nothing on this page reads one."
+        actions={
+          summary ? (
+            <a href={exportHref} className={SECONDARY_LINK} download>
+              Download as a spreadsheet
+            </a>
+          ) : null
+        }
+      />
 
       {organizations.length > 1 ? (
         <nav aria-label="Choose an organisation" className="mt-6">
@@ -118,7 +155,7 @@ export default async function FinancePage({ searchParams }) {
                   <Link
                     href={`/finance?organizationId=${organization.id}`}
                     aria-current={current ? 'page' : undefined}
-                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
+                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
                       current
                         ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
                         : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
@@ -162,9 +199,16 @@ export default async function FinancePage({ searchParams }) {
               <ul className="mt-3 space-y-1 text-sm text-status-danger">
                 {summary.integrity.imbalances.map((imbalance) => (
                   <li key={imbalance.batchId}>
-                    <span className="font-mono">{imbalance.reference}</span> — {imbalance.problem}:
-                    entries total {formatPrice(imbalance.actualDebitCents, summary.currency)} debit
-                    against {formatPrice(imbalance.actualCreditCents, summary.currency)} credit
+                    <span className="font-mono">{imbalance.reference}</span>: {imbalance.problem}.
+                    Its entries total{' '}
+                    <span className="tabular-nums">
+                      {formatAmount(imbalance.actualDebitCents, summary.currency)}
+                    </span>{' '}
+                    debit against{' '}
+                    <span className="tabular-nums">
+                      {formatAmount(imbalance.actualCreditCents, summary.currency)}
+                    </span>{' '}
+                    credit.
                   </li>
                 ))}
               </ul>
@@ -172,68 +216,74 @@ export default async function FinancePage({ searchParams }) {
           ) : null}
 
           <section aria-labelledby="totals-heading" className="mt-8">
-            <h2 id="totals-heading" className="text-xl font-semibold text-ink">
+            <h2 id="totals-heading" className="text-h3 font-semibold text-ink">
               Totals
             </h2>
-            <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <FigureList>
               <Figure
+                plain
                 label="Gross collected"
                 cents={summary.totals.grossCollectedCents}
                 currency={summary.currency}
                 hint="What buyers handed over, before anything went back."
               />
               <Figure
+                plain
                 label="Ticket face value"
                 cents={summary.totals.faceValueCents}
                 currency={summary.currency}
               />
               <Figure
+                plain
                 label="Discounts given"
                 cents={summary.totals.discountCents}
                 currency={summary.currency}
                 hint="Contra-revenue: a discount reduces what was earned rather than costing anything."
               />
               <Figure
+                plain
                 label="Tax payable"
                 cents={summary.totals.taxPayableCents}
                 currency={summary.currency}
                 hint="Collected on an authority’s behalf. Never revenue."
               />
               <Figure
+                plain
                 label="Platform fee revenue"
                 cents={summary.totals.platformFeeRevenueCents}
                 currency={summary.currency}
               />
               <Figure
+                plain
                 label="Owed to organisers"
                 cents={summary.totals.organizerPayableCents}
                 currency={summary.currency}
                 hint="A liability. The buyer’s money is not the platform’s revenue."
               />
-            </dl>
+            </FigureList>
           </section>
 
-          <section aria-labelledby="accounts-heading" className="mt-8">
-            <h2 id="accounts-heading" className="text-xl font-semibold text-ink">
+          <section aria-labelledby="accounts-heading" className="mt-10">
+            <h2 id="accounts-heading" className="text-h3 font-semibold text-ink">
               Clearing accounts
             </h2>
             <ScrollableTable label="Clearing accounts">
-              <table className="w-full min-w-[32rem] border-collapse text-sm">
+              <table className="w-full min-w-[20rem] border-collapse text-sm">
                 <caption className="sr-only">
                   Each account’s debits, credits and balance over the window
                 </caption>
                 <thead>
                   <tr className="border-b border-line-strong text-left">
-                    <th scope="col" className="py-2 pr-4 font-semibold text-ink">
+                    <th scope="col" className="pr-4 font-semibold text-ink">
                       Account
                     </th>
-                    <th scope="col" className="py-2 pr-4 text-right font-semibold text-ink">
+                    <th scope="col" className="w-24 pr-4 text-right font-semibold text-ink sm:w-36">
                       Debits
                     </th>
-                    <th scope="col" className="py-2 pr-4 text-right font-semibold text-ink">
+                    <th scope="col" className="w-24 pr-4 text-right font-semibold text-ink sm:w-36">
                       Credits
                     </th>
-                    <th scope="col" className="py-2 text-right font-semibold text-ink">
+                    <th scope="col" className="w-24 text-right font-semibold text-ink sm:w-36">
                       Balance
                     </th>
                   </tr>
@@ -241,18 +291,17 @@ export default async function FinancePage({ searchParams }) {
                 <tbody>
                   {summary.accounts.map((account) => (
                     <tr key={account.code} className="border-b border-line">
-                      <th scope="row" className="py-2 pr-4 text-left font-normal text-ink">
+                      <th scope="row" className="pr-4 text-left font-normal text-ink">
                         {account.label}
                       </th>
-                      <td className="py-2 pr-4 text-right tabular-nums text-ink">
-                        {formatPrice(account.debitCents, summary.currency)}
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums text-ink">
-                        {formatPrice(account.creditCents, summary.currency)}
-                      </td>
-                      <td className="py-2 text-right font-medium tabular-nums text-ink">
-                        {formatPrice(account.balanceCents, summary.currency)}
-                      </td>
+                      <MoneyCell cents={account.debitCents} currency={summary.currency} />
+                      <MoneyCell cents={account.creditCents} currency={summary.currency} />
+                      <MoneyCell
+                        cents={account.balanceCents}
+                        currency={summary.currency}
+                        strong
+                        last
+                      />
                     </tr>
                   ))}
                 </tbody>
@@ -260,34 +309,54 @@ export default async function FinancePage({ searchParams }) {
             </ScrollableTable>
           </section>
 
-          <section aria-labelledby="activity-heading" className="mt-8">
-            <h2 id="activity-heading" className="text-xl font-semibold text-ink">
+          <section aria-labelledby="activity-heading" className="mt-10">
+            <h2 id="activity-heading" className="text-h3 font-semibold text-ink">
               Activity
             </h2>
-            <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {ACTIVITY.map((row) => (
-                <Figure
-                  key={row.key}
-                  label={`${row.label} (${summary.activity[row.key].count})`}
-                  cents={summary.activity[row.key].amountCents}
-                  currency={summary.currency}
-                  hint={row.hint}
-                />
-              ))}
-            </dl>
+            <ScrollableTable label="Activity">
+              <table className="w-full min-w-[20rem] border-collapse text-sm">
+                <caption className="sr-only">
+                  How many of each movement there were, and how much they came to
+                </caption>
+                <thead>
+                  <tr className="border-b border-line-strong text-left">
+                    <th scope="col" className="pr-4 font-semibold text-ink">
+                      Movement
+                    </th>
+                    <th scope="col" className="w-20 pr-4 text-right font-semibold text-ink sm:w-28">
+                      How many
+                    </th>
+                    <th scope="col" className="w-24 text-right font-semibold text-ink sm:w-36">
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ACTIVITY.map((row) => {
+                    const { count, amountCents } = summary.activity[row.key]
+
+                    return (
+                      <tr key={row.key} className="border-b border-line align-top">
+                        <th scope="row" className="pr-4 text-left font-normal text-ink">
+                          <span className="block font-medium">{row.label}</span>
+                          <span className="mt-0.5 block text-xs text-ink-muted">{row.hint}</span>
+                        </th>
+                        <td
+                          className={`pr-4 text-right tabular-nums ${count === 0 ? 'text-ink-muted' : 'text-ink'}`}
+                        >
+                          {count.toLocaleString('en-US')}
+                        </td>
+                        <MoneyCell cents={amountCents} currency={summary.currency} last />
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </ScrollableTable>
           </section>
 
-          <p className="mt-8">
-            <a
-              href={`/api/v1/finance/export.csv${organizationId ? `?organizationId=${organizationId}` : ''}`}
-              className="inline-flex min-h-11 items-center justify-center rounded-control bg-action-primary px-4 text-sm font-semibold text-action-primary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-primary-hover focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
-              download
-            >
-              Download as a spreadsheet
-            </a>
-          </p>
-          <p className="mt-2 text-xs text-ink-muted">
-            The export carries no buyer, no address and nothing about how anybody paid, and its
+          <p className="mt-6 max-w-3xl text-xs text-ink-muted">
+            The spreadsheet carries no buyer, no address and nothing about how anybody paid, and its
             first row says which mode produced the figures.
           </p>
         </>

@@ -214,7 +214,7 @@ function checkRoute(route, index) {
     fail(
       'CAPABILITY_SCOPE_REQUIRED',
       `Route ${routeId} declares the organisation-scoped capability "${route.capability}" but no capabilityScope. ` +
-        'Name where the organisation is, as "params.id" — without it the check degrades to a platform-level one. ' +
+        'Name where the organisation is, as "params.id": without it the check degrades to a platform-level one. ' +
         'A route whose organisation is only known after loading a record should declare no capability and assert in its handler.',
     )
   }
@@ -296,7 +296,7 @@ function checkRoute(route, index) {
     // also asserts a capability is behind the door.
     fail(
       'MFA_EXEMPT_WITH_CAPABILITY',
-      `Route ${routeId} is marked mfaExempt and asserts "${route.capability}" — an exemption is for account management, not for privileged work`,
+      `Route ${routeId} is marked mfaExempt and asserts "${route.capability}": an exemption is for account management, not for privileged work`,
     )
   }
 
@@ -310,7 +310,7 @@ function checkRoute(route, index) {
     if (typeof route.stepUp !== 'string' || !STEP_UP_POLICY_NAMES.includes(route.stepUp)) {
       fail(
         'BAD_STEP_UP',
-        `Route ${routeId} stepUp must name a policy — one of ${STEP_UP_POLICY_NAMES.join(', ')} — not ${JSON.stringify(route.stepUp)}`,
+        `Route ${routeId} stepUp must name a policy: one of ${STEP_UP_POLICY_NAMES.join(', ')}: not ${JSON.stringify(route.stepUp)}`,
       )
     } else if (!AUTHENTICATED_MODES.includes(route.auth)) {
       fail(

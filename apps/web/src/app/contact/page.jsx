@@ -38,51 +38,51 @@ export default function ContactPage() {
     <div>
       <PageHero
         headingId="contact-heading"
-        eyebrow="Get in touch"
         title={`Contact ${BRAND_NAME}`}
         lead="Email, call or message the team on WhatsApp, Facebook or Instagram."
       />
 
-      <div className="mx-auto max-w-3xl px-4 pt-12 sm:px-6">
-        <h2 id="channels-heading" className="text-h2 font-semibold text-ink">
-          Ways to reach the team
-        </h2>
-        <ul
-          aria-labelledby="channels-heading"
-          className="mt-4 divide-y divide-line rounded-card bg-surface-raised shadow-card"
-        >
-          {CONTACT_CHANNELS.map((channel) => (
-            <li
-              key={channel.id}
-              className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-center sm:gap-6"
-            >
-              <span className="text-sm font-bold text-ink-muted sm:w-28 sm:shrink-0">
-                {channel.kind}
-              </span>
-              <a
-                href={channel.href}
-                aria-label={pageLabel(channel)}
-                className={`${TEXT_LINK} inline-flex min-h-11 min-w-0 items-center [overflow-wrap:anywhere]`}
+      <div className="mx-auto grid max-w-content grid-cols-1 gap-10 px-4 pt-4 pb-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-16 lg:pb-28">
+        <div className="min-w-0">
+          <h2 id="channels-heading" className="text-h2 text-ink">
+            Ways to reach the team
+          </h2>
+          <ul aria-labelledby="channels-heading" className="mt-5 border-t-2 border-ink">
+            {CONTACT_CHANNELS.map((channel) => (
+              <li
+                key={channel.id}
+                className="flex flex-col gap-1 border-b border-line py-4 sm:flex-row sm:items-baseline sm:gap-6"
               >
-                {channel.address}
-              </a>
-            </li>
-          ))}
-        </ul>
+                <span className="text-label font-bold text-ink-muted sm:w-32 sm:shrink-0">
+                  {channel.kind}
+                </span>
+                <a
+                  href={channel.href}
+                  aria-label={pageLabel(channel)}
+                  className={`${TEXT_LINK} inline-flex min-h-11 min-w-0 items-center font-display text-h3 [overflow-wrap:anywhere]`}
+                >
+                  {channel.address}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        <p className="mt-8 max-w-prose text-ink">
-          Organisers reach the team the same way about listing an event on {BRAND_NAME}.
-        </p>
-        <p className="mt-3 max-w-prose text-ink">
-          There is no contact form on this site. For a question about one event, its page names the
-          organiser who runs it.
-        </p>
+        <div className="min-w-0 border-t border-line pt-5 lg:mt-14">
+          <p className="max-w-prose text-ink">
+            Organisers reach the team the same way about listing an event on {BRAND_NAME}.
+          </p>
+          <p className="mt-3 max-w-prose text-ink-muted">
+            There is no contact form on this site. For a question about one event, its page names
+            the organiser who runs it.
+          </p>
 
-        <p className="mt-10 text-sm text-ink-muted">
-          <Link href="/events" className={`${TEXT_LINK} inline-flex min-h-11 items-center`}>
-            Back to what’s on
-          </Link>
-        </p>
+          <p className="mt-6 text-label">
+            <Link href="/events" className={`${TEXT_LINK} inline-flex min-h-11 items-center`}>
+              Back to what’s on
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

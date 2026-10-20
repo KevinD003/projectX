@@ -167,6 +167,17 @@ const figure = (page, label) =>
     .first()
 
 /**
+ * Wait until the page counts clicks: its visit counting has hydrated and set
+ * `data-traffic-ready` on <html>. The page is readable before that (nothing is
+ * held back for hydration), and a click made earlier is not counted.
+ *
+ * @param {object} page The page about to be clicked on.
+ * @returns {Promise<void>} Resolves once clicks are counted.
+ */
+const counting = (page) =>
+  page.locator('html[data-traffic-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 })
+
+/**
  * Wait for the next beacon of a kind, and its answer.
  *
  * @param {object} page The page that sends it.
@@ -269,6 +280,7 @@ test.describe.serial('visits to an event’s page', () => {
     const { gammaGaEventId, gammaGaEventSlug, gammaGaEventTitle } = ids()
 
     await visitor.goto(`/events?q=${encodeURIComponent(gammaGaEventTitle)}`)
+    await counting(visitor)
 
     const card = visitor.getByRole('link', { name: gammaGaEventTitle, exact: true })
 
@@ -318,9 +330,11 @@ test.describe.serial('visits to an event’s page', () => {
       await accepted(await view)
     }
 
-    // The event's card on the home page: in "The next nights out" or as the
-    // hero's next night, either of which counts as the home page.
+    // The event’s link on the home page: in the agenda ("This weekend" or
+    // "Coming up"), as the hero's next event, or as the next event of its kind
+    // in the category index, any of which counts as the home page.
     await visitor.goto('/')
+    await counting(visitor)
 
     const homeCard = visitor
       .locator(`a[data-traffic-event="${gammaGaEventId}"][data-traffic-placement="HOME"]`)
@@ -412,6 +426,7 @@ test.describe.serial('visits to an event’s page', () => {
     })
 
     await gamma.goto(`/events/${gammaGaEventSlug}`)
+    await counting(gamma)
     await gamma.getByRole('link', { name: 'Choose tickets' }).click()
     await gamma.waitForURL(new RegExp(`/events/${gammaGaEventSlug}/checkout`, 'u'))
     // Long enough for a beacon to have been sent if one were going to be.
@@ -422,6 +437,7 @@ test.describe.serial('visits to an event’s page', () => {
     // The seated event's link is on; for its own team it asks not to be
     // counted, and says why.
     await gamma.goto(`/events/${gammaSeatedEventSlug}`)
+    await counting(gamma)
 
     const link = gamma.getByRole('link', { name: 'Visit the organiser’s website', exact: true })
 
@@ -506,7 +522,9 @@ test.describe.serial('visits to an event’s page', () => {
       new RegExp(`the most on ${DAY_FORMAT.format(new Date())}`, 'u'),
     )
 
-    // Today's row of the table beside it.
+    // Today's row of the table under it, folded until it is asked for.
+    await gamma.getByText('Visits per day, as a table', { exact: true }).click()
+
     const todayRow = gamma
       .getByRole('table', { name: 'Visits per day (UTC)' })
       .getByRole('row')
@@ -686,6 +704,7 @@ test.describe.serial('visits to an event’s page', () => {
     const before = (await eventTraffic(owner)).cardPlacements
 
     await visitor.goto('/events')
+    await counting(visitor)
 
     const card = visitor.getByRole('link', { name: gammaGaEventTitle, exact: true })
 

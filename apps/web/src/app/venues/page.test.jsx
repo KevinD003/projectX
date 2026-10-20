@@ -362,6 +362,10 @@ describe('the venue directory', () => {
 
   it('is a public, indexable page', () => {
     expect(metadata.title).toBe('Venues')
+    expect(metadata.description).toBe(
+      'Halls and pavilions on The Desi Events, with the accessibility each venue asserts: step-free entrances, hearing loops, accessible toilets and more.',
+    )
+    expect(metadata.alternates).toEqual({ canonical: '/venues' })
     expect(metadata.robots).toBeUndefined()
   })
 })

@@ -16,7 +16,8 @@ vi.mock('../../../../components/step-up-prompt.jsx', () => ({
 }))
 
 const { apiFetch } = await import('../../../../lib/api-fetch.js')
-const { ImportRunPlan, approvable } = await import('./import-run-plan.jsx')
+const { ImportRunPlan, PLAN_PAGE_SIZE, NOTES_SHOWN, approvable, planKinds, planPage } =
+  await import('./import-run-plan.jsx')
 
 const RUN_ID = 'crun0000000000000000001'
 const DIGEST = 'a'.repeat(64)
@@ -180,7 +181,9 @@ describe('a new plan', () => {
 
     expect(region).toHaveAttribute('tabindex', '0')
     expect(region).toContainElement(screen.getByRole('table'))
-    expect(region.className).toContain('focus-visible:ring-2')
+    expect(region.className).toContain('focus-visible:outline-2')
+    expect(region.className).toContain('focus-visible:outline-focus')
+    expect(region.className).not.toMatch(/focus-visible:(ring-|outline-none)/)
   })
 
   it('imports the plan as shown, with only the published events ticked for updating', async () => {
@@ -536,13 +539,13 @@ describe('a run of many listings', () => {
       }),
     })
 
-  it('ticks every event shown at once, and approves them in one request', async () => {
+  it('ticks every waiting event at once, and approves them in one request', async () => {
     const user = userEvent.setup()
 
     apiFetch.mockResolvedValue(answer(200, { data: { results: [] } }))
     render(<ImportRunPlan run={many(3)} canApprove approveLimit={100} />)
 
-    await user.click(screen.getByRole('button', { name: 'Tick all 3 shown' }))
+    await user.click(screen.getByRole('button', { name: 'Tick all 3 waiting' }))
 
     for (const n of ['001', '002', '003']) {
       expect(screen.getByRole('checkbox', { name: `Approve “Listing ${n}”` })).toBeChecked()
@@ -567,7 +570,7 @@ describe('a run of many listings', () => {
 
     expect(screen.queryByRole('button', { name: 'Untick all' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Tick all 3 shown' }))
+    await user.click(screen.getByRole('button', { name: 'Tick all 3 waiting' }))
     await user.click(screen.getByRole('button', { name: 'Untick all' }))
 
     expect(screen.getByRole('checkbox', { name: 'Approve “Listing 001”' })).not.toBeChecked()
@@ -586,7 +589,7 @@ describe('a run of many listings', () => {
       ),
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Tick the first 2 of 5 shown' }))
+    await user.click(screen.getByRole('button', { name: 'Tick the first 2 of 5 waiting' }))
 
     expect(screen.getByRole('checkbox', { name: 'Approve “Listing 001”' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Approve “Listing 002”' })).toBeChecked()
@@ -640,5 +643,116 @@ describe('approvable', () => {
     ).toBe(false)
     expect(approvable(row({ event: written({ reassigned: true }) }))).toBe(false)
     expect(approvable(row({ event: written({ status: 'DRAFT' }) }))).toBe(false)
+  })
+})
+
+describe('a plan of hundreds of listings, shown a page at a time', () => {
+  /**
+   * A planned run of new listings, every fifth one skipped.
+   *
+   * @param {number} count How many.
+   * @returns {object} The run.
+   */
+  const long = (count) =>
+    run({
+      eventCount: count,
+      rows: Array.from({ length: count }, (_, index) => {
+        const n = String(index + 1).padStart(3, '0')
+
+        return row({
+          sourceId: `50${n}`,
+          title: `Listing ${n}`,
+          action: index % 5 === 4 ? 'SKIPPED_DECIDED' : 'CREATE',
+        })
+      }),
+    })
+
+  /**
+   * The titles of the rows the plan's table shows.
+   *
+   * @returns {string[]} The titles.
+   */
+  const titlesShown = () =>
+    within(screen.getByRole('table'))
+      .getAllByRole('row')
+      .slice(1)
+      .map((tableRow) => tableRow.querySelector('p').textContent)
+
+  it(`shows ${PLAN_PAGE_SIZE} listings at a time, with the way to the rest`, async () => {
+    const user = userEvent.setup()
+
+    render(<ImportRunPlan run={long(60)} canApprove />)
+
+    expect(titlesShown()).toHaveLength(PLAN_PAGE_SIZE)
+    expect(titlesShown()[0]).toBe('Listing 001')
+
+    const pages = screen.getByRole('navigation', { name: 'Pages of the plan' })
+
+    expect(pages).toHaveTextContent('Listings 1 to 25 of 60')
+    expect(within(pages).getByRole('button', { name: 'Previous listings' })).toBeDisabled()
+
+    await user.click(within(pages).getByRole('button', { name: 'Next listings' }))
+    await user.click(within(pages).getByRole('button', { name: 'Next listings' }))
+
+    expect(pages).toHaveTextContent('Listings 51 to 60 of 60')
+    expect(titlesShown()).toEqual(
+      Array.from({ length: 10 }, (_, index) => `Listing ${String(51 + index).padStart(3, '0')}`),
+    )
+    expect(within(pages).getByRole('button', { name: 'Next listings' })).toBeDisabled()
+  })
+
+  it('narrows the plan to one kind of line, counted from the rows, and starts again at the first page', async () => {
+    const user = userEvent.setup()
+
+    render(<ImportRunPlan run={long(60)} canApprove />)
+
+    const kinds = screen.getByRole('group', { name: 'Show listings' })
+    const all = within(kinds).getByRole('button', { name: /^All/u })
+
+    expect(all).toHaveAttribute('aria-pressed', 'true')
+    expect(all).toHaveTextContent('All60')
+
+    const skipped = planKinds(long(60).rows).find((kind) => kind.action === 'SKIPPED_DECIDED')
+
+    expect(skipped.count).toBe(12)
+
+    await user.click(
+      within(kinds).getByRole('button', { name: new RegExp(`^${skipped.label}`, 'u') }),
+    )
+
+    expect(titlesShown()).toHaveLength(12)
+    expect(titlesShown()[0]).toBe('Listing 005')
+    expect(screen.getByRole('navigation', { name: 'Pages of the plan' })).toHaveTextContent(
+      'Listings 1 to 12 of 12',
+    )
+  })
+
+  it('keeps a short plan on one page, with no pager and no kinds to choose from', () => {
+    render(<ImportRunPlan run={run({ rows: [row()] })} canApprove />)
+
+    expect(screen.queryByRole('navigation', { name: 'Pages of the plan' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Show listings' })).toBeNull()
+  })
+
+  it('folds a listing’s notes past the second behind “N more notes”, still in the row', () => {
+    const notes = ['One.', 'Two.', 'Three.', 'Four.']
+
+    render(<ImportRunPlan run={run({ rows: [row({ importNotes: notes })] })} canApprove />)
+
+    const [, only] = within(screen.getByRole('table')).getAllByRole('row')
+    const more = within(only).getByText(`${notes.length - NOTES_SHOWN} more notes`)
+
+    expect(more.tagName).toBe('SUMMARY')
+    expect(more.closest('details')).not.toHaveAttribute('open')
+    // In the row's text, so a search of the page (or a test) still finds it.
+    expect(only).toHaveTextContent('Four.')
+  })
+
+  it('pages within bounds, whatever page is asked for', () => {
+    const rows = Array.from({ length: 30 }, (_, index) => index)
+
+    expect(planPage(rows, 9)).toMatchObject({ page: 2, pages: 2, first: 26, last: 30 })
+    expect(planPage(rows, 0)).toMatchObject({ page: 1, first: 1, last: 25 })
+    expect(planPage([], 1)).toMatchObject({ page: 1, pages: 1, first: 0, last: 0 })
   })
 })

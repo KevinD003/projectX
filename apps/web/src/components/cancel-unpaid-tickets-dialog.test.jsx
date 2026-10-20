@@ -197,7 +197,7 @@ describe('what it reads, and what is ticked to start with', () => {
     const dialog = screen.getByRole('dialog', { name: 'Cancel unpaid tickets' })
 
     expect(dialog).toHaveAttribute('aria-modal', 'true')
-    expect(within(dialog).getByText(`Booking ${REFERENCE} — Asha Rao`)).toBeInTheDocument()
+    expect(within(dialog).getByText(`Booking ${REFERENCE} · Asha Rao`)).toBeInTheDocument()
     await waitFor(() =>
       expect(document.activeElement).toBe(
         screen.getByRole('heading', { name: 'Cancel unpaid tickets' }),
@@ -210,9 +210,9 @@ describe('what it reads, and what is ticked to start with', () => {
 
     await open()
 
-    const first = screen.getByLabelText('Asha Rao — Every night — $45.00')
-    const second = screen.getByLabelText('Ticket 2 of 3 — Saturday — $45.00')
-    const over = screen.getByLabelText('Ticket 3 of 3 — Friday — $45.00')
+    const first = screen.getByLabelText('Asha Rao · Every night · $45.00')
+    const second = screen.getByLabelText('Ticket 2 of 3 · Saturday · $45.00')
+    const over = screen.getByLabelText('Ticket 3 of 3 · Friday · $45.00')
 
     expect(first).toBeChecked()
     expect(second).toBeChecked()
@@ -794,10 +794,10 @@ describe('the words', () => {
   })
 
   it('names a ticket by its attendee or its label, its night or every night, and its due', () => {
-    expect(ticketWords(BOOKING.tickets[0], 'USD')).toBe('Asha Rao — Every night — $45.00')
-    expect(ticketWords(BOOKING.tickets[1], 'USD')).toBe('Ticket 2 of 3 — Saturday — $45.00')
+    expect(ticketWords(BOOKING.tickets[0], 'USD')).toBe('Asha Rao · Every night · $45.00')
+    expect(ticketWords(BOOKING.tickets[1], 'USD')).toBe('Ticket 2 of 3 · Saturday · $45.00')
     // An event with no nights has no night to name.
-    expect(ticketWords(ticket(0, { everyNight: false }), 'USD')).toBe('Ticket 1 of 3 — $45.00')
+    expect(ticketWords(ticket(0, { everyNight: false }), 'USD')).toBe('Ticket 1 of 3 · $45.00')
   })
 
   it('asks for a ticket and a reason of 10 to 500 characters', () => {
