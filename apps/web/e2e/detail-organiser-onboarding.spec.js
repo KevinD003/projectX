@@ -119,8 +119,9 @@ const ids = () => world()
 const names = () => onboardingNames(ids().tag)
 
 /**
- * What a platform administrator's rail offers, in order (ADR 0018): everything
- * a super administrator's does — the workspace's platform doors, Check-in and
+ * What a platform administrator's rail offers, in order (ADR 0018): the
+ * Platform group first, then everything a super administrator's does — the
+ * workspace's platform doors, Check-in and
  * the imported events' door team among them, the money, privacy and retention,
  * review, inviting organisers, every organisation's events, imports and People
  * and roles — though not the platform-role change on that page, which is drawn
@@ -132,6 +133,18 @@ const names = () => onboardingNames(ids().tag)
  * @type {ReadonlyArray<string>}
  */
 const ADMIN_RAIL = Object.freeze([
+  // The platform's own doors come first, under Platform, for a platform
+  // administrator: its overview, then every organisation's events, imports,
+  // People and roles, inviting organisers, and (SPEC3 §12.10) referral codes
+  // and booking fee refunds, and website links.
+  'Platform overview',
+  'All events',
+  'Imports',
+  'People and roles',
+  'Organiser invitations',
+  'Referral codes',
+  'Booking fee refunds',
+  'Website links',
   'Overview',
   'Events',
   'Venues',
@@ -147,19 +160,11 @@ const ADMIN_RAIL = Object.freeze([
   'Retention',
   'Organisation checks',
   'Pictures waiting',
-  'Website links',
-  'Organiser invitations',
-  'All events',
-  // SPEC3 §12.10: referral codes and booking fee refunds, for the team at The Desi Events.
-  'Referral codes',
-  'Booking fee refunds',
-  'Imports',
-  'People and roles',
 ])
 
 /** The one sentence every unusable organiser code is refused with. */
 const UNUSABLE =
-  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address — sign in with the address the invitation was sent to.'
+  'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address. Sign in with the address the invitation was sent to.'
 
 /** What the old self-service route says now, to anybody. */
 const INVITATION_REQUIRED =
@@ -167,11 +172,11 @@ const INVITATION_REQUIRED =
 
 /** What the API says to a posting role asked for from a team page. */
 const POSTING_REFUSAL =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
 
 /** What the team page says beside its invite form. */
 const POSTING_SENTENCE =
-  'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
+  'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. To add somebody who will create events, ask the team at The Desi Events to add them to your organisation.'
 
 /** What a member of the organisation is told on its event's review page. */
 const CONFLICT_NOTICE =
@@ -996,11 +1001,14 @@ test.describe.serial('organisers join by invitation, and events go public after 
     await expect(
       admin.getByText(/Changing a platform role is for super administrators\./u),
     ).toBeVisible()
+    // The area's sections are the workspace rail's entries: the row of tabs
+    // that repeated them was a second menu and is gone.
     await expect(
-      admin
-        .getByRole('navigation', { name: 'Platform administration', exact: true })
-        .getByRole('link', { name: 'People and roles', exact: true }),
+      rail(admin).getByRole('link', { name: 'People and roles', exact: true }),
     ).toBeVisible()
+    await expect(
+      admin.getByRole('navigation', { name: 'Platform administration', exact: true }),
+    ).toHaveCount(0)
 
     const search = admin.getByRole('form', { name: 'Find an account' })
 
@@ -1032,12 +1040,14 @@ test.describe.serial('organisers join by invitation, and events go public after 
     await platform.goto('/admin/organizer-invitations')
     await expect(pageHeading(platform, 'Organiser invitations')).toBeVisible()
 
-    const tabs = platform.getByRole('navigation', { name: 'Platform administration', exact: true })
+    const platformRail = rail(platform)
 
     await expect(
-      tabs.getByRole('link', { name: 'Organiser invitations', exact: true }),
+      platformRail.getByRole('link', { name: 'Organiser invitations', exact: true }),
     ).toBeVisible()
-    await expect(tabs.getByRole('link', { name: 'People and roles', exact: true })).toBeVisible()
+    await expect(
+      platformRail.getByRole('link', { name: 'People and roles', exact: true }),
+    ).toBeVisible()
 
     // A moderator reviews events and is not on the team that invites
     // organisers: the whole area is refused.

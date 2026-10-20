@@ -1,0 +1,126 @@
+/*
+ * The door's one authored moment: the scanner and its verdict.
+ *
+ * Imported by the check-in page only, so no other page carries it. Plain
+ * CSS on the theme's custom properties, so the Showtime register
+ * (`[data-register='door']`) decides every colour: the brackets and the scan
+ * line are the register's accent, which there is gold.
+ *
+ * ## The viewfinder (components/door-camera.jsx)
+ *
+ * Four corner brackets frame where the pass goes. While the camera looks for
+ * a pass, a 2px line travels down the frame and back, 1.8s each way, on
+ * `transform` alone. When a pass is read the camera pauses, the line is taken
+ * out of the page, and the brackets close in to 96% over 160ms: the lock.
+ *
+ * ## The verdict (components/door-workspace.jsx)
+ *
+ * A full-width solid band, revealed from its top edge over 200ms with
+ * `clip-path`, so nothing is ever drawn at opacity 0.
+ *
+ * ## Reduced motion
+ *
+ * The scan line does not exist (it is `display: none`, so it runs no
+ * animation at all) and the band has no entrance: both live inside
+ * `prefers-reduced-motion: no-preference`. The bracket lock is a transition,
+ * which the theme's global rule shortens to nothing, so the brackets simply
+ * are where they end up.
+ */
+
+.door-brackets {
+  transition: transform 160ms var(--ease-out);
+}
+
+.door-viewfinder[data-look='locked'] .door-brackets {
+  transform: scale(0.96);
+}
+
+.door-bracket {
+  position: absolute;
+  width: clamp(1.75rem, 12%, 3rem);
+  aspect-ratio: 1;
+  border-color: var(--color-accent);
+  border-style: solid;
+  border-width: 0;
+}
+
+.door-viewfinder[data-look='off'] .door-bracket {
+  border-color: var(--color-line-strong);
+}
+
+.door-bracket-tl {
+  top: 0;
+  left: 0;
+  border-top-width: 4px;
+  border-left-width: 4px;
+  border-top-left-radius: 6px;
+}
+
+.door-bracket-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 4px;
+  border-right-width: 4px;
+  border-top-right-radius: 6px;
+}
+
+.door-bracket-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 4px;
+  border-left-width: 4px;
+  border-bottom-left-radius: 6px;
+}
+
+.door-bracket-br {
+  right: 0;
+  bottom: 0;
+  border-right-width: 4px;
+  border-bottom-width: 4px;
+  border-bottom-right-radius: 6px;
+}
+
+/* The line is the top edge of a box as tall as the frame; moving the box by
+   its own height moves the edge from the top bracket to the bottom one. */
+.door-scanline {
+  display: none;
+  position: absolute;
+  inset: 0.5rem 0.75rem;
+  border-top: 2px solid var(--color-accent);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes door-scan {
+    from {
+      transform: translateY(0);
+    }
+
+    to {
+      transform: translateY(calc(100% - 2px));
+    }
+  }
+
+  @keyframes door-verdict-in {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  .door-scanline {
+    display: block;
+    animation: door-scan 1.8s linear infinite alternate;
+  }
+
+  /*
+   * `backwards`: the clip holds only until the band is in, so nothing at
+   * rest is clipped, a focus outline on a control inside the band included.
+   */
+  .door-verdict {
+    animation: door-verdict-in 200ms var(--ease-out) backwards;
+  }
+}

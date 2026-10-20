@@ -184,7 +184,7 @@ export default async function PrivacyRequestPage({ params, searchParams }) {
                   {request.completedAt ? (
                     <time dateTime={request.completedAt}>{request.completedAt}</time>
                   ) : (
-                    '—'
+                    'Not completed'
                   )}
                 </dd>
               </div>
@@ -197,9 +197,9 @@ export default async function PrivacyRequestPage({ params, searchParams }) {
             </h2>
             <p className="mt-1 max-w-3xl text-sm text-ink-muted">
               Counts by category, as computed when this request was raised. Categories rather than
-              columns, and counts rather than values — a preview an operator reads must not double
-              as a map of where the personal data lives. This is a snapshot: nothing recomputes it
-              at confirmation time.
+              columns, and counts rather than values: a preview an operator reads must not double as
+              a map of where the personal data lives. This is a snapshot: nothing recomputes it at
+              confirmation time.
             </p>
 
             {Array.isArray(request.scope) && request.scope.length > 0 ? (
@@ -263,7 +263,7 @@ export default async function PrivacyRequestPage({ params, searchParams }) {
               than the request, so placing or releasing one appears on the{' '}
               <Link
                 href="/privacy/holds"
-                className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
               >
                 holds screen
               </Link>{' '}

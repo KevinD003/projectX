@@ -18,7 +18,7 @@
  * @module app/organizer/team/invite-form.test
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -131,7 +131,7 @@ describe('the invite form', () => {
   it('shows the API’s sentence when it refuses a role that posts events', async () => {
     const user = userEvent.setup()
     const sentence =
-      'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
+      'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.'
 
     apiFetch.mockResolvedValue(
       answer(403, { error: { code: 'POSTING_ROLE_NEEDS_PLATFORM', message: sentence } }),
@@ -341,6 +341,50 @@ describe('the invite form', () => {
       role: 'SCANNER',
       eventIds: ['evt00000000000000000001'],
     })
+  })
+
+  it('lists each event on its own row, title then date, and counts what is ticked', async () => {
+    const user = userEvent.setup()
+    const events = [
+      { id: 'evt00000000000000000001', title: 'Garba Night', when: 'Sat 24 Oct' },
+      { id: 'evt00000000000000000002', title: 'Diwali Mela', when: 'Sun 1 Nov' },
+      { id: 'evt00000000000000000003', title: 'Holi Day', when: null },
+    ]
+
+    render(
+      <InviteForm
+        organizationId={ORG}
+        assignableRoles={['SCANNER']}
+        deliveryMode="EMAIL"
+        events={events}
+      />,
+    )
+    await user.selectOptions(screen.getByLabelText(/Role/u), 'SCANNER')
+
+    const picker = document.querySelector('[data-slot="door-event-picker"]')
+
+    expect(picker.className).toContain('overflow-y-auto')
+    expect(
+      within(picker)
+        .getAllByRole('checkbox')
+        .map((box) => box.labels[0].textContent),
+    ).toEqual(['Garba NightSat 24 Oct', 'Diwali MelaSun 1 Nov', 'Holi Day'])
+    // Two stacked lines on screen, one name when read.
+    expect(
+      within(picker)
+        .getAllByRole('checkbox')
+        .map((box) => box.getAttribute('aria-label')),
+    ).toEqual(['Garba Night, Sat 24 Oct', 'Diwali Mela, Sun 1 Nov', 'Holi Day'])
+    expect(screen.getByRole('checkbox', { name: 'Garba Night, Sat 24 Oct' })).not.toBeChecked()
+    expect(screen.getByText('None ticked.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Diwali Mela, Sun 1 Nov' }))
+
+    expect(screen.getByText('1 of 3 ticked.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Holi Day' }))
+
+    expect(screen.getByText('2 of 3 ticked.')).toBeInTheDocument()
   })
 
   it('sends no events for a role that does not work a door, and offers no picker for it', async () => {

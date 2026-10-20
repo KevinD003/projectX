@@ -13,7 +13,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import LimitationsPage from './page.jsx'
+import LimitationsPage, { metadata } from './page.jsx'
 
 afterEach(cleanup)
 
@@ -237,7 +237,7 @@ describe('LimitationsPage', () => {
     const live = entryFor('Reviewing changes to a published event').textContent
 
     for (const sentence of [
-      'On a published, on-sale, paused, sold-out or postponed event, the organiser — or the team at The Desi Events, in an editing session opened with a reason — can change everything without another review, and the change is public when it saves.',
+      'On a published, on-sale, paused, sold-out or postponed event, the organiser (or the team at The Desi Events, in an editing session opened with a reason) can change everything without another review, and the change is public when it saves.',
       'The date, time, time zone, place, joining link, age limit and entry, refund and conduct terms change only with a reason, and every ticket holder is shown the change on their order page; it is not emailed.',
       'Ticket types can be added, edited, re-priced (people who already bought keep what they paid), closed, hidden, or removed if unused.',
       'Nights can be added, moved, given another seating map while nothing at them is sold, removed if unused, or cancelled with their tickets refunded.',
@@ -533,5 +533,10 @@ describe('LimitationsPage', () => {
 
     expect(fetch).not.toHaveBeenCalled()
     fetch.mockRestore()
+  })
+
+  it('is canonical at its own address', () => {
+    expect(metadata.title).toBe('What this site does not do')
+    expect(metadata.alternates).toEqual({ canonical: '/limitations' })
   })
 })

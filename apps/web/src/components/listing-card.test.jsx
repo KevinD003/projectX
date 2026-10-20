@@ -34,7 +34,7 @@ describe('EventCard', () => {
     render(<EventCard event={garba} />)
 
     expect(screen.getByRole('img')).toHaveAccessibleName(
-      'Illustration of garba dancers circling a lit lamp under festival lights for Navratri Night One: Garba Under the Lights',
+      'Garba & Dandiya poster for Navratri Night One: Garba Under the Lights',
     )
   })
 
@@ -60,7 +60,7 @@ describe('EventCard', () => {
     expect(cover.getAttribute('src')).toContain(
       'url=%2Fapi%2Fv1%2Fmedia%2Fcmedia0000000000000000001',
     )
-    expect(container.querySelector('svg[data-slot="poster"]')).toBeNull()
+    expect(container.querySelector('[data-slot="poster"]')).toBeNull()
     expect(screen.getByRole('link')).toHaveAccessibleName(
       'Navratri Night One: Garba Under the Lights',
     )
@@ -347,16 +347,25 @@ describe('EventGrid', () => {
     expect(screen.queryAllByRole('listitem')).toHaveLength(0)
   })
 
-  it('as a rail, scrolls inside itself on a phone rather than widening the page', () => {
-    render(<EventGrid label="Upcoming events" events={[garba]} layout="rail" />)
+  it('is a poster wall: two across on a phone, three on a tablet, four on a desk', () => {
+    render(<EventGrid label="Matching events" events={[garba]} />)
 
-    const list = screen.getByRole('list', { name: 'Upcoming events' })
+    const list = screen.getByRole('list', { name: 'Matching events' })
 
-    // Asserted on the classes because jsdom applies no stylesheet: the list is
-    // the scroll container, and each card snaps and keeps a fixed share.
-    expect(list.className).toContain('overflow-x-auto')
-    expect(list.className).toContain('snap-x')
-    expect(within(list).getByRole('listitem').className).toContain('snap-start')
+    // Asserted on the classes because jsdom applies no stylesheet.
+    expect(list).toHaveClass('grid', 'grid-cols-2', 'sm:grid-cols-3', 'xl:grid-cols-4')
+    expect(within(list).getByRole('img')).toHaveClass('aspect-[4/5]')
+  })
+
+  it('draws a card alike whether or not its poster is carried to the event page', () => {
+    const { container, unmount } = render(<EventGrid label="Matching events" events={[garba]} />)
+    const plain = container.innerHTML
+
+    unmount()
+    render(<EventGrid label="Matching events" events={[garba]} shared />)
+
+    // The shared transition adds no box of its own: the card is drawn alike.
+    expect(screen.getByRole('list', { name: 'Matching events' }).outerHTML).toBe(plain)
   })
 })
 

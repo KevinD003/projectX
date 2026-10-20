@@ -574,7 +574,7 @@ describe('the booking fee and payment (SPEC3 §12.3, SPEC3-XI §12.3)', () => {
     expect(getPaymentTerms).toHaveBeenCalledWith(EVENT.id, {})
     expect(
       screen.getByRole('link', {
-        name: 'Bookings waiting to be paid at the door: 2 tickets — review',
+        name: 'Bookings waiting to be paid at the door: 2 tickets. Review them',
       }),
     ).toHaveAttribute('href', `/admin/events/${EVENT.id}/venue-bookings`)
     expect(screen.getByTestId('fee-example')).toHaveTextContent(

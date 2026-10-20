@@ -116,6 +116,13 @@ beforeEach(() => {
 })
 
 describe('the organisation screen', () => {
+  it('says once that a verified organisation may publish and be paid, not twice', async () => {
+    await renderPage({ state: verification('VERIFIED') })
+
+    expect(screen.getByText('Verified')).toBeInTheDocument()
+    expect(screen.getAllByText('It may publish events and be paid.')).toHaveLength(1)
+  })
+
   it('shows the public page, the state and the request form to an owner of an unverified one', async () => {
     await renderPage({})
 

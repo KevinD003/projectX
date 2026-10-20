@@ -79,6 +79,8 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
+import { Icon } from '@desi-event/ui/icons'
+
 import { Alert, Button, FormField, Input, Select } from './ui.jsx'
 import { DoorCamera } from './door-camera.jsx'
 import { apiFetch } from '../lib/api-fetch.js'
@@ -104,9 +106,21 @@ import {
   takePaymentSentence,
   tonightOf,
 } from '../lib/door.js'
+import { zoneWords } from '../lib/format.js'
 import { formatAmount } from '../lib/pricing.js'
 import { looksLikeGroupCode } from '../lib/pass-shape.js'
 import { EVERY_NIGHT, sessionDisplayLabel } from '../lib/sessions.js'
+
+/**
+ * The door's primary action while it cannot be pressed. The shared disabled
+ * look is the gold plate at 60% opacity, which on the Showtime purple turns a
+ * muddy brown beside the gold Next ticket and the gold segmented control. At
+ * the door a disabled action is drawn as a quiet plate instead: the raised
+ * purple well with muted lavender words, a pair the contrast test measures
+ * in the door register.
+ */
+export const DOOR_DISABLED_PRIMARY =
+  'disabled:opacity-100 disabled:bg-surface-subtle disabled:text-ink-muted'
 
 /** How many recent tickets the session list shows. */
 const RECENT_LIMIT = 8
@@ -623,17 +637,22 @@ export function DoorWorkspace({ events, platform = false, venuePaymentsFor = [] 
   }
 
   const scanning = mode === 'camera' && stage === 'ready' && ready && online
+  const answered = Boolean(problem || preview || result || groupPreview || groupResult)
 
+  // Two columns from `lg`: where the ticket is presented on the left, what
+  // the server said about it on the right, beside it rather than under it.
+  // On a phone it is one column in the order a steward works: the event, the
+  // ticket, the answer, then the session list.
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <p role="status" aria-live="polite" className="sr-only">
         {notice}
       </p>
 
       {!online ? (
         <Alert variant="warning">
-          This device is offline. Nobody can be admitted until it is back online — there is no
-          offline admission.
+          This device is offline. Nobody can be admitted until it is back online, because there is
+          no offline admission.
         </Alert>
       ) : null}
 
@@ -644,270 +663,362 @@ export function DoorWorkspace({ events, platform = false, venuePaymentsFor = [] 
         </Alert>
       ) : null}
 
-      <section aria-labelledby="door-event-heading">
-        <h2 id="door-event-heading" className="text-xl font-semibold text-ink">
-          Event
-        </h2>
-        {events.length === 1 ? (
-          <div className="mt-3 rounded-card border border-line bg-surface-raised p-4 text-sm shadow-card">
-            <p className="font-medium break-words text-ink">{events[0].event.title}</p>
-            {platform && events[0].organization?.name ? (
-              <p className="mt-1 break-words text-ink-muted">{events[0].organization.name}</p>
-            ) : null}
-            <p className="mt-1 text-ink-muted">
-              {doorTime(events[0].event.startsAt, events[0].event.timezone)} ·{' '}
-              {events[0].event.timezone}
-            </p>
-            <p className="mt-1 text-ink-muted">{authorityLabel(events[0])}</p>
-          </div>
-        ) : (
-          <FormField label="Event you are admitting to" className="mt-3 max-w-xl">
-            <Select
-              ref={eventField}
-              value={eventId}
-              onChange={(changed) => {
-                setEventId(changed.target.value)
-                setNightId(
-                  tonightOf(
-                    events.find((entry) => entry.event.id === changed.target.value)?.sessions ?? [],
-                  ),
-                )
-                clear(false)
-              }}
-            >
-              <option value="">Choose an event</option>
-              {events.map((entry) => (
-                <option key={entry.event.id} value={entry.event.id}>
-                  {doorEventLabel(entry, { withOrganization: manyOrganizations })}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        )}
-        {selected && events.length > 1 ? (
-          <p className="mt-2 text-sm text-ink-muted">{authorityLabel(selected)}</p>
-        ) : null}
-        {selected && venuePaymentsFor.includes(selected.event.id) ? (
-          <p className="mt-2 text-sm">
-            <Link
-              href={`/organizer/events/${encodeURIComponent(selected.event.id)}/venue-payments`}
-              className="inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
-            >
-              Payments at the venue
-            </Link>
-          </p>
-        ) : null}
-        {manyNights ? (
-          <FormField
-            label="Night you are admitting to"
-            description="A ticket for another night is refused. A ticket for every night is let in once each night."
-            className="mt-4 max-w-xl"
-          >
-            <Select
-              ref={nightField}
-              value={nightId}
-              onChange={(changed) => {
-                setNightId(changed.target.value)
-                clear(false)
-              }}
-            >
-              <option value="">Choose a night</option>
-              {nights.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {sessionDisplayLabel(entry)}
-                  {entry.status === 'CANCELLED' ? ' (cancelled)' : ''}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        ) : null}
-      </section>
-
-      {ready ? (
-        <section aria-labelledby="door-present-heading">
-          <h2 id="door-present-heading" className="text-xl font-semibold text-ink">
-            Present a ticket
-          </h2>
-
-          <div
-            role="group"
-            aria-label="How the ticket is presented"
-            className="mt-3 flex flex-wrap gap-2"
-          >
-            <Button
-              type="button"
-              variant={mode === 'manual' ? 'primary' : 'outline'}
-              aria-pressed={mode === 'manual'}
-              onClick={() => setMode('manual')}
-            >
-              Type the printed code
-            </Button>
-            <Button
-              type="button"
-              variant={mode === 'camera' ? 'primary' : 'outline'}
-              aria-pressed={mode === 'camera'}
-              onClick={() => setMode('camera')}
-            >
-              Scan the QR pass
-            </Button>
-          </div>
-
-          <div className="mt-4">
-            {mode === 'manual' ? (
-              <form
-                className="flex max-w-xl flex-wrap items-end gap-3"
-                onSubmit={(submitted) => {
-                  submitted.preventDefault()
-
-                  const typed = code.trim().toUpperCase()
-
-                  if (!typed) return
-
-                  lookUp({ kind: looksLikeGroupCode(typed) ? 'group' : 'ticket', code: typed })
-                }}
-              >
-                <FormField label="Printed ticket code or group code" className="min-w-0 flex-1">
-                  <Input
-                    ref={codeField}
-                    value={code}
-                    onChange={(changed) => setCode(changed.target.value)}
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    spellCheck={false}
-                    inputMode="text"
-                    maxLength={64}
-                    disabled={busy || stage === 'preview' || stage === 'result'}
-                  />
-                </FormField>
-                <Button
-                  type="submit"
-                  loading={stage === 'looking'}
-                  disabled={
-                    !online || code.trim() === '' || stage === 'preview' || stage === 'result'
-                  }
-                >
-                  Look up
-                </Button>
-              </form>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-8">
+          <section aria-labelledby="door-event-heading">
+            <h2 id="door-event-heading" className="text-h3 text-ink">
+              Event
+            </h2>
+            {events.length === 1 ? (
+              <div className="mt-2 rounded-plate bg-surface-raised px-4 py-3 text-sm">
+                <p className="font-display text-h3 break-words text-ink">{events[0].event.title}</p>
+                {platform && events[0].organization?.name ? (
+                  <p className="mt-1 break-words text-ink-muted">{events[0].organization.name}</p>
+                ) : null}
+                <p className="mt-1 text-ink-muted">
+                  {doorTime(events[0].event.startsAt, events[0].event.timezone)} ·{' '}
+                  {zoneWords(events[0].event.timezone, events[0].event.startsAt)}
+                </p>
+                <p className="mt-1 text-ink-muted">{authorityLabel(events[0])}</p>
+              </div>
             ) : (
-              <DoorCamera
-                paused={!scanning}
-                onPass={onPass}
-                onGroupPass={onGroupPass}
-                onOther={() => setNotice('That QR code is not a ticket pass.')}
-              />
+              <FormField label="Event you are admitting to" className="mt-2 max-w-xl">
+                <Select
+                  ref={eventField}
+                  value={eventId}
+                  onChange={(changed) => {
+                    setEventId(changed.target.value)
+                    setNightId(
+                      tonightOf(
+                        events.find((entry) => entry.event.id === changed.target.value)?.sessions ??
+                          [],
+                      ),
+                    )
+                    clear(false)
+                  }}
+                >
+                  <option value="">Choose an event</option>
+                  {events.map((entry) => (
+                    <option key={entry.event.id} value={entry.event.id}>
+                      {doorEventLabel(entry, { withOrganization: manyOrganizations })}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
             )}
-          </div>
-        </section>
-      ) : (
-        <p className="text-sm text-ink-muted">
-          {selected
-            ? 'Choose the night you are admitting to first.'
-            : 'Choose the event you are admitting to first.'}
-        </p>
-      )}
+            {selected && events.length > 1 ? (
+              <p className="mt-2 text-sm text-ink-muted">{authorityLabel(selected)}</p>
+            ) : null}
+            {selected && venuePaymentsFor.includes(selected.event.id) ? (
+              <p className="mt-2 text-sm">
+                <Link
+                  href={`/organizer/events/${encodeURIComponent(selected.event.id)}/venue-payments`}
+                  className="inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
+                >
+                  Payments at the venue
+                </Link>
+              </p>
+            ) : null}
+            {manyNights ? (
+              <FormField
+                label="Night you are admitting to"
+                description="A ticket for another night is refused. A ticket for every night is let in once each night."
+                className="mt-4 max-w-xl"
+              >
+                <Select
+                  ref={nightField}
+                  value={nightId}
+                  onChange={(changed) => {
+                    setNightId(changed.target.value)
+                    clear(false)
+                  }}
+                >
+                  <option value="">Choose a night</option>
+                  {nights.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {sessionDisplayLabel(entry)}
+                      {entry.status === 'CANCELLED' ? ' (cancelled)' : ''}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            ) : null}
+          </section>
 
-      {problem && !preview && !groupPreview ? (
-        <section aria-labelledby={answerId}>
-          <h2
-            id={answerId}
-            ref={headingRef}
-            tabIndex={-1}
-            className="text-xl font-semibold text-ink"
-          >
-            Not found
-          </h2>
-          <Alert variant="error" urgent className="mt-3">
-            {problem.sentence}
-          </Alert>
-          <Button type="button" variant="secondary" className="mt-3" onClick={() => clear()}>
-            Next ticket
-          </Button>
-        </section>
-      ) : null}
+          {ready ? (
+            <section aria-labelledby="door-present-heading">
+              <h2 id="door-present-heading" className="text-h3 text-ink">
+                Present a ticket
+              </h2>
 
-      {preview && !result ? (
-        <PreviewCard
-          preview={preview}
-          night={night}
-          headingId={answerId}
-          headingRef={headingRef}
-          stage={stage}
-          problem={problem}
-          online={online}
-          onAdmit={admit}
-          onLookAgain={lookAgain}
-          onClear={() => clear()}
-        />
-      ) : null}
+              {/* Two ways in, as one segmented control: the pressed one is filled
+              in the register's gold, the other sits quietly in the track. */}
+              <div
+                role="group"
+                aria-label="How the ticket is presented"
+                className="mt-3 grid max-w-xl grid-cols-2 gap-1 rounded-control bg-surface-sunken p-1"
+              >
+                <Button
+                  type="button"
+                  variant={mode === 'manual' ? 'primary' : 'ghost'}
+                  aria-pressed={mode === 'manual'}
+                  onClick={() => setMode('manual')}
+                  className="px-3"
+                >
+                  <Icon name="ticket" className="hidden sm:block" />
+                  Type the printed code
+                </Button>
+                <Button
+                  type="button"
+                  variant={mode === 'camera' ? 'primary' : 'ghost'}
+                  aria-pressed={mode === 'camera'}
+                  onClick={() => setMode('camera')}
+                  className="px-3"
+                >
+                  <Icon name="scan" className="hidden sm:block" />
+                  Scan the QR pass
+                </Button>
+              </div>
 
-      {result ? (
-        <ResultCard
-          result={result}
-          owed={owedOf(preview)}
-          night={night}
-          headingId={answerId}
-          headingRef={headingRef}
-          onClear={() => clear()}
-        />
-      ) : null}
+              <div className="mt-5">
+                {mode === 'manual' ? (
+                  <form
+                    className="flex max-w-xl flex-col gap-3 sm:flex-row sm:items-end"
+                    onSubmit={(submitted) => {
+                      submitted.preventDefault()
 
-      {groupPreview && !groupResult ? (
-        <GroupPreviewCard
-          preview={groupPreview}
-          night={night}
-          chosen={chosen}
-          onToggle={toggle}
-          headingId={answerId}
-          headingRef={headingRef}
-          stage={stage}
-          problem={problem}
-          online={online}
-          onAdmit={admit}
-          onLookAgain={lookAgain}
-          onClear={() => clear()}
-        />
-      ) : null}
+                      const typed = code.trim().toUpperCase()
 
-      {groupResult ? (
-        <GroupResultCard
-          result={groupResult}
-          currency={groupPreview?.payment?.currency ?? 'USD'}
-          night={night}
-          headingId={answerId}
-          headingRef={headingRef}
-          onClear={() => clear()}
-        />
-      ) : null}
+                      if (!typed) return
 
-      <section aria-labelledby="door-recent-heading">
-        <h2 id="door-recent-heading" className="text-xl font-semibold text-ink">
-          This session
+                      lookUp({ kind: looksLikeGroupCode(typed) ? 'group' : 'ticket', code: typed })
+                    }}
+                  >
+                    <FormField label="Printed ticket code or group code" className="min-w-0 flex-1">
+                      <Input
+                        ref={codeField}
+                        value={code}
+                        onChange={(changed) => setCode(changed.target.value)}
+                        autoComplete="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        inputMode="text"
+                        maxLength={64}
+                        disabled={busy || stage === 'preview' || stage === 'result'}
+                        className="min-h-12 font-mono text-lg tracking-wide uppercase sm:text-lg"
+                      />
+                    </FormField>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      loading={stage === 'looking'}
+                      disabled={
+                        !online || code.trim() === '' || stage === 'preview' || stage === 'result'
+                      }
+                      className={DOOR_DISABLED_PRIMARY}
+                    >
+                      Look up
+                    </Button>
+                  </form>
+                ) : (
+                  <DoorCamera
+                    paused={!scanning}
+                    onPass={onPass}
+                    onGroupPass={onGroupPass}
+                    onOther={() => setNotice('That QR code is not a ticket pass.')}
+                  />
+                )}
+              </div>
+            </section>
+          ) : (
+            <p className="text-sm text-ink-muted">
+              {selected
+                ? 'Choose the night you are admitting to first.'
+                : 'Choose the event you are admitting to first.'}
+            </p>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-8 lg:sticky lg:top-[calc(var(--chrome-top)+1.5rem)] lg:self-start">
+          {!answered ? (
+            <div
+              data-slot="door-waiting"
+              className="hidden rounded-plate bg-surface-sunken px-5 py-8 text-ink-muted lg:block"
+            >
+              <p className="font-display text-h3 text-ink">Waiting for a ticket</p>
+              <p className="mt-2 text-sm">
+                Who it is, what they hold and whether they may come in shows up here. Looking a
+                ticket up changes nothing. Only Admit does.
+              </p>
+            </div>
+          ) : null}
+
+          {problem && !preview && !groupPreview ? (
+            <section aria-labelledby={answerId}>
+              <VerdictBand tone="refuse" headingId={answerId} headingRef={headingRef}>
+                Not found
+              </VerdictBand>
+              <Alert variant="error" urgent className="mt-4">
+                {problem.sentence}
+              </Alert>
+              <Button
+                type="button"
+                size="lg"
+                className="mt-4 w-full sm:w-auto"
+                onClick={() => clear()}
+              >
+                Next ticket
+              </Button>
+            </section>
+          ) : null}
+
+          {preview && !result ? (
+            <PreviewCard
+              preview={preview}
+              night={night}
+              headingId={answerId}
+              headingRef={headingRef}
+              stage={stage}
+              problem={problem}
+              online={online}
+              onAdmit={admit}
+              onLookAgain={lookAgain}
+              onClear={() => clear()}
+            />
+          ) : null}
+
+          {result ? (
+            <ResultCard
+              result={result}
+              owed={owedOf(preview)}
+              night={night}
+              headingId={answerId}
+              headingRef={headingRef}
+              onClear={() => clear()}
+            />
+          ) : null}
+
+          {groupPreview && !groupResult ? (
+            <GroupPreviewCard
+              preview={groupPreview}
+              night={night}
+              chosen={chosen}
+              onToggle={toggle}
+              headingId={answerId}
+              headingRef={headingRef}
+              stage={stage}
+              problem={problem}
+              online={online}
+              onAdmit={admit}
+              onLookAgain={lookAgain}
+              onClear={() => clear()}
+            />
+          ) : null}
+
+          {groupResult ? (
+            <GroupResultCard
+              result={groupResult}
+              currency={groupPreview?.payment?.currency ?? 'USD'}
+              night={night}
+              headingId={answerId}
+              headingRef={headingRef}
+              onClear={() => clear()}
+            />
+          ) : null}
+
+          <section aria-labelledby="door-recent-heading">
+            <h2 id="door-recent-heading" className="text-h3 text-ink">
+              This session
+            </h2>
+            {recent.length === 0 ? (
+              <p className="mt-2 text-sm text-ink-muted">
+                Nothing so far. Tickets you look up appear here until you leave this page; nothing
+                is saved.
+              </p>
+            ) : (
+              <ol className="mt-3 divide-y divide-line border-y border-line text-sm">
+                {recent.map((entry) => (
+                  <li
+                    key={entry.key}
+                    className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3"
+                  >
+                    <span className="min-w-0 flex-1 break-words">
+                      <span className="font-medium text-ink">{entry.name}</span>
+                      {entry.tier ? <span className="text-ink-muted"> · {entry.tier}</span> : null}
+                    </span>
+                    <span className="text-ink-muted">
+                      {entry.outcome} ·{' '}
+                      <time dateTime={entry.at}>
+                        {new Date(entry.at).toLocaleTimeString('en-US', { timeStyle: 'short' })}
+                      </time>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Each verdict band's fill, ink and icon. */
+const VERDICT = Object.freeze({
+  admit: { className: 'bg-door-admit text-door-admit-ink', icon: 'check-circle' },
+  refuse: { className: 'bg-door-refuse text-door-refuse-ink', icon: 'x-circle' },
+  warn: { className: 'bg-door-warn text-door-warn-ink', icon: 'alert-triangle' },
+  check: {
+    className: 'bg-surface-raised text-ink outline-2 -outline-offset-2 outline-accent',
+    icon: 'ticket',
+  },
+})
+
+/**
+ * The verdict, as a full-width solid band a steward reads at arm's length:
+ * green with a tick for admitted, red with a cross for do not admit, the
+ * kit's orange with a warning sign for already admitted, and a gold-edged
+ * plate for a ticket still to be checked. The heading is the answer's `h2`,
+ * which takes focus when the answer arrives; the name follows in large type.
+ *
+ * Revealed from its top edge with `clip-path` (`app/organizer/check-in/door.css`),
+ * never faded, and not at all under reduced motion.
+ *
+ * @param {object} props Component props.
+ * @param {'admit'|'refuse'|'warn'|'check'} props.tone Which verdict.
+ * @param {string} props.headingId The heading's id.
+ * @param {object} props.headingRef Receives the heading, for focus.
+ * @param {ReactNode} props.children The heading's words.
+ * @param {ReactNode} [props.name] Who the ticket is for.
+ * @param {ReactNode} [props.detail] A line under the name.
+ * @returns {JSX.Element} The band.
+ */
+function VerdictBand({ tone, headingId, headingRef, children, name, detail }) {
+  const verdict = VERDICT[tone]
+
+  return (
+    <div
+      data-slot="door-verdict"
+      data-verdict={tone}
+      className={`door-verdict -mx-4 px-4 py-5 sm:mx-0 sm:rounded-plate sm:px-6 sm:py-6 ${verdict.className}`}
+    >
+      <div className="flex items-start gap-3">
+        <Icon name={verdict.icon} className="mt-0.5 size-8 sm:size-10" />
+        <h2
+          id={headingId}
+          ref={headingRef}
+          tabIndex={-1}
+          className="min-w-0 text-h2 leading-none break-words outline-offset-4 focus-visible:outline-current"
+        >
+          {children}
         </h2>
-        {recent.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-muted">
-            Nothing so far. Tickets you look up appear here until you leave this page; nothing is
-            saved.
-          </p>
-        ) : (
-          <ol className="mt-3 divide-y divide-line rounded-card border border-line bg-surface-raised px-4 text-sm shadow-card">
-            {recent.map((entry) => (
-              <li key={entry.key} className="flex flex-wrap justify-between gap-2 py-3">
-                <span className="min-w-0 break-words">
-                  <span className="font-medium text-ink">{entry.name}</span>
-                  {entry.tier ? <span className="text-ink-muted"> · {entry.tier}</span> : null}
-                </span>
-                <span className="text-ink-muted">
-                  {entry.outcome} ·{' '}
-                  <time dateTime={entry.at}>
-                    {new Date(entry.at).toLocaleTimeString('en-US', { timeStyle: 'short' })}
-                  </time>
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      </div>
+      {name ? (
+        <p className="mt-4 font-display text-h1 leading-none font-bold break-words [font-stretch:80%]">
+          {name}
+        </p>
+      ) : null}
+      {detail ? <p className="mt-3 text-base font-medium">{detail}</p> : null}
     </div>
   )
 }
@@ -957,39 +1068,49 @@ function PreviewCard({
     (preview.outcome === 'ADMISSIBLE'
       ? 'Check the ticket, then admit'
       : preview.outcome === 'ALREADY_CHECKED_IN'
-        ? 'Already admitted — do not admit again'
+        ? 'Already admitted: do not admit again'
         : 'Do not admit')
 
+  // A ticket still to be checked is a gold-edged plate; one already in is
+  // the orange band, with the time it got in; anything else is refused, red.
+  const tone = named
+    ? 'refuse'
+    : preview.outcome === 'ADMISSIBLE'
+      ? 'check'
+      : preview.outcome === 'ALREADY_CHECKED_IN'
+        ? 'warn'
+        : 'refuse'
+
   return (
-    <section
-      aria-labelledby={headingId}
-      className={`rounded-card border p-5 shadow-card sm:p-6 ${
-        preview.outcome === 'ADMISSIBLE'
-          ? 'border-line-strong bg-surface-raised'
-          : 'border-status-danger/25 bg-status-danger-soft'
-      }`}
-    >
-      <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-ink">
+    <section aria-labelledby={headingId}>
+      <VerdictBand
+        tone={tone}
+        headingId={headingId}
+        headingRef={headingRef}
+        name={preview.attendeeName ?? 'No name on this ticket'}
+        detail={
+          preview.outcome === 'ALREADY_CHECKED_IN' && preview.checkedInAt
+            ? `In at ${doorTime(preview.checkedInAt, preview.event.timezone)}`
+            : null
+        }
+      >
         {heading}
-      </h2>
+      </VerdictBand>
 
-      <p className="mt-3 font-display text-h2 font-semibold break-words text-ink">
-        {preview.attendeeName ?? 'No name on this ticket'}
-      </p>
-
-      <dl className="mt-3 space-y-1 text-sm">
-        <div className="flex flex-wrap gap-2">
+      <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm [&>div]:contents">
+        <div>
           <dt className="text-ink-muted">Event</dt>
           <dd className="break-words text-ink">{preview.event.title}</dd>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div>
           <dt className="text-ink-muted">Starts</dt>
           <dd className="text-ink">
-            {doorTime(preview.event.startsAt, preview.event.timezone)} · {preview.event.timezone}
+            {doorTime(preview.event.startsAt, preview.event.timezone)} ·{' '}
+            {zoneWords(preview.event.timezone, preview.event.startsAt)}
           </dd>
         </div>
         {preview.tier ? (
-          <div className="flex flex-wrap gap-2">
+          <div>
             <dt className="text-ink-muted">Ticket</dt>
             <dd className="text-ink">{preview.tier.name}</dd>
           </div>
@@ -998,7 +1119,7 @@ function PreviewCard({
             night the server refuses a ticket for another; one for every night
             is let in once each night. */}
         {preview.session || night ? (
-          <div className="flex flex-wrap gap-2">
+          <div>
             <dt className="text-ink-muted">Night</dt>
             <dd className="text-ink">
               {preview.session ? sessionDisplayLabel(preview.session) : EVERY_NIGHT}
@@ -1006,19 +1127,19 @@ function PreviewCard({
           </div>
         ) : null}
         {seat ? (
-          <div className="flex flex-wrap gap-2">
+          <div>
             <dt className="text-ink-muted">Seat</dt>
             <dd className="text-ink">{seat}</dd>
           </div>
         ) : null}
-        <div className="flex flex-wrap gap-2">
+        <div>
           <dt className="text-ink-muted">Presented as</dt>
           <dd className="text-ink">{preview.method === 'QR_SCAN' ? 'QR pass' : 'Printed code'}</dd>
         </div>
       </dl>
 
       {owed ? (
-        <div className="mt-4 rounded-card border border-status-warning/30 bg-status-warning-soft p-4">
+        <div className="mt-4 rounded-plate bg-status-warning-soft p-4">
           <h3 className="font-semibold text-ink">Payment to take</h3>
           <p className="mt-1 text-ink">{takePaymentSentence(owed.dueCents, owed.currency)}</p>
           {bookingLine ? <p className="mt-1 text-sm text-ink">{bookingLine}</p> : null}
@@ -1054,10 +1175,12 @@ function PreviewCard({
         </Alert>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className={ACTIONS}>
         {admissible ? (
           <Button
             type="button"
+            size="lg"
+            className={PRIMARY_ACTION}
             onClick={onAdmit}
             loading={stage === 'confirming'}
             disabled={!online || stage === 'looking'}
@@ -1072,6 +1195,8 @@ function PreviewCard({
         {problem?.lookAgain ? (
           <Button
             type="button"
+            size="lg"
+            className={PRIMARY_ACTION}
             onClick={onLookAgain}
             loading={stage === 'looking'}
             disabled={!online}
@@ -1081,7 +1206,9 @@ function PreviewCard({
         ) : null}
         <Button
           type="button"
-          variant="secondary"
+          size="lg"
+          variant={admissible || problem?.lookAgain ? 'secondary' : 'primary'}
+          className={admissible || problem?.lookAgain ? SECOND_ACTION : PRIMARY_ACTION}
           onClick={onClear}
           disabled={stage === 'confirming'}
         >
@@ -1091,6 +1218,19 @@ function PreviewCard({
     </section>
   )
 }
+
+/**
+ * The row of actions under an answer. On a phone the buttons stack at full
+ * width, the one to press first on top, where a thumb reaches; from `sm`
+ * they sit side by side.
+ */
+const ACTIONS = 'mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap'
+
+/** The answer's main action: as wide as the phone, at least 12rem beside others. */
+const PRIMARY_ACTION = 'w-full sm:w-auto sm:min-w-48'
+
+/** Any other action under an answer. */
+const SECOND_ACTION = 'w-full sm:w-auto'
 
 /**
  * What the admission did.
@@ -1116,28 +1256,27 @@ function ResultCard({ result, owed, night, headingId, headingRef, onClear }) {
   const paidEarlier = admitted && !owed && result.payment?.byThisRequest === false
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className={`rounded-card border p-5 shadow-card sm:p-6 ${admitted ? 'border-status-success/25 bg-status-success-soft' : 'border-status-danger/25 bg-status-danger-soft'}`}
-    >
-      <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-ink">
+    <section aria-labelledby={headingId}>
+      <VerdictBand
+        tone={admitted ? 'admit' : 'warn'}
+        headingId={headingId}
+        headingRef={headingRef}
+        name={result.attendeeName ?? 'Ticket holder'}
+        detail={
+          result.session || result.tier || night
+            ? [
+                result.tier?.name,
+                result.session ? sessionDisplayLabel(result.session) : night ? EVERY_NIGHT : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : null
+        }
+      >
         {admitted ? 'Admitted' : 'Already admitted by another steward'}
-      </h2>
-      <p className="mt-3 font-display text-h2 font-semibold break-words text-ink">
-        {result.attendeeName ?? 'Ticket holder'}
-      </p>
-      {result.session || result.tier || night ? (
-        <p className="mt-1 text-sm text-ink">
-          {[
-            result.tier?.name,
-            result.session ? sessionDisplayLabel(result.session) : night ? EVERY_NIGHT : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      ) : null}
+      </VerdictBand>
       {admitted && recorded ? (
-        <p className="mt-2 font-medium text-ink">
+        <p className="mt-4 font-medium text-ink">
           {paymentRecordedSentence(recorded, { retried: result.outcome !== 'ADMITTED' })}
         </p>
       ) : null}
@@ -1157,7 +1296,7 @@ function ResultCard({ result, owed, night, headingId, headingRef, onClear }) {
           {owed || result.payment ? ` ${ANOTHER_STEWARD_PAID}` : ''}
         </Alert>
       ) : null}
-      <Button type="button" className="mt-4" onClick={onClear}>
+      <Button type="button" size="lg" className={`mt-5 ${PRIMARY_ACTION}`} onClick={onClear}>
         Next ticket
       </Button>
     </section>
@@ -1261,24 +1400,30 @@ function GroupPreviewCard({
   const due = owes ? formatAmount(dueCents, currency) : null
   const handedOnLine = handedOnUnpaidSentence(preview.payment?.handedOnUnpaidTickets)
 
+  // Somebody to admit: the gold-edged plate. Nobody, because everybody is
+  // already in: the orange band. Nobody for any other reason: red.
+  const tone =
+    admissible.length > 0
+      ? 'check'
+      : alreadyIn.length > 0 && refused.length === 0
+        ? 'warn'
+        : 'refuse'
+
   return (
-    <section
-      aria-labelledby={headingId}
-      className={`rounded-card border p-5 shadow-card sm:p-6 ${
-        admissible.length > 0
-          ? 'border-line-strong bg-surface-raised'
-          : 'border-status-danger/25 bg-status-danger-soft'
-      }`}
-    >
-      <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-ink">
+    <section aria-labelledby={headingId}>
+      <VerdictBand
+        tone={tone}
+        headingId={headingId}
+        headingRef={headingRef}
+        detail={groupLookupSentence(preview)}
+      >
         {admissible.length > 0
           ? 'Check the group, then admit'
           : 'Nobody in this group can be admitted'}
-      </h2>
+      </VerdictBand>
 
-      <p className="mt-2 text-sm text-ink">{groupLookupSentence(preview)}</p>
-      {handedOnLine ? <p className="mt-1 text-sm text-ink">{handedOnLine}</p> : null}
-      <p className="mt-1 text-sm text-ink-muted">
+      {handedOnLine ? <p className="mt-4 text-sm text-ink">{handedOnLine}</p> : null}
+      <p className="mt-2 text-sm text-ink-muted">
         {preview.event.title} · {doorTime(preview.event.startsAt, preview.event.timezone)} ·{' '}
         {preview.method === 'QR_SCAN' ? 'Group QR pass' : 'Printed group code'}
       </p>
@@ -1296,21 +1441,24 @@ function GroupPreviewCard({
           <p id={legendId} className="mt-1 text-sm text-ink-muted">
             Untick anybody who has not arrived; they can be admitted later with the same pass.
           </p>
-          <ul className="mt-2 space-y-2">
+          <ul className="mt-3 divide-y divide-line border-y border-line">
             {admissible.map((ticket) => {
               const id = `${headingId}-${ticket.ticketId}`
 
               return (
-                <li key={ticket.ticketId} className="flex min-h-11 items-start gap-3 py-1">
+                <li key={ticket.ticketId} className="flex min-h-12 items-start gap-3">
                   <input
                     id={id}
                     type="checkbox"
                     checked={chosen.includes(ticket.ticketId)}
                     onChange={() => onToggle(ticket.ticketId)}
                     disabled={stage === 'confirming'}
-                    className="mt-0.5 size-5 shrink-0 rounded border-line-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                    className="mt-3.5 size-6 shrink-0 rounded border-line-strong accent-action-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                   />
-                  <label htmlFor={id} className="min-w-0 break-words text-ink">
+                  <label
+                    htmlFor={id}
+                    className="min-w-0 flex-1 cursor-pointer py-3 break-words text-ink"
+                  >
                     {groupTicketWords(ticket, night)}
                     {groupTicketPaymentWords(ticket, currency) ? (
                       <span className="block text-sm font-medium text-ink">
@@ -1323,7 +1471,7 @@ function GroupPreviewCard({
             })}
           </ul>
           {owes ? (
-            <div className="mt-3 rounded-card border border-status-warning/30 bg-status-warning-soft p-3">
+            <div className="mt-4 rounded-plate bg-status-warning-soft p-4">
               <h3 className="font-semibold text-ink">Payment to take</h3>
               <p className="mt-1 text-ink">{groupPaymentLine(due)}</p>
             </div>
@@ -1337,7 +1485,7 @@ function GroupPreviewCard({
           <ul className="mt-1 space-y-1 text-sm text-ink">
             {alreadyIn.map((ticket) => (
               <li key={ticket.ticketId} className="break-words">
-                {groupTicketWords(ticket, night)} —{' '}
+                {groupTicketWords(ticket, night)}:{' '}
                 {ticket.checkedInAt
                   ? `already in at ${doorTime(ticket.checkedInAt, preview.event.timezone)}`
                   : 'already in'}
@@ -1353,7 +1501,7 @@ function GroupPreviewCard({
           <ul className="mt-1 space-y-1 text-sm text-ink">
             {refused.map((ticket) => (
               <li key={ticket.ticketId} className="break-words">
-                {groupTicketWords(ticket, night)} — {refusalSentence(ticket.refusal)}
+                {groupTicketWords(ticket, night)}: {refusalSentence(ticket.refusal)}
               </li>
             ))}
           </ul>
@@ -1366,10 +1514,12 @@ function GroupPreviewCard({
         </Alert>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className={ACTIONS}>
         {canAdmit ? (
           <Button
             type="button"
+            size="lg"
+            className={PRIMARY_ACTION}
             onClick={onAdmit}
             loading={stage === 'confirming'}
             disabled={!online || stage === 'looking' || chosen.length === 0}
@@ -1387,6 +1537,8 @@ function GroupPreviewCard({
         {problem?.lookAgain ? (
           <Button
             type="button"
+            size="lg"
+            className={PRIMARY_ACTION}
             onClick={onLookAgain}
             loading={stage === 'looking'}
             disabled={!online}
@@ -1396,7 +1548,9 @@ function GroupPreviewCard({
         ) : null}
         <Button
           type="button"
-          variant="secondary"
+          size="lg"
+          variant={canAdmit || problem?.lookAgain ? 'secondary' : 'primary'}
+          className={canAdmit || problem?.lookAgain ? SECOND_ACTION : PRIMARY_ACTION}
           onClick={onClear}
           disabled={stage === 'confirming'}
         >
@@ -1424,16 +1578,17 @@ function GroupResultCard({ result, currency, night, headingId, headingRef, onCle
   const alreadyIn = result.tickets.filter((ticket) => ticket.outcome !== 'ADMITTED')
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-card border border-status-success/25 bg-status-success-soft p-5 shadow-card sm:p-6"
-    >
-      <h2 id={headingId} ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-ink">
+    <section aria-labelledby={headingId}>
+      <VerdictBand
+        tone={result.admitted > 0 ? 'admit' : 'warn'}
+        headingId={headingId}
+        headingRef={headingRef}
+        detail={groupResultSentence(result)}
+      >
         {result.admitted > 0 ? `Admitted ${result.admitted}` : 'Already admitted'}
-      </h2>
-      <p className="mt-2 text-sm text-ink">{groupResultSentence(result)}</p>
+      </VerdictBand>
       {result.payment ? (
-        <p className="mt-1 font-medium text-ink">
+        <p className="mt-4 font-medium text-ink">
           Payment recorded: {formatAmount(result.payment.recordedCents, currency)}.
         </p>
       ) : null}
@@ -1442,7 +1597,7 @@ function GroupResultCard({ result, currency, night, headingId, headingRef, onCle
         <ul className="mt-3 space-y-1 text-sm text-ink">
           {admittedNow.map((ticket) => (
             <li key={ticket.ticketId} className="break-words">
-              {groupTicketWords(ticket, night)} — admitted at{' '}
+              {groupTicketWords(ticket, night)}: admitted at{' '}
               {doorTime(ticket.checkedInAt, result.event.timezone)}
             </li>
           ))}
@@ -1455,7 +1610,7 @@ function GroupResultCard({ result, currency, night, headingId, headingRef, onCle
           <ul className="mt-1 space-y-1 text-sm text-ink">
             {alreadyIn.map((ticket) => (
               <li key={ticket.ticketId} className="break-words">
-                {groupTicketWords(ticket, night)} —{' '}
+                {groupTicketWords(ticket, night)}:{' '}
                 {ticket.checkedInByYou ? 'admitted by you at ' : 'admitted at '}
                 {doorTime(ticket.checkedInAt, result.event.timezone)}
               </li>
@@ -1464,7 +1619,7 @@ function GroupResultCard({ result, currency, night, headingId, headingRef, onCle
         </>
       ) : null}
 
-      <Button type="button" className="mt-4" onClick={onClear}>
+      <Button type="button" size="lg" className={`mt-5 ${PRIMARY_ACTION}`} onClick={onClear}>
         Next ticket
       </Button>
     </section>

@@ -45,10 +45,9 @@
 import Link from 'next/link'
 import { ACCESSIBILITY_FEATURES } from '@desi-event/schemas'
 
-import { GarbaRings } from '../../components/festive-decor.jsx'
-import { ArrowLeftIcon, ArrowRightIcon, PinIcon } from '../../components/icons.jsx'
+import { ArrowLeftIcon, ArrowRightIcon } from '../../components/icons.jsx'
 import { SECONDARY_LINK, TEXT_LINK } from '../../components/link-classes.js'
-import { FadeIn } from '../../components/motion.jsx'
+import { Icon } from '@desi-event/ui/icons'
 import { Empty } from '../../components/page-state.jsx'
 import { PageHero } from '../../components/page-hero.jsx'
 import { ReadRefusal } from '../../components/read-refusal.jsx'
@@ -70,7 +69,8 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Venues',
   description:
-    'Halls and pavilions on The Desi Events, with the accessibility each venue asserts — step-free entrances, hearing loops, accessible toilets and more.',
+    'Halls and pavilions on The Desi Events, with the accessibility each venue asserts: step-free entrances, hearing loops, accessible toilets and more.',
+  alternates: { canonical: '/venues' },
 }
 
 /** Classes for a pagination link, matching the event listing. */
@@ -89,23 +89,12 @@ function VenueFilterForm({ filters }) {
   const ticked = new Set(filters.accessibility)
 
   return (
-    <form
-      method="get"
-      action="/venues"
-      aria-label="Filter venues"
-      className="rounded-card bg-surface-raised p-5 shadow-dialog sm:p-6"
-    >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_2fr]">
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="venue-city"
-            className="pl-1 text-micro font-bold tracking-eyebrow text-ink-muted uppercase"
-          >
+    <form method="get" action="/venues" aria-label="Filter venues" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-0 flex-1 basis-64 flex-col gap-1.5">
+          <label htmlFor="venue-city" className="text-caption font-semibold text-ink-muted">
             City
           </label>
-          <p id="venue-city-hint" className="text-sm text-ink-muted">
-            The whole name, such as Edison or Santa Clara.
-          </p>
           <Input
             id="venue-city"
             name="city"
@@ -114,20 +103,53 @@ function VenueFilterForm({ filters }) {
             maxLength={120}
             autoComplete="address-level2"
             aria-describedby="venue-city-hint"
+            className="h-11 sm:h-12"
           />
         </div>
+        <Button type="submit" size="lg" className="h-11 sm:h-12">
+          Apply
+        </Button>
+        {hasVenueFilters(filters) ? (
+          <Link
+            href="/venues"
+            className={`${TEXT_LINK} inline-flex min-h-11 items-center px-2 text-label`}
+          >
+            Clear filters
+          </Link>
+        ) : null}
+      </div>
+      <p id="venue-city-hint" className="text-caption text-ink-subtle">
+        The whole name, such as Edison or Santa Clara.
+      </p>
 
-        <fieldset aria-describedby="venue-access-hint">
-          <legend className="pl-1 text-micro font-bold tracking-eyebrow text-ink-muted uppercase">
-            What you need to get in
-          </legend>
-          <p id="venue-access-hint" className="mt-1 text-sm text-ink-muted">
+      {/*
+        The accessibility needs sit behind one disclosure, open whenever one
+        is chosen, so the directory is not eighteen checkboxes before the
+        first venue. It is a native disclosure: it works without JavaScript.
+      */}
+      <details open={ticked.size > 0} className="group/needs">
+        <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 rounded-control font-bold text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
+          <Icon
+            name="chevron-down"
+            className="h-4.5 w-4.5 transition-transform duration-(--duration-fast) ease-out group-open/needs:rotate-180"
+          />
+          What you need to get in
+          {ticked.size > 0 ? (
+            <span className="font-semibold text-ink-muted">· {ticked.size} chosen</span>
+          ) : null}
+        </summary>
+        <fieldset
+          aria-describedby="venue-access-hint"
+          className="mt-2 rounded-card bg-surface-raised p-4 shadow-card lg:p-5"
+        >
+          <legend className="sr-only">What you need to get in</legend>
+          <p id="venue-access-hint" className="text-caption text-ink-muted">
             Only venues asserting every one you tick are shown. Up to {MAX_ACCESSIBILITY_FILTERS} at
             once.
           </p>
-          <div className="mt-2 grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+          <div className="mt-2 grid grid-cols-1 gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
             {ACCESSIBILITY_FEATURES.map((code) => (
-              <label key={code} className="flex min-h-11 items-center gap-3 text-sm text-ink">
+              <label key={code} className="flex min-h-11 items-center gap-3 text-label text-ink">
                 <input
                   type="checkbox"
                   name="accessibility"
@@ -140,21 +162,7 @@ function VenueFilterForm({ filters }) {
             ))}
           </div>
         </fieldset>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button type="submit" size="lg">
-          Apply
-        </Button>
-        {hasVenueFilters(filters) ? (
-          <Link
-            href="/venues"
-            className={`${TEXT_LINK} inline-flex min-h-11 items-center px-2 text-sm`}
-          >
-            Clear filters
-          </Link>
-        ) : null}
-      </div>
+      </details>
     </form>
   )
 }
@@ -173,34 +181,27 @@ function VenueCard({ venue }) {
   const capacity = Number.isInteger(venue.capacity) && venue.capacity > 0 ? venue.capacity : null
 
   return (
-    <li className="flex flex-col rounded-card bg-surface-raised p-6 shadow-card">
-      <div className="flex items-start gap-4">
-        <span
-          aria-hidden="true"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-accent-soft text-accent-strong"
-        >
-          <PinIcon className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-h3 font-semibold text-ink">
-            <Link
-              href={`/venues/${encodeURIComponent(venue.slug)}`}
-              className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 hover:text-accent-strong hover:underline"
-            >
-              {venue.name}
-            </Link>
-          </h2>
-          {place ? <p className="text-sm text-ink-muted">{place}</p> : null}
+    <li className="flex flex-col border-b border-line py-5">
+      <div className="flex flex-col gap-0.5">
+        <h2 className="min-w-0 text-h3 text-ink sm:text-h2">
+          <Link
+            href={`/venues/${encodeURIComponent(venue.slug)}`}
+            className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 hover:text-accent-strong hover:underline"
+          >
+            {venue.name}
+          </Link>
+        </h2>
+        <p className="text-label text-ink-muted">
+          {place}
+          {place && capacity ? <span aria-hidden="true"> · </span> : null}
           {capacity ? (
-            <p className="mt-1 text-sm text-ink-muted">
-              Capacity {capacity.toLocaleString('en-US')}
-            </p>
+            <span className="tabular-nums">Capacity {capacity.toLocaleString('en-US')}</span>
           ) : null}
-        </div>
+        </p>
       </div>
 
       {claims.length > 0 ? (
-        <ul aria-label={`Accessibility at ${venue.name}`} className="mt-5 flex flex-wrap gap-2">
+        <ul aria-label={`Accessibility at ${venue.name}`} className="mt-2 flex flex-wrap gap-2">
           {claims.map((claim) => (
             <li key={claim}>
               {/* Words, not icons, and the same words the venue's own page uses. */}
@@ -211,7 +212,7 @@ function VenueCard({ venue }) {
       ) : null}
 
       {hasNote ? (
-        <p className="mt-4 text-sm text-ink-muted">
+        <p className="mt-2 text-caption text-ink-muted">
           {claims.length > 0
             ? 'The venue adds an accessibility note on its page.'
             : 'The venue describes its accessibility in a note on its page.'}
@@ -219,7 +220,7 @@ function VenueCard({ venue }) {
       ) : null}
 
       {claims.length === 0 && !hasNote ? (
-        <p className="mt-5 text-sm text-ink-muted">
+        <p className="mt-2 text-caption text-ink-muted">
           This venue has not published its accessibility details.
         </p>
       ) : null}
@@ -308,18 +309,17 @@ export default async function VenuesPage({ searchParams }) {
     <div>
       <PageHero
         headingId="venues-heading"
-        eyebrow="Halls & pavilions"
         title="Venues"
-        lead="The halls and pavilions shared across The Desi Events, and what each one asserts about getting in. Open a venue for its address, how to reach it and what is on there."
-        art={<GarbaRings className="h-[30rem] w-[30rem]" />}
-        className="pb-24 sm:pb-28"
+        lead="The halls and pavilions shared across The Desi Events, and what each one says about getting in. Open a venue for its address, how to reach it and what is on there."
       />
 
-      <div className="mx-auto max-w-content px-4 sm:px-6">
-        <FadeIn delay={0.12} className="relative z-10 -mt-14">
+      <div className="border-y border-line bg-surface-subtle">
+        <div className="mx-auto max-w-content px-4 py-4 sm:px-6 sm:py-5">
           <VenueFilterForm filters={filters} />
-        </FadeIn>
+        </div>
+      </div>
 
+      <div className="mx-auto max-w-content px-4 pb-20 sm:px-6 lg:pb-28">
         {filters.leftOut.length > 0 ? (
           <p className="mt-4 rounded-card border border-status-warning/30 bg-status-warning-soft p-4 text-sm text-status-warning">
             Only {MAX_ACCESSIBILITY_FILTERS} accessibility needs can be applied at once, so these
@@ -329,10 +329,7 @@ export default async function VenuesPage({ searchParams }) {
 
         {result.ok ? (
           <>
-            <p
-              data-testid="venue-summary"
-              className="mt-10 font-display text-h3 font-semibold text-ink"
-            >
+            <p data-testid="venue-summary" className="mt-8 font-display text-h2 text-ink sm:mt-10">
               {result.venues.length === 1
                 ? '1 venue on this page'
                 : `${result.venues.length} venues on this page`}
@@ -349,7 +346,7 @@ export default async function VenuesPage({ searchParams }) {
             ) : (
               <ul
                 aria-label="Venues"
-                className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                className="mt-5 grid grid-cols-1 border-t-2 border-ink lg:grid-cols-2 lg:gap-x-12"
               >
                 {result.venues.map((venue) => (
                   <VenueCard key={venue.slug} venue={venue} />

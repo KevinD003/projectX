@@ -1,91 +1,98 @@
 /**
- * The night band a public page opens with.
+ * The masthead a public page opens with.
  *
- * The home page has its own, larger hero; every other public page — the
- * listing, the directories, a venue, an organiser, sign-in, the limitations —
- * opens with this one: the toran strung across the top, an optional trail and
- * eyebrow, the page's one `h1` in the display face, a line of lead copy, and
- * whatever the page wants to add beneath it. A scalloped hem closes it into the
- * ivory page.
+ * The home page and an event have their own openings; every other public
+ * page (the listing, the directories, a venue, an organiser, contact, the
+ * limitations) opens with this one: the trail, the page's one `h1` set large
+ * and condensed, a line of lead copy, and whatever the page wants to add
+ * beneath it. No eyebrow above the heading and no ornament around it: the
+ * heading says what the page is.
  *
- * The heading and its copy rise into place when the page loads; under reduced
- * motion they are simply there. Nothing the page needs to read waits on the
- * animation, because the theme forces anything marked `data-motion` visible
- * when motion is reduced or scripting is off.
+ * Two grounds. `page` (the default) is the white page itself, so most pages
+ * open quietly and spend their one plate moment further down. `plate` is the
+ * Royal Purple plate, for a page whose subject is one thing worth a poster's
+ * weight: an organiser, a venue.
+ *
+ * Nothing in it animates: the heading paints with the first frame.
  *
  * @module components/page-hero
  */
 
-import { Diamond, ScallopHem, Toran } from './festive-decor.jsx'
-import { FadeIn } from './motion.jsx'
-
 /**
  * @typedef {object} PageHeroProps
- * @property {string} headingId The `h1`'s id; the band is a region named by it.
+ * @property {string} headingId The `h1`'s id; the masthead is a region named by it.
  * @property {ReactNode} title The page's heading.
- * @property {ReactNode} [eyebrow] A short marigold line above the heading.
  * @property {ReactNode} [lead] A sentence or two under the heading.
- * @property {ReactNode} [breadcrumbs] A `Breadcrumbs` trail with `tone="inverse"`.
- * @property {ReactNode} [art] Decoration drawn on the right on a wide screen. Hidden from assistive technology.
- * @property {ReactNode} [children] Anything else the band should hold, under the lead.
- * @property {string} [className] Extra classes for the band's inner column, e.g. more room at the foot for a panel that overlaps it.
+ * @property {ReactNode} [breadcrumbs] A `Breadcrumbs` trail (`tone="inverse"` on the plate).
+ * @property {ReactNode} [art] Something drawn beside the heading on a wide screen. Hidden from assistive technology.
+ * @property {ReactNode} [children] Anything else the masthead should hold, under the lead.
+ * @property {'page'|'plate'} [tone] The ground: the white page, or the purple plate.
+ * @property {'display'|'h1'} [size] The heading's size: `display` for the listing, `h1` elsewhere.
+ * @property {string} [className] Extra classes for the masthead's inner column.
  */
 
+/** The masthead's colours, per ground. */
+const TONES = Object.freeze({
+  page: { band: 'bg-page text-ink', heading: 'text-ink', lead: 'text-ink-muted' },
+  plate: {
+    band: 'bg-surface-inverse text-ink-inverse',
+    heading: 'text-ink-inverse',
+    lead: 'text-ink-inverse-muted',
+  },
+})
+
 /**
- * The night band at the top of a public page.
+ * The masthead at the top of a public page.
  *
  * @param {PageHeroProps} props Component props.
- * @returns {JSX.Element} The band.
+ * @returns {JSX.Element} The masthead.
  */
 export function PageHero({
   headingId,
   title,
-  eyebrow,
   lead,
   breadcrumbs,
   art,
   children,
-  className = 'pb-16 sm:pb-20',
+  tone = 'page',
+  size = 'h1',
+  className = '',
 }) {
-  return (
-    <section
-      aria-labelledby={headingId}
-      className="relative isolate overflow-hidden bg-surface-inverse text-ink-inverse"
-    >
-      <Toran />
-      {art ? (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] max-w-xl items-center justify-center lg:flex"
-        >
-          {art}
-        </div>
-      ) : null}
+  const colours = TONES[tone] ?? TONES.page
+  const plate = tone === 'plate'
 
-      <div className={`relative mx-auto max-w-content px-4 pt-16 sm:px-6 sm:pt-20 ${className}`}>
-        <div className="max-w-2xl lg:max-w-[52%]">
-          {breadcrumbs ? <div className="-mt-2 mb-2">{breadcrumbs}</div> : null}
-          <FadeIn>
-            {eyebrow ? (
-              <p className="mb-3 flex items-center gap-2.5 text-micro font-bold tracking-eyebrow text-accent-inverse uppercase">
-                <Diamond />
-                {eyebrow}
-              </p>
-            ) : null}
-            <h1 id={headingId} className="text-h1 font-semibold text-ink-inverse">
+  return (
+    <section aria-labelledby={headingId} className={`relative isolate ${colours.band}`}>
+      <div
+        className={`mx-auto max-w-content px-4 sm:px-6 ${
+          plate ? 'pt-6 pb-12 sm:pt-8 sm:pb-16' : 'pt-6 pb-8 sm:pt-8 sm:pb-12'
+        } ${className}`}
+      >
+        {breadcrumbs ? <div className="-ml-0.5">{breadcrumbs}</div> : null}
+        <div
+          className={`mt-4 grid grid-cols-1 gap-8 sm:mt-6 ${
+            art ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-end lg:gap-14' : ''
+          }`}
+        >
+          <div className="min-w-0">
+            <h1
+              id={headingId}
+              className={`${size === 'display' ? 'text-display' : 'text-h1'} max-w-[18ch] text-balance ${colours.heading}`}
+            >
               {title}
             </h1>
-          </FadeIn>
-          {lead ? (
-            <FadeIn delay={0.08}>
-              <p className="mt-4 text-body text-ink-inverse-muted">{lead}</p>
-            </FadeIn>
+            {lead ? (
+              <p className={`mt-4 max-w-[60ch] text-body sm:mt-5 ${colours.lead}`}>{lead}</p>
+            ) : null}
+            {children}
+          </div>
+          {art ? (
+            <div aria-hidden="true" className="pointer-events-none hidden lg:block">
+              {art}
+            </div>
           ) : null}
-          {children}
         </div>
       </div>
-
-      <ScallopHem />
     </section>
   )
 }

@@ -58,7 +58,18 @@ export function TrafficBeacons({ view = null, excludeAll = false, excludedOrgani
   const organizationId = view?.organizationId ?? null
 
   useEffect(() => {
-    if (excludeAll) return undefined
+    // The page is decided: from here a marked click is counted (or, for staff,
+    // deliberately not). A click before hydration is not, so anything that
+    // clicks to check counting waits for this mark on <html>.
+    const root = document.documentElement
+
+    root.dataset.trafficReady = 'true'
+
+    if (excludeAll) {
+      return () => {
+        delete root.dataset.trafficReady
+      }
+    }
 
     const excluded = {
       excludeAll,
@@ -83,6 +94,7 @@ export function TrafficBeacons({ view = null, excludeAll = false, excludedOrgani
     return () => {
       document.removeEventListener('click', onClick, true)
       document.removeEventListener('auxclick', onClick, true)
+      delete root.dataset.trafficReady
     }
   }, [excludeAll, excludedKey])
 

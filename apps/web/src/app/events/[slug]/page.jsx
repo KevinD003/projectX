@@ -49,7 +49,6 @@
  */
 
 import Link from 'next/link'
-import { Fragment } from 'react'
 import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 
 import { Alert, Badge } from '../../../components/ui.jsx'
@@ -72,19 +71,11 @@ import {
   toDateTimeAttribute,
 } from '../../../lib/format.js'
 import { endTimeListed, reservableOnWhatsApp } from '../../../lib/imports.js'
-import { initialOf } from '../../../lib/initial.js'
 import { formatPrice, priceSelection, taxLabelForPlace } from '../../../lib/pricing.js'
 import { buildEventsHref } from '../../../lib/search-params.js'
 import { readSession } from '../../../lib/session.js'
 import { trafficAttributes } from '../../../lib/traffic-client.js'
 import { excludesEvent, trafficExclusion } from '../../../lib/traffic.js'
-import {
-  Diamond,
-  MirrorBand,
-  MirrorDivider,
-  ScallopHem,
-  Toran,
-} from '../../../components/festive-decor.jsx'
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -92,12 +83,11 @@ import {
   CheckIcon,
   ClockIcon,
   PinIcon,
-  PolicyIcon,
   ShieldIcon,
   TicketIcon,
   VerifiedIcon,
 } from '../../../components/icons.jsx'
-import { INVERSE_TEXT_LINK, PRIMARY_LINK, TEXT_LINK } from '../../../components/link-classes.js'
+import { OUTLINE_LINK, PRIMARY_LINK, TEXT_LINK } from '../../../components/link-classes.js'
 import { AvailabilityChip } from '../../../components/listing-card.jsx'
 import { EventArt } from '../../../components/event-art.jsx'
 import { EventGallery } from '../../../components/event-gallery.jsx'
@@ -116,10 +106,10 @@ import {
 } from '../../../components/event-content.jsx'
 import { RichText } from '../../../components/rich-text.jsx'
 import { NotFoundView } from '../../../components/not-found-view.jsx'
-import { FadeIn, Reveal, Stagger, StaggerItem } from '../../../components/motion.jsx'
 import { Breadcrumbs } from '../../../components/page-state.jsx'
 import { SampleDataNotice } from '../../../components/sample-data-notice.jsx'
 import { SessionList } from '../../../components/session-list.jsx'
+import { StickyBuyBar } from '../../../components/sticky-buy-bar.jsx'
 import { TicketTiers } from '../../../components/ticket-tiers.jsx'
 import { TrafficScope } from '../../../components/traffic-scope.jsx'
 
@@ -146,10 +136,6 @@ const BUYABLE_STATUSES = new Set(['PUBLISHED', 'ON_SALE'])
  */
 const VENUE_PAYMENT_NOTE =
   'You can pay at the venue for this event: pay the booking fee online now (simulated), and the ticket price at the door.'
-
-/** A section's eyebrow: a small uppercase line in the accent, after a diamond. */
-const EYEBROW =
-  'flex items-center gap-2.5 text-micro font-bold tracking-eyebrow text-accent-strong uppercase'
 
 /**
  * The cheapest ticket that can be bought now, used for the "from" price.
@@ -217,6 +203,42 @@ function allInPrice(tier, venue, feeTerms = null) {
 }
 
 /**
+ * Whether a text opens with another, ignoring spacing and case.
+ *
+ * @param {string|null|undefined} text The longer text.
+ * @param {string} start What it may open with.
+ * @returns {boolean} Whether it does.
+ */
+function opensWith(text, start) {
+  const plain = (value) =>
+    String(value ?? '')
+      .replace(/\s+/gu, ' ')
+      .trim()
+      .toLowerCase()
+
+  return plain(start) !== '' && plain(text).startsWith(plain(start))
+}
+
+/**
+ * A zone's everyday name, read at the event's start: "Eastern Time", never
+ * the database's `America/New_York`.
+ *
+ * @param {object} event The event, with `timezone` and `startsAt`.
+ * @returns {string|null} The name, or null when it cannot be read.
+ */
+function genericZoneName(event) {
+  try {
+    return (
+      new Intl.DateTimeFormat('en-US', { timeZone: event.timezone, timeZoneName: 'longGeneric' })
+        .formatToParts(new Date(event.startsAt))
+        .find((part) => part.type === 'timeZoneName')?.value ?? null
+    )
+  } catch {
+    return null
+  }
+}
+
+/**
  * Per-event metadata for search engines and link previews.
  *
  * @param {object} props Route props.
@@ -260,7 +282,7 @@ export async function generateMetadata({ params }) {
       : { index: false, follow: false },
     openGraph: {
       type: 'article',
-      title: `${event.title} — ${when}, ${where}`,
+      title: `${event.title} · ${when}, ${where}`,
       description: event.summary,
       url: `/events/${event.slug}`,
     },
@@ -302,6 +324,7 @@ export default async function EventDetailPage({ params }) {
   const soldOut = allTiersSoldOut(ticketTypes)
   const address = formatVenueAddress(event.venue)
   const zoneLabel = formatTimeZoneLabel(event)
+  const zoneName = genericZoneName(event)
 
   const notice = lifecycleNotice(event.status)
   const buyable = BUYABLE_STATUSES.has(event.status) && Boolean(cheapest)
@@ -323,7 +346,6 @@ export default async function EventDetailPage({ params }) {
   const locality = event.venue
     ? [event.venue.city, event.venue.region].filter(Boolean).join(', ')
     : null
-  const titleWords = String(event.title).split(/\s+/).filter(Boolean)
   const heroPrice = cheapest
     ? {
         amount: formatPrice(allIn ? allIn.allInCents : cheapest.priceCents, cheapest.currency),
@@ -334,6 +356,10 @@ export default async function EventDetailPage({ params }) {
             : 'before fees',
       }
     : null
+
+  // The bar that keeps the price in reach on a phone: only while there is
+  // something to buy.
+  const showBuyBar = buyable && Boolean(heroPrice)
 
   // Emitted only for an event a stranger may load at all. For a draft being
   // previewed by its own organiser there is nothing a search engine should be
@@ -355,12 +381,14 @@ export default async function EventDetailPage({ params }) {
   const uncounted = excludesEvent(trafficExclusion(await readSession()), event.organizationId)
 
   return (
-    <article>
+    <article className={showBuyBar ? 'pb-24 lg:pb-0' : undefined}>
       <JsonLd data={structuredData} />
 
-      <div className="mx-auto max-w-content px-4 py-1 sm:px-6">
+      <div className="mx-auto max-w-content px-4 pt-2 sm:px-6">
         <Breadcrumbs
+          structured
           trail={[
+            { href: '/', label: 'Home' },
             { href: '/events', label: 'Discover events' },
             {
               href: buildEventsHref({ category: event.category }),
@@ -372,166 +400,147 @@ export default async function EventDetailPage({ params }) {
       </div>
 
       {/*
-        The hero. On a wide screen the poster fills the band and two scrims —
-        one from the left, one from the foot — turn it to night behind the
-        words, so the text sits on the band's own colour rather than on the
-        picture. On a phone the poster stands above the words instead of
-        behind them.
+        The hero: the event's poster (or its approved cover) as the plate, and
+        beside it, on the white page, the title and the facts a person decides
+        on. The poster prints itself into register once as the page arrives,
+        and when it was followed from a card on the listing it is the same
+        object, moved and scaled into place. On a phone the poster leads, at a
+        shorter 5:4 so the price is still on the first screen.
       */}
       <section
         aria-labelledby="event-title"
-        className="relative isolate overflow-hidden bg-surface-inverse text-ink-inverse"
+        className="mx-auto max-w-content px-4 pt-4 pb-12 sm:px-6 sm:pt-6 lg:pb-16"
       >
-        <div className="relative lg:absolute lg:inset-0">
-          <FadeIn className="h-full" distance={0}>
-            <EventArt event={event} variant="hero" className="lg:h-full" priority />
-          </FadeIn>
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-linear-to-t from-surface-inverse via-surface-inverse/10 via-40% to-transparent lg:hidden"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 hidden bg-linear-to-r from-surface-inverse from-20% via-surface-inverse/90 via-50% to-transparent to-85% lg:block"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 hidden bg-linear-to-t from-surface-inverse via-transparent via-45% to-surface-inverse/40 lg:block"
-          />
-        </div>
-        <Toran />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end lg:gap-12">
+          <div className="min-w-0 lg:col-span-5">
+            <div className="overflow-hidden rounded-plate bg-surface-subtle">
+              <EventArt
+                event={event}
+                variant="hero"
+                priority
+                registration
+                transitionName
+                sizes="(min-width: 1024px) 28rem, 100vw"
+              />
+            </div>
+          </div>
 
-        <div className="relative mx-auto max-w-content px-4 pb-14 sm:px-6 lg:flex lg:min-h-[38rem] lg:items-end lg:pt-36 lg:pb-16">
-          <div className="-mt-10 sm:-mt-16 lg:mt-0 lg:max-w-[50%]">
-            <FadeIn>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex min-h-8 items-center gap-2 rounded-full bg-highlight px-3.5 text-[0.8125rem] font-bold text-highlight-ink">
-                  <CategoryIcon category={event.category} className="h-4 w-4" />
-                  {categoryLabel(event.category)}
+          <div className="min-w-0 lg:col-span-7 lg:pb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex min-h-8 items-center gap-2 rounded-full bg-accent-secondary-soft px-3 text-label font-bold text-accent-secondary">
+                <CategoryIcon category={event.category} className="h-4 w-4" />
+                {categoryLabel(event.category)}
+              </span>
+              {stateChip ? (
+                <span className="inline-flex min-h-8 items-center rounded-full bg-availability-closed-soft px-3 text-label font-bold text-availability-closed">
+                  <span className="sr-only">Availability: </span>
+                  {stateChip.label}
                 </span>
-                {stateChip ? (
-                  <span className="inline-flex min-h-8 items-center rounded-full bg-surface-raised px-3.5 text-[0.8125rem] font-bold text-availability-closed">
-                    <span className="sr-only">Availability: </span>
-                    {stateChip.label}
-                  </span>
-                ) : null}
-                {allTiersGone ? (
-                  <span className="inline-flex min-h-8 items-center rounded-full bg-surface-raised px-3.5 text-[0.8125rem] font-bold text-availability-closed">
-                    <span className="sr-only">Availability: </span>
-                    Sold out
-                  </span>
-                ) : null}
-                {/* A number, not a colour: "18+" is the whole fact, and a red dot is not. */}
-                {event.ageRestriction ? (
-                  <Badge variant="warning" size="lg" srLabel="Age restriction:">
-                    {event.ageRestriction}+
-                  </Badge>
-                ) : null}
-                {locality ? (
-                  <span className="text-micro font-bold tracking-eyebrow text-accent-inverse uppercase">
-                    {locality}
-                  </span>
-                ) : null}
-              </div>
-            </FadeIn>
+              ) : null}
+              {allTiersGone ? (
+                <span className="inline-flex min-h-8 items-center rounded-full bg-availability-closed-soft px-3 text-label font-bold text-availability-closed">
+                  <span className="sr-only">Availability: </span>
+                  Sold out
+                </span>
+              ) : null}
+              {/* A number, not a colour: "18+" is the whole fact, and a red dot is not. */}
+              {event.ageRestriction ? (
+                <Badge variant="warning" size="lg" srLabel="Age restriction:">
+                  {event.ageRestriction}+
+                </Badge>
+              ) : null}
+            </div>
 
-            <h1 id="event-title" className="mt-5 text-h1 font-semibold text-ink-inverse">
-              {/* Each word rises in turn. The spaces sit between the words as
-                  text of their own, so the heading reads as the title. */}
-              <Stagger as="span" trigger="mount" delay={0.06} className="block">
-                {titleWords.map((word, index) => (
-                  <Fragment key={`${word}-${index}`}>
-                    {index > 0 ? ' ' : null}
-                    <StaggerItem as="span" className="inline-block">
-                      {word}
-                    </StaggerItem>
-                  </Fragment>
-                ))}
-              </Stagger>
+            <h1
+              id="event-title"
+              className={`mt-4 text-ink [overflow-wrap:anywhere] ${
+                String(event.title).length <= 36 ? 'text-display' : 'text-h1'
+              }`}
+            >
+              {event.title}
             </h1>
 
-            <FadeIn delay={0.3}>
-              {event.summary ? (
-                <p className="mt-4 text-body text-ink-inverse-muted">{event.summary}</p>
-              ) : null}
+            {/* Not when the description opens with the same words, as an
+                imported listing's often does: it would be read twice. */}
+            {event.summary && !opensWith(event.description, event.summary) ? (
+              <p className="mt-4 max-w-[60ch] text-body text-ink-muted">{event.summary}</p>
+            ) : null}
 
-              {event.organization ? (
-                <p className="mt-5 flex flex-wrap items-center gap-3 text-[0.9375rem] text-ink-inverse-muted">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-page font-display text-base font-bold text-ink"
-                  >
-                    {initialOf(presenter)}
+            {event.organization ? (
+              <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-label text-ink-muted">
+                <span>{`Presented by ${presenter}`}</span>
+                {event.organization.verified && !imported ? (
+                  <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full bg-highlight px-2.5 text-caption font-bold text-highlight-ink">
+                    <VerifiedIcon className="h-4 w-4" />
+                    Verified organiser
                   </span>
-                  <span>{`Presented by ${presenter}`}</span>
-                  {event.organization.verified && !imported ? (
-                    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-ink-inverse/25 bg-ink-inverse/10 pr-3 pl-1.5 text-xs font-bold text-ink-inverse">
-                      <VerifiedIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                      Verified organiser
-                    </span>
-                  ) : null}
-                </p>
-              ) : null}
-
-              <div aria-hidden="true" className="mt-6 h-px bg-ink-inverse/15" />
-
-              <ul
-                aria-label="Event details"
-                className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-4"
-              >
-                <li className="flex items-center gap-3">
-                  <HeroFactIcon Icon={CalendarIcon} />
-                  <span className="min-w-0">
-                    <span className="block text-[0.9375rem] font-bold text-ink-inverse">
-                      <time dateTime={toDateTimeAttribute(event.startsAt)}>
-                        {formatEventDate(event.startsAt, event.timezone)}
-                      </time>
-                    </span>
-                    <span className="block text-sm text-ink-inverse-muted">
-                      {formatEventTime(event.startsAt, event.timezone)}
-                      {shownEndsAt ? ` – ${formatEventTime(shownEndsAt, event.timezone)}` : ''}
-                      {zoneLabel ? ` ${zoneLabel}` : ''}
-                    </span>
-                  </span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <HeroFactIcon Icon={PinIcon} />
-                  <span className="min-w-0">
-                    <span className="block text-[0.9375rem] font-bold text-ink-inverse">
-                      {event.isOnline ? 'Online' : (event.venue?.name ?? 'Venue to be announced')}
-                    </span>
-                    {locality ? (
-                      <span className="block text-sm text-ink-inverse-muted">{locality}</span>
-                    ) : null}
-                  </span>
-                </li>
-                {heroPrice ? (
-                  <li className="flex items-center gap-3">
-                    <HeroFactIcon Icon={TicketIcon} />
-                    <span className="min-w-0">
-                      <span className="block text-[0.9375rem] font-bold text-ink-inverse">
-                        From {heroPrice.amount}
-                      </span>
-                      <span className="block text-sm text-ink-inverse-muted">{heroPrice.note}</span>
-                    </span>
-                  </li>
                 ) : null}
-              </ul>
+              </p>
+            ) : null}
 
-              {ticketTypes.length > 0 || imported ? (
-                <a
-                  href="#tickets"
-                  className={`${INVERSE_TEXT_LINK} mt-6 inline-flex min-h-11 items-center gap-2 lg:hidden`}
-                >
-                  <TicketIcon className="h-4.5 w-4.5" />
-                  Tickets and prices
-                </a>
+            <ul
+              aria-label="Event details"
+              className="mt-6 grid grid-cols-1 border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-line"
+            >
+              <li className="flex items-start gap-3 py-4 sm:pr-5">
+                <CalendarIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent-strong" />
+                <span className="min-w-0">
+                  <span className="block text-label font-bold text-ink">
+                    <time dateTime={toDateTimeAttribute(event.startsAt)}>
+                      {formatEventDate(event.startsAt, event.timezone)}
+                    </time>
+                  </span>
+                  <span className="block text-caption text-ink-muted tabular-nums">
+                    {formatEventTime(event.startsAt, event.timezone)}
+                    {shownEndsAt ? ` – ${formatEventTime(shownEndsAt, event.timezone)}` : ''}
+                    {zoneLabel ? ` ${zoneLabel}` : ''}
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-start gap-3 border-t border-line py-4 sm:border-t-0 sm:px-5">
+                <PinIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent-strong" />
+                <span className="min-w-0">
+                  <span className="block text-label font-bold text-ink">
+                    {event.isOnline ? 'Online' : (event.venue?.name ?? 'Venue to be announced')}
+                  </span>
+                  {locality ? (
+                    <span className="block text-caption text-ink-muted">{locality}</span>
+                  ) : null}
+                </span>
+              </li>
+              {heroPrice ? (
+                <li className="flex items-start gap-3 border-t border-line py-4 sm:border-t-0 sm:pl-5">
+                  <TicketIcon className="mt-0.5 h-5 w-5 shrink-0 text-accent-strong" />
+                  <span className="min-w-0">
+                    <span className="block text-label font-bold text-ink tabular-nums">
+                      From {heroPrice.amount}
+                    </span>
+                    <span className="block text-caption text-ink-muted">{heroPrice.note}</span>
+                  </span>
+                </li>
               ) : null}
-            </FadeIn>
+            </ul>
+
+            {/*
+              The first screen's one action. While tickets can be bought it is
+              the magenta plate, so the first viewport carries the primary
+              colour, and it goes to the tickets panel rather than straight to
+              checkout: the panel is where the tiers, the all-in price and the
+              one "Choose tickets" are, and a second buy link here would split
+              the click count and the choice. Outlined when nothing is on sale.
+            */}
+            {ticketTypes.length > 0 || imported ? (
+              <a
+                href="#tickets"
+                data-hero-action=""
+                className={`${buyable ? PRIMARY_LINK : OUTLINE_LINK} mt-6`}
+              >
+                <TicketIcon className="h-4.5 w-4.5" />
+                Tickets and prices
+              </a>
+            ) : null}
           </div>
         </div>
-
-        <ScallopHem />
       </section>
 
       <div className="mx-auto max-w-content px-4 sm:px-6">
@@ -559,12 +568,8 @@ export default async function EventDetailPage({ params }) {
 
         <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-16">
           <div className="min-w-0 space-y-14">
-            <Reveal as="section" aria-labelledby="about-heading">
-              <p className={EYEBROW}>
-                <Diamond className="h-2.5 w-2.5 fill-accent" />
-                About this night
-              </p>
-              <h2 id="about-heading" className="mt-3 text-h2 font-semibold text-ink">
+            <section aria-labelledby="about-heading">
+              <h2 id="about-heading" className="text-h2 text-ink">
                 About this event
               </h2>
               {/* The organiser's own formatting — paragraphs, lists, bold,
@@ -585,16 +590,14 @@ export default async function EventDetailPage({ params }) {
               {/* Billing order, kept: for a lot of these events the order of the
                   names on the bill is the thing being negotiated. */}
               <EventLineUp performers={event.performers} artists={event.artists} />
-            </Reveal>
+            </section>
 
             {/* The organiser's approved pictures, in their order. Renders
                 nothing for an event with none. */}
             <EventGallery images={event.gallery} />
 
-            <MirrorDivider />
-
-            <Reveal as="section" aria-labelledby="schedule-heading">
-              <h2 id="schedule-heading" className="text-h2 font-semibold text-ink">
+            <section aria-labelledby="schedule-heading">
+              <h2 id="schedule-heading" className="text-h2 text-ink">
                 Schedule
               </h2>
               {sessions.length > 0 ? (
@@ -624,12 +627,13 @@ export default async function EventDetailPage({ params }) {
                     </ScheduleFact>
                   ) : null}
                   <ScheduleFact Icon={PinIcon} term="Local time" wide>
-                    All times are {zoneLabel ? `${zoneLabel} — ` : ''}the local time at the venue (
-                    {event.timezone}), not your own.
+                    All times are the venue’s own
+                    {zoneName ? `, ${zoneName}` : ''}
+                    {zoneLabel ? ` (${zoneLabel})` : ''}, not yours.
                   </ScheduleFact>
                 </dl>
               )}
-            </Reveal>
+            </section>
 
             <EventRunningOrder
               items={event.runningOrder}
@@ -637,23 +641,14 @@ export default async function EventDetailPage({ params }) {
               startsAt={event.startsAt}
             />
 
-            <Reveal as="section" aria-labelledby="venue-heading">
-              <h2 id="venue-heading" className="text-h2 font-semibold text-ink">
+            <section aria-labelledby="venue-heading">
+              <h2 id="venue-heading" className="text-h2 text-ink">
                 Venue
               </h2>
               {event.venue ? (
-                <div className="mt-5 grid grid-cols-1 overflow-hidden rounded-card bg-surface-raised shadow-card sm:grid-cols-[9rem_minmax(0,1fr)]">
-                  <div
-                    aria-hidden="true"
-                    className="hidden items-center justify-center bg-surface-subtle text-accent-strong sm:flex"
-                  >
-                    <PinIcon className="h-10 w-10" />
-                  </div>
-                  <div className="p-6">
-                    <p className="text-micro font-bold tracking-eyebrow text-ink-subtle uppercase">
-                      Venue
-                    </p>
-                    <p className="mt-1 font-display text-h3 font-semibold text-ink">
+                <div className="mt-5 grid grid-cols-1 gap-6 border-t-2 border-ink pt-5 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="min-w-0">
+                    <p className="font-display text-h3 text-ink">
                       {/* Linked when there is a slug. Deriving one from the name
                           would produce a URL that looks right and 404s. */}
                       {event.venue.slug ? (
@@ -664,7 +659,7 @@ export default async function EventDetailPage({ params }) {
                         event.venue.name
                       )}
                     </p>
-                    <address className="mt-2 text-[0.9375rem] leading-6 text-ink-muted not-italic">
+                    <address className="mt-2 text-label leading-6 text-ink-muted not-italic">
                       {address.map((line) => (
                         <span key={line} className="block">
                           {line}
@@ -672,11 +667,12 @@ export default async function EventDetailPage({ params }) {
                       ))}
                     </address>
                     {event.venue.capacity ? (
-                      <p className="mt-3 text-sm text-ink-muted">
+                      <p className="mt-3 text-caption text-ink-muted tabular-nums">
                         Capacity {event.venue.capacity.toLocaleString('en-US')}
                       </p>
                     ) : null}
                   </div>
+                  <PinIcon className="hidden h-10 w-10 text-accent-strong sm:block" />
                 </div>
               ) : event.isOnline ? null : (
                 <p className="mt-4 text-ink-muted">
@@ -691,7 +687,7 @@ export default async function EventDetailPage({ params }) {
                   is on your ticket once you have booked.
                 </p>
               ) : null}
-            </Reveal>
+            </section>
 
             {/* This event's own arrival notes, after the venue's address. */}
             <EventDirections text={event.directions} />
@@ -703,8 +699,8 @@ export default async function EventDetailPage({ params }) {
               unreadable to a screen reader without a label nobody writes.
             */}
             {access.features.length > 0 || access.notes.length > 0 || event.ageRestriction ? (
-              <Reveal as="section" aria-labelledby="access-heading">
-                <h2 id="access-heading" className="text-h2 font-semibold text-ink">
+              <section aria-labelledby="access-heading">
+                <h2 id="access-heading" className="text-h2 text-ink">
                   Access and admission
                 </h2>
 
@@ -712,7 +708,7 @@ export default async function EventDetailPage({ params }) {
                   <p className="mt-4 text-ink-muted">
                     <span className="font-bold text-ink">Age {event.ageRestriction} and over.</span>{' '}
                     {policies.ageNote ??
-                      'Bring photo identification — the door may ask for it, and a ticket is not a way in without it.'}
+                      'Bring photo identification: the door may ask for it, and a ticket is not a way in without it.'}
                   </p>
                 ) : null}
 
@@ -747,7 +743,7 @@ export default async function EventDetailPage({ params }) {
                     organiser before you buy rather than assuming either way.
                   </p>
                 ) : null}
-              </Reveal>
+              </section>
             ) : null}
 
             <EventDressCode text={event.dressCode} />
@@ -755,11 +751,11 @@ export default async function EventDetailPage({ params }) {
             <EventFaq items={event.faq} />
 
             {event.organization ? (
-              <Reveal as="section" aria-labelledby="organiser-heading">
-                <h2 id="organiser-heading" className="text-h2 font-semibold text-ink">
+              <section aria-labelledby="organiser-heading">
+                <h2 id="organiser-heading" className="text-h2 text-ink">
                   Presented by
                 </h2>
-                <div className="mt-5 rounded-card bg-surface-raised p-6 shadow-card">
+                <div className="mt-5 border-t-2 border-ink pt-5">
                   {imported ? (
                     /*
                       The organiser the listing names, who has no page here;
@@ -814,7 +810,7 @@ export default async function EventDetailPage({ params }) {
                     <p className="mt-3 text-ink-muted">{event.organization.description}</p>
                   ) : null}
                 </div>
-              </Reveal>
+              </section>
             ) : null}
 
             {/* Only while an administrator at The Desi Events has the link on and the
@@ -839,39 +835,27 @@ export default async function EventDetailPage({ params }) {
               policy block becomes decoration.
             */}
             {policies.refund || policies.entry || policies.conduct ? (
-              <Reveal
-                as="section"
-                aria-labelledby="policies-heading"
-                className="rounded-card bg-surface-subtle p-6 sm:p-8"
-              >
-                <div className="flex items-center gap-4">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-surface-raised text-accent-strong"
-                  >
-                    <PolicyIcon className="h-5.5 w-5.5" />
-                  </span>
-                  <h2 id="policies-heading" className="text-h2 font-semibold text-ink">
-                    Policies
-                  </h2>
-                </div>
-                <dl className="mt-5 space-y-4">
+              <section aria-labelledby="policies-heading">
+                <h2 id="policies-heading" className="text-h2 text-ink">
+                  Policies
+                </h2>
+                <dl className="mt-5 divide-y divide-line border-t-2 border-ink">
                   {policies.refund ? (
-                    <div>
+                    <div className="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6">
                       <dt className="font-bold text-ink">Refunds</dt>
-                      <dd className="mt-1 text-ink">{policies.refund}</dd>
+                      <dd className="text-ink">{policies.refund}</dd>
                     </div>
                   ) : null}
                   {policies.entry ? (
-                    <div>
+                    <div className="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6">
                       <dt className="font-bold text-ink">Getting in</dt>
-                      <dd className="mt-1 text-ink">{policies.entry}</dd>
+                      <dd className="text-ink">{policies.entry}</dd>
                     </div>
                   ) : null}
                   {policies.conduct ? (
-                    <div>
+                    <div className="grid grid-cols-1 gap-1 py-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6">
                       <dt className="font-bold text-ink">House rules</dt>
-                      <dd className="mt-1 text-ink">{policies.conduct}</dd>
+                      <dd className="text-ink">{policies.conduct}</dd>
                     </div>
                   ) : null}
                 </dl>
@@ -880,23 +864,19 @@ export default async function EventDetailPage({ params }) {
                   copied onto it when it was placed, so a later edit cannot change what you agreed
                   to.
                 </p>
-              </Reveal>
+              </section>
             ) : null}
           </div>
 
           <aside
             id="tickets"
             aria-labelledby="tickets-heading"
-            className="scroll-mt-28 lg:sticky lg:top-28"
+            className="scroll-mt-24 lg:sticky lg:top-24"
           >
-            <FadeIn
-              delay={0.2}
-              className="overflow-hidden rounded-card bg-surface-raised shadow-dialog"
-            >
-              <MirrorBand />
+            <div className="overflow-hidden rounded-card border border-line-strong bg-surface-raised">
               <div className="p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 id="tickets-heading" className="text-h2 font-semibold text-ink">
+                  <h2 id="tickets-heading" className="text-h2 text-ink">
                     Tickets
                   </h2>
                   {buyable ? (
@@ -955,8 +935,9 @@ export default async function EventDetailPage({ params }) {
                           <p className="mt-1 text-sm text-ink-muted">
                             <span className="font-bold text-ink">
                               {formatPrice(allIn.allInCents, cheapest.currency)} all in
-                            </span>{' '}
-                            — includes {formatPrice(allIn.feesCents, cheapest.currency)} booking fee
+                            </span>
+                            , including the {formatPrice(allIn.feesCents, cheapest.currency)}{' '}
+                            booking fee
                             {allIn.taxCents > 0
                               ? ` and ${formatPrice(allIn.taxCents, cheapest.currency)} ${allIn.taxLabel}`
                               : ''}
@@ -1028,32 +1009,16 @@ export default async function EventDetailPage({ params }) {
                   </span>
                 </p>
               </div>
-            </FadeIn>
+            </div>
           </aside>
         </div>
       </div>
 
+      {showBuyBar ? <StickyBuyBar amount={heroPrice.amount} note={heroPrice.note} /> : null}
+
       {/* The page view, and the clicks on "Choose tickets" and "Choose seats". */}
       <TrafficScope view={traffic} />
     </article>
-  )
-}
-
-/**
- * A fact's icon on the hero: a marigold line icon on a faint marigold tile.
- *
- * @param {object} props Component props.
- * @param {Function} props.Icon The icon component.
- * @returns {JSX.Element} The tile.
- */
-function HeroFactIcon({ Icon }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-accent-inverse/12 text-accent-inverse"
-    >
-      <Icon className="h-5 w-5" />
-    </span>
   )
 }
 

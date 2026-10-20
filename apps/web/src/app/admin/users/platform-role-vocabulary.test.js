@@ -51,7 +51,7 @@ describe('the platform role vocabulary', () => {
     expect(PLATFORM_ROLES.indexOf('ADMIN')).toBe(PLATFORM_ROLES.indexOf('SUPER_ADMIN') - 1)
     expect(platformRoleLabel('ADMIN')).toBe('Platform administrator')
     expect(PLATFORM_ROLE_DESCRIPTIONS.ADMIN).toBe(
-      'Everything a super administrator can do — every event, organisation, refund, report and door, and putting people into organisations — except changing anybody’s platform role. Needs two-step sign-in.',
+      'Everything a super administrator can do (every event, organisation, refund, report and door, and putting people into organisations) except changing anybody’s platform role. Needs two-step sign-in.',
     )
     expect(PRIVILEGED_PLATFORM_ROLES).toContain('ADMIN')
   })

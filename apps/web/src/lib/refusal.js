@@ -275,7 +275,7 @@ export function describeApiRefusal(error) {
       state: 'permission-denied',
       title: 'Not for this account',
       detail:
-        'This account does not hold what this needs here. If you think it should, ask whoever runs the organisation — nothing on this page can grant it.',
+        'This account does not hold what this needs here. If you think it should, ask whoever runs the organisation: nothing on this page can grant it.',
       recoverable: false,
       retryAfterSeconds: null,
     }

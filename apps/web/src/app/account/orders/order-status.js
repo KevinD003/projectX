@@ -8,7 +8,7 @@
  * another would have somebody wondering whether they were two different
  * states. Pure functions, so every rule here is tested without a browser.
  *
- * ## "Paid — simulated"
+ * ## "Paid (simulated)"
  *
  * Every payment in this build is simulated: the provider is the in-memory mock
  * or Stripe's sandbox, and the server refuses to start with anything that
@@ -52,10 +52,10 @@ import {
  * @type {Readonly<Record<string, StatusMeaning>>}
  */
 export const ORDER_STATUS = Object.freeze({
-  PAID: { label: 'Paid — simulated', tone: 'success' },
+  PAID: { label: 'Paid (simulated)', tone: 'success' },
   PENDING: { label: 'Waiting for payment', tone: 'pending' },
   CANCELLED: { label: 'Cancelled', tone: 'neutral' },
-  REFUNDED: { label: 'Refunded — simulated', tone: 'info' },
+  REFUNDED: { label: 'Refunded (simulated)', tone: 'info' },
   EXPIRED: { label: 'Expired', tone: 'neutral' },
 })
 
@@ -113,8 +113,8 @@ export function orderStatusFor(order) {
 
   if (order.status === 'REFUNDED') {
     return (venue?.feeKeptCents ?? 0) > 0
-      ? { label: 'Booking fee partly refunded — simulated', tone: 'info' }
-      : { label: 'Booking fee refunded — simulated', tone: 'info' }
+      ? { label: 'Booking fee partly refunded (simulated)', tone: 'info' }
+      : { label: 'Booking fee refunded (simulated)', tone: 'info' }
   }
 
   if (order.status !== 'PAID' || !venue) return orderStatusMeaning(order.status)
@@ -122,19 +122,19 @@ export function orderStatusFor(order) {
   switch (venue.state) {
     case 'TO_PAY':
       return {
-        label: `Booked — pay ${formatAmount(venue.unpaidCents, order.currency)} at the door`,
+        label: `Booked, pay ${formatAmount(venue.unpaidCents, order.currency)} at the door`,
         tone: 'pending',
       }
     case 'PAID':
       return { label: 'Paid at the door', tone: 'success' }
     case 'PASSED_ON':
-      return { label: 'Passed on — the new holder pays at the door', tone: 'info' }
+      return { label: 'Passed on, the new holder pays at the door', tone: 'info' }
     case 'CANCELLED':
-      return { label: 'Cancelled — not paid at the door', tone: 'neutral' }
+      return { label: 'Cancelled, not paid at the door', tone: 'neutral' }
     case 'ENDED':
       // Its event or night was called off, or its tickets were withdrawn,
       // before anything was owed at the door: never "Paid", never "pay".
-      return { label: 'Cancelled — nothing to pay', tone: 'neutral' }
+      return { label: 'Cancelled, nothing to pay', tone: 'neutral' }
     default:
       return orderStatusMeaning(order.status)
   }
@@ -160,11 +160,11 @@ export function venueTicketMeaning(ticket, currency) {
   const venue = ticket?.venuePayment ?? null
 
   if (!venue) return null
-  if (venue.cancelled) return { label: 'Cancelled — not paid', tone: 'neutral' }
+  if (venue.cancelled) return { label: 'Cancelled, not paid', tone: 'neutral' }
 
   if (ticket.purchaserHolding === 'TRANSFERRED_AWAY' && ticket.passedOn?.state === 'OWES') {
     return {
-      label: `Passed on — its new holder pays ${formatAmount(ticket.passedOn.dueCents, currency)} at the door`,
+      label: `Passed on, its new holder pays ${formatAmount(ticket.passedOn.dueCents, currency)} at the door`,
       tone: 'info',
     }
   }

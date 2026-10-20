@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { Card, CardHeader, CardBody, CardFooter } from './Card.jsx'
 import { Badge } from './Badge.jsx'
 import { Skeleton } from './Skeleton.jsx'
+import { Kbd } from './Kbd.jsx'
 import { EmptyState } from './EmptyState.jsx'
 import { Button } from './Button.jsx'
 
@@ -43,7 +44,12 @@ describe('Card', () => {
     )
 
     expect(screen.getByTestId('card')).toHaveClass('mt-4')
-    expect(screen.getByTestId('card').className).toContain('focus-within:ring-2')
+    expect(screen.getByTestId('card')).toHaveClass(
+      'focus-within:outline-2',
+      'focus-within:outline-offset-2',
+      'focus-within:outline-focus',
+    )
+    expect(screen.getByTestId('card').className).not.toMatch(/focus-within:ring-/)
 
     await user.click(screen.getByRole('link', { name: 'Tickets' }))
     expect(onClick).toHaveBeenCalledTimes(1)
@@ -123,5 +129,52 @@ describe('EmptyState', () => {
 
     expect(screen.getByRole('heading', { level: 3, name: 'No orders' })).toBeInTheDocument()
     expect(screen.getByText('Nothing here yet.')).toBeInTheDocument()
+  })
+})
+
+describe('Skeleton shapes', () => {
+  it.each([
+    ['text', 'rounded-plate'],
+    ['title', 'w-1/2'],
+    ['block', 'rounded-card'],
+    ['circle', 'rounded-full'],
+    ['button', 'rounded-control'],
+  ])('draws the %s shape, hidden from assistive technology', (variant, cls) => {
+    render(<Skeleton variant={variant} data-testid="skeleton" />)
+
+    const skeleton = screen.getByTestId('skeleton')
+
+    expect(skeleton).toHaveAttribute('aria-hidden', 'true')
+    expect(skeleton).toHaveAttribute('data-variant', variant)
+    expect(skeleton).toHaveClass(cls, 'bg-surface-sunken')
+  })
+
+  it('draws table rows of a short label, a long value and a figure', () => {
+    const { container } = render(<Skeleton rows={4} data-testid="rows" />)
+
+    expect(container.querySelectorAll('[data-testid="rows"] > span')).toHaveLength(4)
+    expect(screen.getByTestId('rows')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('pulses only where motion is welcome', () => {
+    render(<Skeleton data-testid="skeleton" />)
+
+    const animated = [...screen.getByTestId('skeleton').classList].filter((cls) =>
+      cls.includes('animate'),
+    )
+
+    expect(animated).toEqual(['motion-safe:animate-pulse'])
+  })
+})
+
+describe('Kbd', () => {
+  it('is the native kbd element, in the text face, never a monospace costume', () => {
+    render(<Kbd>Esc</Kbd>)
+
+    const key = screen.getByText('Esc')
+
+    expect(key.tagName).toBe('KBD')
+    expect(key).toHaveClass('font-sans', 'rounded-plate')
+    expect(key.className).not.toMatch(/font-mono/)
   })
 })

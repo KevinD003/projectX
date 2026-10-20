@@ -136,7 +136,7 @@ describe('the figures', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'Payments at the venue — Navratri Garba Night',
+        name: 'Payments at the venue for Navratri Garba Night',
       }),
     ).toBeInTheDocument()
 

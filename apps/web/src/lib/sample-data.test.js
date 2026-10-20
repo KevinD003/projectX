@@ -307,7 +307,7 @@ describe('the states the catalogue exercises', () => {
     )
 
     expect(few.map((tier) => tier.name)).toEqual(
-      expect.arrayContaining(['VIP Circle', 'Season Pass — All Nine Nights']),
+      expect.arrayContaining(['VIP Circle', 'Season Pass: All Nine Nights']),
     )
     for (const tier of few) {
       expect(tier.availableQuantity).toBe(tier.quantityTotal - tier.quantitySold)
@@ -321,7 +321,7 @@ describe('the states the catalogue exercises', () => {
 
     expect(tier('navratri-night-one-edison', 'VIP Circle').availableQuantity).toBe(12)
     expect(
-      tier('mirrorwork-nine-nights-pass', 'Season Pass — All Nine Nights').availableQuantity,
+      tier('mirrorwork-nine-nights-pass', 'Season Pass: All Nine Nights').availableQuantity,
     ).toBe(19)
   })
 

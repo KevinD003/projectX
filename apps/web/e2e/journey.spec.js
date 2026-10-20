@@ -7,7 +7,7 @@ test.describe('home → events → event → checkout', () => {
     await page.goto('/')
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      'Nine nights. One circle. Find your garba.',
+      'Plans for the weekend, sorted.',
     )
 
     await page.getByRole('link', { name: 'See all events' }).click()
@@ -166,5 +166,28 @@ test.describe('footer → contact', () => {
     await expect(page.locator('a[href^="mailto:"]').first()).toHaveAttribute('href', COMPANY_MAILTO)
     await expect(page.locator(OTHER_MAILTO)).toHaveCount(0)
     await expect(page.locator('main form')).toHaveCount(0)
+  })
+})
+
+test.describe('the colour register across soft navigations', () => {
+  // The root layout writes `data-register` on <body> from the request path,
+  // and is not rendered again with a new path on a client navigation, so a
+  // page loaded in a signed-in area used to keep the courtyard register after
+  // a `<Link>` back to a public page, and the reverse. `components/register-
+  // sync.jsx` now moves it. This config runs without the API, so nobody can
+  // sign in and no signed-in page can be reached: the round trip that proves
+  // the fix (account to home to wallet, each a soft navigation) is walked in
+  // the accessibility sweep, which has a database. Here, the guard is the
+  // other half: a link into a signed-in area that ends on the sign-in page
+  // must not leave the courtyard register behind on a public page.
+  test('a link into a signed-in area that lands on sign-in stays in the public register', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: 'Open the organiser workspace' }).click()
+
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Forganizer/)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.locator('body')).not.toHaveAttribute('data-register')
   })
 })

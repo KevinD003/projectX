@@ -58,6 +58,17 @@ describe('SiteHeader', () => {
     expect(image).toHaveAttribute('loading', 'eager')
   })
 
+  it('lets the logo wait for layout, not fetched first, when told the page may never be shown', async () => {
+    readSession.mockResolvedValue(null)
+    render(await SiteHeader({ logoPriority: false }))
+
+    const image = within(screen.getByRole('link', { name: 'The Desi Events' })).getByRole('img')
+
+    expect(image).toHaveAttribute('data-logo', 'light')
+    expect(image).not.toHaveAttribute('fetchpriority')
+    expect(image).toHaveAttribute('loading', 'lazy')
+  })
+
   it('offers the four ways into the catalogue, marking the current one', async () => {
     readSession.mockResolvedValue(null)
     render(await SiteHeader())
@@ -130,6 +141,38 @@ describe('SiteHeader', () => {
     expect(within(signedIn).getByRole('img').className).toBe(
       'block max-w-none shrink-0 h-8 w-auto min-[440px]:h-9 sm:h-10',
     )
+  })
+
+  it('draws the four discovery links from 1024px, and Menu below it', async () => {
+    readSession.mockResolvedValue(null)
+    render(await SiteHeader())
+
+    const [row] = screen.getAllByRole('navigation', { name: 'Primary' })
+    const menu = screen.getByRole('button', { name: /menu/i })
+
+    expect(row.className).toBe('hidden lg:block')
+    expect(menu.className).toContain('lg:hidden')
+  })
+
+  it('offers a search trigger beside the account control on a desk, out of the phone’s tab order', async () => {
+    readSession.mockResolvedValue(null)
+    render(await SiteHeader())
+
+    const banner = screen.getByRole('banner')
+    const search = within(banner).getByRole('button', { name: 'Search' })
+    const signIn = within(banner).getByRole('link', { name: 'Sign in' })
+
+    expect(search.className).toContain('hidden')
+    expect(search.className).toContain('lg:inline-flex')
+    expect(search.compareDocumentPosition(signIn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('ends on the single magenta brand rule, not a band of mirror-work', async () => {
+    readSession.mockResolvedValue(null)
+    const { container } = render(await SiteHeader())
+
+    expect(container.querySelectorAll('[data-brand-rule]')).toHaveLength(1)
+    expect(container.querySelector('.mirror-band')).toBeNull()
   })
 
   it('shows who is signed in instead, by display name', async () => {

@@ -83,6 +83,20 @@ describe('the category directory', () => {
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(14)
   })
 
+  it('keeps the editorial order but sets an empty category smaller and quieter than a busy one', async () => {
+    await draw({ categories: [{ value: 'COMEDY', count: 3 }] })
+
+    const comedy = screen.getByRole('heading', { level: 2, name: 'Comedy' })
+    const theatre = screen.getByRole('heading', { level: 2, name: 'Theatre' })
+
+    expect(comedy).toHaveClass('text-h2')
+    expect(comedy).not.toHaveClass('text-ink-muted')
+    expect(theatre).toHaveClass('text-h3', 'text-ink-muted')
+    // An index, not a wall of cards: no tile shadows, no entrance to wait on.
+    expect(document.querySelector('[data-motion]')).toBeNull()
+    expect(document.querySelector('.shadow-card')).toBeNull()
+  })
+
   it('shows no counts, rather than zeros, when the facets carry no category list', async () => {
     const container = await draw({ cities: [] })
 
@@ -119,6 +133,7 @@ describe('the category directory', () => {
   it('is a public, indexable page', () => {
     expect(metadata.title).toBe('Categories')
     expect(metadata.description).toEqual(expect.any(String))
+    expect(metadata.alternates).toEqual({ canonical: '/categories' })
     expect(metadata.robots).toBeUndefined()
   })
 })

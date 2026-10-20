@@ -1,0 +1,563 @@
+# The Desi Events design system: Poster House+
+
+The best poster on the community-centre noticeboard, set with modern restraint.
+Bollywood hand-painted film posters, desi concert flyers and mela banners share
+one vernacular: huge compressed type on flat ink plates, with gold used like
+foil. The site borrows that vernacular and stops there. It is typographic, flat
+and confident, rooted in print rather than in app chrome, and it belongs to the
+whole calendar (comedy, concerts, Durga Puja, Diwali, Holi, garba, bhangra,
+sangeet, Bollywood nights, classical, family days), not to one festival.
+
+This document describes the system as it is built. Where it names a file, that
+file is the source of truth and this page explains it.
+
+| Layer                                       | Where                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------- |
+| Tokens (colour, type, shape, depth, motion) | `packages/config/src/tailwind.css`                                     |
+| App-wide base styles                        | `apps/web/src/app/globals.css`                                         |
+| Primitives                                  | `packages/ui/src` (`@desi-event/ui`, `/classes`, `/icons`)             |
+| Motion components                           | `apps/web/src/components/motion.jsx`                                   |
+| App furniture                               | `apps/web/src/components/` (`workspace-kit.jsx`, `link-classes.js`, …) |
+| Brand files                                 | `docs/BRAND.md`                                                        |
+
+---
+
+## 1. Colour
+
+### The kit is the anchor
+
+The four colours of the brand kit (`docs/BRAND.md`) are declared as ramps and
+every semantic token is built around them. The kit swatch is the named step.
+
+| Ramp            | Steps           | Kit swatch                         | oklch (kit step)   |
+| --------------- | --------------- | ---------------------------------- | ------------------ |
+| `brand-magenta` | 300 500 600 700 | Magenta `#B0004A` = 600            | `0.485 0.194 7.9`  |
+| `brand-purple`  | 800 900 950     | Royal Purple `#32105E` = 900       | `0.28 0.127 297.1` |
+| `brand-gold`    | 300 400 500     | Gold `#D4A529` = 500               | `0.746 0.141 86.1` |
+| `brand-orange`  | 400 500         | Celebration Orange `#F47A1F` = 500 | `0.708 0.176 50.6` |
+
+A component never writes `bg-brand-gold-400`: `semantic-classes.test.js`
+forbids the ramps by name, exactly as it forbids Tailwind's palette. Components
+speak only the semantic layer below, which is what the contrast test measures.
+
+### Roles
+
+| Role             | Token(s)                                                                   | Value (poster register)                        | Use                                                                                           |
+| ---------------- | -------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Page             | `page`, `surface`, `surface-raised`                                        | white                                          | The ground. Never cream or ivory. A card is told from the page by its keyline, not a tint.    |
+| Subtle / sunken  | `surface-subtle`, `surface-sunken`                                         | faint purple-grey, one step deeper             | A band inside the page; a well (camera frame, code, quiet strip).                             |
+| Plate            | `surface-inverse`                                                          | the kit's Royal Purple exactly                 | The hero band, a featured strip, the footer.                                                  |
+| Ink              | `ink`, `ink-muted`, `ink-subtle`                                           | deepened purple, `0.24 0.11 300`               | Three levels of text, no more.                                                                |
+| Ink on the plate | `ink-inverse`, `ink-inverse-muted`                                         | white, lavender                                | Never grey on a coloured field.                                                               |
+| Action           | `action-primary(-hover,-ink)`                                              | the kit's Magenta, white text                  | The one thing a screen most wants done.                                                       |
+| Accent           | `accent`, `accent-strong`, `accent-soft`, `accent-line`                    | magenta                                        | The 2px brand rule (decorative `accent`), links (`accent-strong`).                            |
+| Foil             | `highlight` + `highlight-ink`, `accent-inverse`                            | gold `brand-gold-400`                          | Owned, verified, VIP; headings and links on the plate. Never text on a light ground (2.3:1).  |
+| Tonight          | `celebration`                                                              | the kit's orange                               | "Tonight", "live", "doors open" plates, in `highlight-ink`. Never white text, never a status. |
+| Secondary        | `accent-secondary(-soft)`                                                  | the purple at text strength                    | Secondary chips, a poster's category.                                                         |
+| Status           | `status-{success,pending,warning,danger,refusal,info,mock,neutral}(-soft)` | green, berry, amber, vermilion, purples        | Always with an icon and a word. `refusal` is not `danger`; `mock` is its own state.           |
+| Availability     | `availability-{open,limited,closed}(-soft)`                                | green, amber, purple grey                      | On sale, "Only N left" (the API's own words, at 25 or fewer), nothing to buy.                 |
+| Seats            | `seat-*`                                                                   |                                                | Each state has a fill, an ink and a non-colour cue.                                           |
+| Rail             | `opsnav-*`                                                                 | white, purple tint, magenta marker             | The workspace navigation.                                                                     |
+| Ticket           | `ticket-paper`, `ticket-ink`                                               | white with a hint of card stock                | The pass as an object. The QR itself is always black on white.                                |
+| Door verdicts    | `door-admit`, `door-refuse`, `door-warn` (+ `-ink`)                        | green / red with white, orange with purple ink | Full-width solid bands read at arm's length, with icon and word.                              |
+| Scrim            | `scrim`                                                                    | deepest purple, used at `/60`                  | Behind a dialog.                                                                              |
+| Focus            | `focus`                                                                    | a pink between magenta and light               | One outline everywhere (section 6).                                                           |
+| Charts           | `chart-views`, `chart-visitors`                                            | purple bars, orange line                       | Marks only.                                                                                   |
+
+### Three registers
+
+A component never asks which register it is in; the register redefines the
+variables and every utility follows.
+
+- **Poster** (the theme itself): public discovery, event pages, checkout,
+  sign-in. Colour is committed: magenta and purple plates own whole regions.
+- **Quiet Courtyard** (`[data-register='courtyard']`): every signed-in area.
+  A faintly purple off-white page, cool lines, and a Royal Purple accent and
+  primary action. Colour is restrained: it means a status or the one action.
+- **Showtime** (`[data-register='door']`): the door's own region. A dark
+  purple ground for a phone at a dim entrance, light lavender ink, gold for the
+  primary action and the focus ring, every status redrawn as a light word on a
+  dark chip, `color-scheme: dark`. Composed, not inverted: each name a door
+  component can render has its own dark value.
+
+The root layout sets `data-register` on `<body>` from the request path, and
+`components/register-sync.jsx` keeps it in step across soft navigations. The
+door register is applied by the door screen (`/organizer/check-in`) to its own
+region, which fills the space beside the folded rail.
+
+### Measured, not eyeballed
+
+`packages/config/tests/token-contrast.test.js` parses the stylesheet and
+measures every declared pairing in all three registers at WCAG 2 AA (4.5:1
+text; 3:1 focus, boundaries and chart marks) with 0.1 of headroom. A new token
+that will be text, a ring or a ground gets a pairing there. The test also pins
+the kit anchors, the plate equal to the kit purple, the action next to the kit
+magenta, and the dark grounds of the door.
+
+---
+
+## 2. Type
+
+| Face                                                                | Package                                    | Job                                                                                                                                                                              |
+| ------------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Anek Latin** (Ek Type, Mumbai), variable width 75–125% and weight | `@fontsource-variable/anek-latin/wdth.css` | Display and headings, set bold and condensed like a poster title. Sister families exist for Devanagari, Gujarati, Gurmukhi and more, for event titles in their own script later. |
+| **Mukta** (Ek Type), 400 500 600 700, Latin                         | `@fontsource/mukta/latin-*.css`            | Everything read at text size.                                                                                                                                                    |
+
+Both are self-hosted from npm and SIL OFL; `self-hosted-fonts.test.js` pins the
+exact stylesheets imported and forbids every font service.
+
+**Scale** (`--text-*`, fluid between 375 and ~1280px, in rem):
+
+| Step      | Size                     | Leading | Use                                       |
+| --------- | ------------------------ | ------- | ----------------------------------------- |
+| `display` | 44 → 96px (ceiling 6rem) | 0.95    | The poster title. One per page.           |
+| `h1`      | 36 → 60px                | 1.0     | Page title.                               |
+| `h2`      | 28 → 40px                | 1.08    | Section title.                            |
+| `h3`      | 24px                     | 30px    | Sub-section, card title.                  |
+| `title`   | 18px                     | 26px    | Workspace panel and section titles.       |
+| `body`    | 17px                     | 28px    | Reading text.                             |
+| `label`   | 15px                     | 20px    | Control labels, nav entries, table cells. |
+| `caption` | 13px                     | 18px    | Metadata and helper text. The floor.      |
+| `micro`   | 12px                     | 16px    | A chip's word only.                       |
+
+**Setting.** Headings are Anek at 80% width (h1), 86% (h2) and 92% (h3 and
+`.font-display`), bold. Tracking tightens with size and never past -0.02em
+(`--tracking-display`); `type-scale.test.js` holds the ceiling, the floor, the
+order of the steps and a leading for each. Headings balance (`text-wrap:
+balance`), paragraphs wrap pretty. `time`, `td`, `th`, `data` and `output` set
+tabular figures; use `tabular-nums` for any other price, time or count. Condensed
+type is for 20px and up; never set body text condensed. No italic display (Anek
+has none), no accent word in another face or colour.
+
+---
+
+## 3. Space and layout
+
+- A 4px base. Section gaps clearly exceed internal gaps: Persuade pages
+  120–220px between sections on a desk and 72–112px on a phone; Operate pages
+  16–24px inside a panel and 32–48px between regions.
+- Two or three left edges per page. Centre at most one moment.
+- `--container-content` (75rem) for Operate and reading columns; posters and
+  colour fields may run to the edges, with only the text measure (45–75ch)
+  constrained.
+- The phone is its own composition: 16px gutters, one dominant thing on the
+  first screen, primary actions in the thumb zone, 44px targets, no sideways
+  scroll at 320px.
+- Repeated modules only where the content is a list: the event listing, a
+  schedule, the wallet. Equal-card grids are not page structure.
+
+## 4. Shape and depth
+
+| Token               | Value                      | Use                                                               |
+| ------------------- | -------------------------- | ----------------------------------------------------------------- |
+| `rounded-plate`     | 4px                        | Poster plates, key caps, skeleton bars.                           |
+| `rounded-control`   | 10px                       | Buttons, inputs, menus' entries, toasts.                          |
+| `rounded-card`      | 16px                       | A card, only where a card is the right object; popovers, dialogs. |
+| `rounded-full`      |                            | Chips and badges.                                                 |
+| `shadow-card`       | a 1px ink keyline at 8%    | A card at rest. Flat.                                             |
+| `shadow-card-hover` | keyline + soft offset      | A card under the pointer.                                         |
+| `shadow-control`    | 1px                        | A control's seat.                                                 |
+| `shadow-floating`   | keyline + 12px offset blur | Menus, popovers, tooltips, sheets, toasts.                        |
+| `shadow-dialog`     | deeper offset blur         | Dialogs.                                                          |
+
+Shadows are tinted with the ink, always have an offset and a soft blur, and are
+only for things that float. No glows, no glass on cards, no gradients (a scrim
+under text on a photo is the only exception). `theme.test.jsx` pins both sets
+exactly, so a new radius or shadow is a decision written down.
+
+---
+
+## 5. Motion
+
+**Grammar:** mechanical and print-like. Things slot into place on one axis,
+with a hard ease-out; no bounce, no blur, no scale from zero.
+
+| Token              | Value                             | Use                                                        |
+| ------------------ | --------------------------------- | ---------------------------------------------------------- |
+| `--duration-fast`  | 120ms                             | Press, colour, small state changes.                        |
+| `--duration-base`  | 180ms                             | Menus, popovers, tooltips, hover.                          |
+| `--duration-slow`  | 250ms                             | Entrances, dialogs. The ceiling for interface feedback.    |
+| `--duration-sheet` | 400ms                             | A sheet sliding from an edge.                              |
+| `--duration-page`  | 300ms                             | A view transition between pages.                           |
+| `--ease-standard`  | `cubic-bezier(0.2, 0, 0, 1)`      | Existing transitions.                                      |
+| `--ease-out`       | `cubic-bezier(0.23, 1, 0.32, 1)`  | Anything entering or leaving (also Tailwind's `ease-out`). |
+| `--ease-in-out`    | `cubic-bezier(0.77, 0, 0.175, 1)` | Something moving or morphing on screen.                    |
+| `--ease-drawer`    | `cubic-bezier(0.32, 0.72, 0, 1)`  | Sheets and drawers.                                        |
+
+`motion.test.jsx` holds `DURATION` (120–250ms) and `DURATION_EXPRESSIVE`
+(sheet and page, above 250 and at most 500ms) equal to the tokens, under
+separate bounds.
+
+**How things move** (`apps/web/src/components/motion.jsx`):
+
+- **Entrances are CSS.** `FadeIn` and a `Stagger trigger="mount"` render plain
+  markup marked `data-motion="enter"`; the theme rises it 12px over 250ms
+  inside `prefers-reduced-motion: no-preference`. Nothing is inlined by the
+  server, so the hero heading (the LCP text) paints with the first frame.
+  Delays come in 40ms steps (`data-motion-delay`), never as inline styles.
+  Once its time has passed an entrance is marked `data-motion-done` and its
+  animation is taken off, so one that sat inside something hidden is at rest
+  when shown.
+- **Reveals never leave a blank band.** `Reveal` is visible as sent; only
+  after hydration, and only when below the fold, does it hold itself 12px low
+  and transparent until an IntersectionObserver (threshold 0) sees it.
+  Reduced motion, no observer, no scripting and print never hide it.
+- **Framer Motion is for gestures and springs**, loaded through `LazyMotion`
+  (`domAnimation`, strict) with `m` components under `MotionConfig
+reducedMotion="user"`. Today: the poster zoom (1.04 inside its own frame).
+  Cards do not lift.
+- **Dialogs, sheets, popovers** enter by CSS: `@starting-style` (Tailwind's
+  `starting:`), scale 0.96 (dialog) or 0.95 (popover, from the trigger's
+  `--transform-origin`) plus opacity; sheets translate 8px from their edge.
+- **Press:** `scale(0.98)` under `motion-safe:` on buttons and button links.
+- **Hover** only changes colour or a poster's zoom, only on a fine pointer, and
+  never changes weight.
+- **Nothing animates on keyboard-frequency actions** (tab switches in a table,
+  the next scan at the door, focus).
+
+**Reduced motion** keeps the global rule: every transition and animation is cut
+to 0.01ms, `[data-motion]` is forced to its final state, and every
+`::view-transition-*` animation is stopped. The browser sweep depends on all
+three; "gentler, not zero" would be a policy change for the owner.
+
+---
+
+## 6. Focus and accessibility
+
+- **One focus indicator:** a 2px outline in `--color-focus`, offset 2px
+  (`focus-visible:outline-2 focus-visible:outline-offset-2
+focus-visible:outline-focus`). It survives forced-colours mode; a box-shadow
+  ring does not. The only ring left is the seat on the seat map, which the
+  sweep pins as a box-shadow; `apps/web/src/focus-outline.test.js` fails on any
+  other.
+- 44px targets for every control (`sm` controls grow to 44px under a finger).
+- Colour is never the only carrier: a status is a word and an icon; a verdict
+  is a word, an icon and a band.
+- Live regions are polite. `<Alert urgent>` is reserved for the door and once
+  per checkout (`live-region-policy.test.js`); toasts are polite and never take
+  focus.
+- Exactly one `h1`, `banner`, `main` and `contentinfo` per page; the skip link
+  is the first Tab stop.
+
+---
+
+## 7. Components (`@desi-event/ui`)
+
+| Component                                                                                                                                      | Notes                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Button`                                                                                                                                       | `primary`, `secondary`/`outline`, `ghost`, `danger`, `accent`, `ink`, `inverse`; `sm`/`md`/`lg`; `loading` is a real state.                                                                                                                                                                |
+| `ButtonLink`                                                                                                                                   | An anchor (or the router's `Link` via `as`) drawn exactly like the button. Navigation is a link, never a button.                                                                                                                                                                           |
+| `buttonClasses()`, `textLinkClasses()`                                                                                                         | The class lists, pure, at `@desi-event/ui/classes` for Server Components. `link-classes.js` and the workspace kit's `PRIMARY_LINK` etc. are aliases over them.                                                                                                                             |
+| `TextLink`                                                                                                                                     | Underlined running-text link: `accent`, `ink`, `inverse`.                                                                                                                                                                                                                                  |
+| `Card`, `Badge`, `Alert`, `EmptyState`, `Input`, `Select`, `Textarea`, `Label`, `FormField`, `Spinner`, `StatusIcon`, `VisuallyHidden`, `Tabs` | As before, in the new tokens.                                                                                                                                                                                                                                                              |
+| `Modal`                                                                                                                                        | Hand-rolled focus trap, scroll freeze with a stable scrollbar gutter, CSS entrance, drawn close icon. Only for a task that needs protected focus; destructive confirmations are inline regions.                                                                                            |
+| `Sheet`                                                                                                                                        | In place, never portalled: the header menu's sheet must stay inside the banner. Focus in on open, back to the trigger on Escape.                                                                                                                                                           |
+| `Popover`, `Menu`, `Tooltip`                                                                                                                   | Base UI behind this library's API; portalled; origin-aware; Menu entries are 44px `menuitem`s and destinations render as real links. Tooltip only repeats a control's accessible name. Each at its own subpath (`/popover`, `/menu`, `/tooltip`), loaded on first use (see Weight, below). |
+| `Toaster`, `toast()`                                                                                                                           | Sonner, at `@desi-event/ui/toast`. Mounted nowhere while nothing calls `toast()`; when something does, mount it in that area's layout. Non-critical confirmations only ("Copied", "Saved"); never a code, a token or an outcome a reader must act on.                                      |
+| `Stat`                                                                                                                                         | A figure with its label, tabular, optional roll on a real change (off under reduced motion, hidden from screen readers mid-roll).                                                                                                                                                          |
+| `Skeleton`                                                                                                                                     | `text`, `title`, `block`, `circle`, `button`, `lines`, `rows`; matches the shape of what is coming.                                                                                                                                                                                        |
+| `Kbd`                                                                                                                                          | A key cap in running text.                                                                                                                                                                                                                                                                 |
+| `SegmentedControl`                                                                                                                             | Native radios in a fieldset: keyboard and form submission for free.                                                                                                                                                                                                                        |
+| `Icon`                                                                                                                                         | The self-drawn family, at `@desi-event/ui/icons`.                                                                                                                                                                                                                                          |
+
+`cn()` is `clsx` plus `tailwind-merge` configured with this theme's type
+steps, radii, shadows, easings and tracking, so a caller's class wins a
+conflict and `text-h2` survives beside `text-ink`.
+
+### Weight
+
+Every route loads the app's client barrel (`apps/web/src/components/ui.jsx`),
+so it re-exports the light primitives only, from `@desi-event/ui/primitives`.
+The floating layers bring Base UI and its positioning with them, and are
+imported from their own subpaths by the few modules that draw them: the
+header's search (`header-search-popover.jsx`) and the workspace bar's menu,
+page finder and folded-rail tooltips (`workspace-floating.jsx`). Both are
+fetched when a pointer comes over the control or focus lands on it, and drawn
+on the first press; until then the control is a plain button.
+
+`pnpm run bundle:budget` (run by `bundle:scan`, after the build in CI) sums
+the gzipped client chunks each of seven routes' client-reference manifests
+names: home, All events, an event, a ticket, the door, checkout and the admin
+overview. Each budget is the figure measured when it was set plus 8 KB, and
+none is more than half again over `main`'s figure before the redesign. The
+table and how to move it are in `scripts/lib/bundle-budget.mjs`; set at the
+barrel split, home measured 78.1 KB against 70.0 on `main` (budget 87).
+
+### Icons
+
+One family: a 24 grid, 1.75 strokes, round caps and joins, `currentColor`,
+strokes only. Decoration by default (`aria-hidden`); give `label` only when the
+icon stands alone. The operational set covers navigation, actions, status,
+tickets, the door and money; every event category the API has its own glyph
+(mic, dandiya sticks, a Bollywood star, ghungroo, a comedy bubble, film, a
+kandil, a thali, rings, a diya, theatre curtains, a notebook, a network, a
+cricket bat). `CategoryIcon` maps them, and a test holds the map equal to
+`EVENT_CATEGORIES`. No emoji or unicode glyphs as icons, anywhere.
+
+---
+
+## 8. Shells
+
+The root layout draws only the document, the skip link and two
+listeners (the register and the view-transition guard). Each area's layout
+draws its own shell, and every page has exactly one `banner`, one `main`
+(`#main-content`, the skip link's target) and one `contentinfo`.
+
+| Shell                                                                                   | Where                                                                                                                                                     | What it draws                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public (`components/public-shell.jsx`)                                                  | home (`app/(home)`), events, categories, venues, organisers, contact, limitations, sign-in, register, the 404 and 400 pages; and around the account shell | The site header: a 64px white row (logo, the four discovery links from 1024px, a search trigger that opens a GET form to `/events?q=`, the account control) over the single 2px brand rule; below 1024px a Menu sheet that stays inside the banner. The page. The footer plate: Royal Purple, the D, the tagline set as words, three short lists, what the site does not do, contact, cities, and the simulated-payment line. |
+| Account (`AccountShell` in `components/shells.jsx`)                                     | `/account/*`, `/tickets/*`, inside the public shell                                                                                                       | The account's six pages as one list: a rail on a desk, a row of segments across the top on a phone. No disclosure to open.                                                                                                                                                                                                                                                                                                    |
+| Workspace (`WorkspaceShell` in `components/shells.jsx`, `components/workspace-nav.jsx`) | organiser, analytics, finance, operations, moderation, privacy, retention, admin                                                                          | A 56px purple bar (the D home, an area switcher, a page finder, the account), a left rail from `lg` (an icon per entry; folds to icons, remembered in this browser, folded by itself at the door; a sheet from the bar below `lg`), the page, a slim footer. No public header or footer. Tabs only for an area's sections the rail does not list (finance, operations, privacy).                                              |
+
+**Authority is said, not remembered.** A platform administrator's bar carries
+a "Platform administrator" badge, a super administrator's a gold "Super
+administrator" marker (`highlight` on the purple), and every workspace page
+opens with a line saying what that reach means (`lib/authority.js`).
+
+**One navigation system.** The rail is the way around the workspace. An area
+whose sections are all rail entries draws no tabs (admin, moderation,
+analytics), and overview pages do not repeat the rail as link cards: `/admin`
+lists what is waiting for the team with the API's own counts, and
+`/organizer` says what the account looks after.
+
+**Page headers** (`PageHeader`) keep the title and its actions in view under
+the workspace bar from `lg`. `--chrome-top` (66px public, 56px workspace) is
+the offset every sticky thing below the chrome uses.
+
+**Refusals** (`AreaRefusal`) are drawn in the public shell: a session an area
+does not admit has no workspace to be shown.
+
+**Error pages.** The 404 (`not-found-view.jsx`) is a poster: the line set at
+display size beside a purple plate with a ticket that admits nobody. The route
+error page draws its own bare header and footer (`bare-chrome.jsx`), because
+it replaces the area's shell. An address whose escapes do not decode is
+answered by the proxy with `/bad-address` as a real `400`.
+
+**Page transitions.** Each shell wraps its content in a React
+`ViewTransition` keyed on the path (`components/page-transition.jsx`), so a
+navigation to another page crossfades it (180ms on the site, 150ms in the
+workspace, on `--ease-out`) and a refresh or a changed query does not. The header, bar, rail and
+footer are named (`site-header`, `app-rail`, `site-footer`) with their
+animation off and their old picture hidden, so the shell never moves; the
+overlay lets taps through. A transition the browser skips is not an error
+(`view-transition-guard.jsx`). Reduced motion stops them all.
+
+**Decoration budget.** One brand rule under the header and one plate moment
+per page. The toran, garba rings, scalloped hems, mirror band, mirror
+dividers and diamonds are gone; `festive-decor.jsx` holds only `BrandRule`,
+and its test fails if the band or the twinkling bulbs come back.
+
+### The platform's working pages
+
+Administration, moderation, finance, operations, privacy and retention are
+dense lists for people who come back every day. They share
+`components/admin-kit.jsx` beside the workspace kit:
+
+- **States are a colour, a glyph and a word** (`StatusWord`, over the
+  library's `StatusIcon`), never a colour or a pill alone. Tags that are not
+  states ("Hidden", "Complimentary", "Imported") stay quiet badges or plates.
+- **No eyebrows.** A page opens on its `PageHeader`: title, one or two
+  sentences, and its page-level action beside the title.
+- **Tables have columns sized for their content.** A wide list is
+  `table-fixed` from the width where every heading fits on its own, with
+  sentence-case headings and numbers right-aligned in tabular figures, and
+  below that each row is a ruled record with visible labels, so nothing
+  scrolls sideways on a phone (All events, the referral codes). A moment in
+  a column is the day over the time (`Instant`); an email wraps before its
+  `@` and dots (`EmailAddress`, shared with the organiser team tables).
+- **Money is money.** Finance and operations print every amount with
+  `formatAmount`, so a zero is "$0.00", set in the muted ink; the shop's
+  `formatPrice` (which calls zero "Free") is for prices. Several figures are
+  one ruled statement (`FigureList`), not a grid of cards.
+- **An empty queue is one line** (`AllClear`): a success glyph and the
+  sentence that says why that is good news. The dashed empty box is for a
+  list somebody is about to fill, not for the resting state of a queue.
+- **Long plans are paged in the browser.** An import run shows 25 listings
+  at a time with "Previous listings" and "Next listings", and can be
+  narrowed to one kind of plan line; import and approval still act on the
+  whole plan.
+- **Gold is super-administrator authority.** The platform-role control on
+  People and roles sits under a hairline rule and carries a gold "Super
+  administrators only" mark, as the bar's marker does; a super administrator's role badge
+  is gold. Gold is always a fill with purple ink, never text on white.
+- **One authored moment per page, at most.** The imports page's moment is
+  the pending-approval panel: the count set large under its heading, and
+  the large primary button. No thick coloured bar runs down a callout's
+  side; a heading, a count or a chip says what matters. Most working pages have none.
+
+### The API reference
+
+`/docs` is Swagger UI themed through `@fastify/swagger-ui`'s own options
+(`apps/api/src/docs-theme/`): `theme.css` with the brand's values as hex,
+Anek Latin and Mukta served beside it, the dark logo in a purple bar with the
+magenta rule, the D as favicon, and method plates (GET purple, POST magenta,
+PUT and PATCH orange with purple ink, DELETE red, each with its word).
+`theme.js` adds the viewport declaration the stock page lacks and follows
+the system's dark setting into Swagger's dark mode, which the stylesheet maps
+to the Showtime purples. Focus is always an outline; reduced motion stops
+Swagger's transitions; tags open folded. `info.description` is the written
+introduction (base URL, signing in, the error envelope, rate limits,
+simulated payments), and sample values are added only where a schema's
+pattern makes the shape certain (`packages/api-contract/src/openapi-examples.js`)
+or where a schema names its own with `.meta({ examples })`, as the health
+payload does for its uptime, version and log level.
+
+`theme.js` also names the three controls Swagger UI draws without one: the
+logo image in the bar (`alt="The Desi Events API"`), the light and dark switch
+(`aria-label="Dark mode"`, with `aria-pressed`), and the server picker
+(`aria-label="Server"`). One axe finding stays, and it is upstream:
+`nested-interactive` on `.opblock-summary-control`, where Swagger UI puts the
+copy and lock buttons inside the operation's own summary button. Fixing it
+means changing Swagger UI's markup, which this repository does not fork.
+
+---
+
+## 9. Per-surface modes
+
+| Surface                                                                                       | Mode                                       | Register                  | What carries the brand                                                                                                          |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Home, `/events`, event page, categories, cities, organisers, venues                           | Persuade (the event page leans Experience) | Poster                    | Purple and magenta plates own regions; one plate moment per page; the working action (search, tier choice) on the first screen. |
+| Checkout, seats, sign-in, register                                                            | Operate inside the poster frame            | Poster                    | Clarity: fee-transparent totals, the simulated-payment notice once per screen.                                                  |
+| Tickets and account                                                                           | Operate with one Experience moment         | Courtyard                 | The ticket as an object on `ticket-paper`, with its stub.                                                                       |
+| Organiser, admin, super admin, moderation, finance, operations, analytics, privacy, retention | Operate                                    | Courtyard                 | Type, palette and density; status colour; gold marks super-administrator authority.                                             |
+| The door (check-in)                                                                           | Operate, high frequency                    | Showtime                  | Dark ground, gold brackets and actions, full-width verdict bands.                                                               |
+| API docs, limitations, policy pages                                                           | Read                                       | Poster frame, calm column | The masthead and method plates; a 60–75ch column.                                                                               |
+
+### The organiser workspace, page by page
+
+- **Lists are ruled rows, not cards.** "Your events", "Your venues", the
+  editor's readiness checks and the overview's waiting list are one
+  `divide-y` list between two rules. A row is the title in the display face,
+  a line of tabular facts, and the state on the right (stacked under it on a
+  phone). Counts over a list are one ruled strip of figures (`dl > div`), not
+  a row of tiles, and count only the rows the page read.
+- **One plate per page.** The overview's "Next up" is the workspace's plate:
+  the date set large in gold on purple, the orange "Today"/"On now" mark on
+  the event's day, and the door link only then and only for somebody who
+  admits people there.
+- **The editor's steps are a stepper.** A numbered marker per step (drawn,
+  `aria-hidden`), the number said once in words, so each button is named
+  "Step 3 Sessions". Vertical with a rule from `lg`; a row that scrolls
+  inside itself on a phone.
+- **Words, not stamps.** Times read as "Oct 19, 2026, 7:24 PM UTC" with the
+  instant kept in `dateTime`; email addresses break only before the `@` and
+  a domain dot (`EmailAddress`); row headers in tables sit left.
+- **Removals are quiet.** A destructive action repeated per row is
+  danger-coloured text on a ghost button; the solid danger button is for the
+  one irreversible act on a screen (cancel, delete).
+- **The door** is §5's Showtime register: viewfinder with gold brackets, a
+  scan line that exists only under `prefers-reduced-motion: no-preference`
+  and leaves on a read, a 160ms bracket lock, and verdicts as full-width
+  solid bands (`door-admit`, `door-refuse`, `door-warn`).
+
+### Checkout, tickets and account
+
+- **Checkout route** (`components/checkout-route.jsx`). The purple band on the
+  checkout and seat pages carries a list of five stops (Event, Tickets or
+  Seats, Details, Pay, Done) labelled "Checkout progress". The basket reports
+  its step through `useReportCheckoutStep`; the gold fill grows between stops
+  on a transform, only under `prefers-reduced-motion: no-preference`. The
+  current stop has `aria-current="step"`; finished stops say ", done" in words.
+- **One payment notice per screen.** `PaymentModeNotice` heads the order
+  summary (or the seat selection) until the order is booked. Held notices and
+  buttons do not repeat it; a booked order says "simulated" once, as a fact.
+- **Direction.** Links deeper into checkout (to the seat map, from the
+  confirmation to the tickets or the order) carry `transitionTypes={['nav-forward']}`;
+  links back to the event carry `nav-back`. `PageTransition` maps them to the
+  `page-forward` / `page-back` classes: a 12px slide on one axis, 250ms in and
+  180ms out. Anything else keeps the shell's fade.
+- **The ticket object** (`components/ticket-object.jsx`, `commerce.css`). A face
+  and a stub on `ticket-paper`, notched at the tear line by a mask. The pass
+  panel is uncovered with a clip from the tear line; the QR never moves and
+  keeps one path. On the event's day a gold keyline is traced once.
+- **Ledgers, not card grids.** Orders and transfers are rows divided by a rule,
+  with the night's date in the margin (`components/ledger-date.jsx`, hidden
+  from assistive technology because the row's "When" says it). No poster
+  thumbnail is repeated down a history. The account overview is an index of
+  rows.
+- **Copy.** No em dashes in visible strings; times are written by the site's
+  formatters in the event's zone (or UTC, said so), never as raw ISO.
+
+### The public pages, as built
+
+- **The house poster** (`lib/poster-art.js`, `components/poster.jsx`). Every
+  event without an approved cover wears a typographic poster: one of six brand
+  schemes as a flat plate, one printed shape suited to its category (sun, arch,
+  rays, bands, rainbow, halftone, lattice), and its own title set huge and
+  condensed with the date and city on a snipe. Scheme, shape, corner and title
+  position come from the slug, so an event looks the same everywhere. Hex
+  colours live only in `PALETTES`; the lettering is drawn from an attribute so
+  the title is read once, and the whole poster is one named image.
+- **Plate registration.** The home page's next-up poster and the event page's
+  hero print themselves into register once (`[data-registration]`, CSS only,
+  motion-safe): a magenta and a gold impression of the title and the foil
+  impression of the shape slide 6px into place over 450ms. The title itself
+  never moves, and it is the page's one plate moment.
+- **One object across a navigation.** A poster on `/events` and the hero on
+  the event page share a `ViewTransition` name (`share="poster-morph"`, 300ms),
+  so following a card moves the poster rather than cutting to a new one.
+- **Home.** The first screen is the purple plate: headline, one line, the
+  search (keyword and city, a plain GET to `/events`) on the left, the next
+  event's poster on the right. Under it, "This weekend" (or "Coming up") as a
+  dated list of rows, read in each event's own zone; the busiest cities set
+  large with every city behind one disclosure; the kinds of night as a ruled
+  index with each one's next event; three lines on how booking works.
+- **`/events`** is the only poster wall: two across on a phone, four on a
+  desk, under a quiet filter band. Filtered, searched and later pages ask not
+  to be indexed and point their canonical at `/events`.
+- **The event page.** Poster beside title and facts on the white page; the
+  tickets box sticks beside the content from the desk breakpoint, and below it
+  a fixed bar keeps the price and a link to the tickets in reach, stepping
+  aside while the box is on screen (the page pads its scroll so focus is never
+  hidden behind it).
+- **Directories** (categories, organisers, venues, contact, limitations) are
+  ruled indexes in the display face, not card grids. An organiser or venue
+  page opens on the purple plate; everything else opens on the white page.
+- **Structured data.** `WebSite` with `SearchAction` and `Organization` on the
+  home page, `Organization` on an organiser's page (from its own record only),
+  `Event` on an event, `Place` on a venue, and `BreadcrumbList` microdata in the
+  trail itself (`Breadcrumbs structured`).
+
+---
+
+## 10. Do and don't
+
+**Do**
+
+- Use the semantic tokens; add a pairing to the contrast test for any new
+  text, ring or ground.
+- Use `ButtonLink` for navigation that looks like an action, `Button` for an
+  action.
+- Put the word beside the icon and the colour.
+- Keep money, times and counts in tabular figures.
+- Write human, specific copy in North American English; say plainly, once per
+  screen, that payments are simulated.
+
+**Don't**
+
+- Write `oklch()`, hex or palette classes in a component (the literal-class
+  test fails), or `bg-brand-*` (also forbidden).
+- Use gradients, glows, glass on cards, resting shadows, eyebrows above
+  headings, equal-card grids as page structure, or hover lift.
+- Animate from `scale(0)`, ease in, exceed 250ms for interface feedback, or
+  put `data-motion` on an element with a static transform.
+- Portal the header sheet, add a `role="alert"`, or put decoration inside a
+  QR code's SVG.
+- Use em dashes, "unlock", "seamless", "elevate", "coming soon" or invented
+  counts and urgency in visible copy.
+
+---
+
+## 11. The guards
+
+| Test                                                                  | Holds                                                                                                                  |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `packages/config/tests/token-contrast.test.js`                        | Every pairing, three registers, AA + 0.1; kit anchors; the door is dark.                                               |
+| `packages/config/tests/semantic-classes.test.js`                      | No palette or ramp classes, no hex, no `oklch()` in components; tokens-only hexes equal a token.                       |
+| `packages/config/tests/self-hosted-fonts.test.js`                     | Anek Latin and Mukta, file by file, from npm; no font service.                                                         |
+| `packages/config/tests/type-scale.test.js`                            | 6rem ceiling, -0.02em floor, 13px floor, step order, leadings.                                                         |
+| `packages/ui/src/theme.test.jsx`                                      | Every class a primitive renders names a declared token; shadow and radius sets exact; Button's press, focus and sizes. |
+| `packages/ui/src/cn.test.js`                                          | Configured merging, scales equal to the stylesheet.                                                                    |
+| `apps/web/src/components/motion.test.jsx`, `motion-viewport.test.jsx` | CSS-first entrances, reveals that never hide content, durations and curves equal to tokens.                            |
+| `apps/web/src/focus-outline.test.js`                                  | No box-shadow focus ring outside the seat.                                                                             |
+| `apps/web/e2e/*`                                                      | Reduced motion, the focus walk, the header contract, landmarks, axe at four widths.                                    |

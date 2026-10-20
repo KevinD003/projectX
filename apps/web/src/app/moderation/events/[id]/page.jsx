@@ -26,15 +26,22 @@ import Link from 'next/link'
 
 import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 
+import { StatusWord } from '../../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../../components/read-refusal.jsx'
 import { Alert, Badge, Card, CardBody } from '../../../../components/ui.jsx'
 import { ModerationDecision } from '../../../../components/moderation-decision.jsx'
 import { ModerationMediaReview } from '../../../../components/moderation-media-review.jsx'
+import { twelveHour } from '../../../../components/event-content.jsx'
 import { RichText } from '../../../../components/rich-text.jsx'
 import { WebsiteRedirectPanel } from '../../../../components/website-redirect-panel.jsx'
 import { accessibilityLabel, mergedAccessibility } from '../../../../lib/accessibility.js'
 import { sessionCan } from '../../../../lib/capabilities.js'
-import { formatEventDate, formatEventTime, formatVenueAddress } from '../../../../lib/format.js'
+import {
+  formatEventDate,
+  formatEventTime,
+  formatVenueAddress,
+  zoneWords,
+} from '../../../../lib/format.js'
 import { mediaReadFailure } from '../../../../lib/media.js'
 import { statusReading } from '../../../../lib/event-status.js'
 import { SOCIAL_NETWORK_LABELS, SOCIAL_NETWORKS } from '../../../../lib/event-content.js'
@@ -71,9 +78,9 @@ function Readiness({ ready, title, blockers }) {
   return (
     <li className="rounded-card border border-line bg-surface-raised shadow-card p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={ready ? 'success' : 'warning'} srLabel="Status:">
+        <StatusWord tone={ready ? 'success' : 'warning'} srLabel="Status:">
           {ready ? 'Ready' : 'Not ready'}
-        </Badge>
+        </StatusWord>
         <span className="font-medium text-ink">{title}</span>
       </div>
       {blockers.length > 0 ? (
@@ -177,7 +184,7 @@ export default async function ReviewEventPage({ params }) {
           <li>
             <Link
               href="/moderation/events"
-              className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+              className="inline-flex min-h-11 items-center rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
             >
               Review queue
             </Link>
@@ -191,9 +198,9 @@ export default async function ReviewEventPage({ params }) {
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <h1 className="text-h2 font-semibold text-ink">{event.title}</h1>
-        <Badge variant={reading.tone} srLabel="State:">
+        <StatusWord tone={reading.tone} srLabel="State:">
           {reading.label}
-        </Badge>
+        </StatusWord>
       </div>
 
       {/* The Desi Events team's own page for this event: editing it once it is
@@ -203,7 +210,7 @@ export default async function ReviewEventPage({ params }) {
         <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <Link
             href={`/admin/events/${encodeURIComponent(event.id)}`}
-            className="inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+            className="inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
           >
             {event.status === 'DELETED'
               ? 'Open its record as the team at The Desi Events'
@@ -212,7 +219,7 @@ export default async function ReviewEventPage({ params }) {
           {event.status !== 'DELETED' ? (
             <Link
               href={`/admin/events/${encodeURIComponent(event.id)}#delete-event`}
-              className="inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+              className="inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
             >
               Delete…
             </Link>
@@ -248,7 +255,8 @@ export default async function ReviewEventPage({ params }) {
                     <dt className="font-medium text-ink">When</dt>
                     <dd className="text-ink-muted">
                       {formatEventDate(event.startsAt, event.timezone)} ·{' '}
-                      {formatEventTime(event.startsAt, event.timezone)} ({event.timezone})
+                      {formatEventTime(event.startsAt, event.timezone)},{' '}
+                      {zoneWords(event.timezone, event.startsAt)}
                     </dd>
                   </div>
                   <div>
@@ -260,7 +268,7 @@ export default async function ReviewEventPage({ params }) {
                   <div>
                     <dt className="font-medium text-ink">Sessions</dt>
                     <dd className="text-ink-muted">
-                      {(sessions.data ?? []).length} — {(event.ticketTypes ?? []).length} ticket
+                      {(sessions.data ?? []).length}, with {(event.ticketTypes ?? []).length} ticket
                       type
                       {(event.ticketTypes ?? []).length === 1 ? '' : 's'}
                     </dd>
@@ -279,7 +287,7 @@ export default async function ReviewEventPage({ params }) {
                           {performers.map((performer, index) => (
                             <li key={`${performer.name}-${index}`}>
                               {performer.name}
-                              {performer.role ? ` — ${performer.role}` : ''}
+                              {performer.role ? `: ${performer.role}` : ''}
                               {performer.bio ? (
                                 <span className="block text-xs">{performer.bio}</span>
                               ) : null}
@@ -296,7 +304,7 @@ export default async function ReviewEventPage({ params }) {
                         <ul className="space-y-1">
                           {event.runningOrder.map((item, index) => (
                             <li key={`${item.time}-${index}`}>
-                              {item.time} {item.title}
+                              {twelveHour(item.time)} {item.title}
                               {item.note ? ` (${item.note})` : ''}
                             </li>
                           ))}
@@ -371,7 +379,7 @@ export default async function ReviewEventPage({ params }) {
                             <li key={`${sponsor.name}-${index}`} className="break-all">
                               {sponsor.name}
                               {sponsor.level ? ` (${sponsor.level})` : ''}
-                              {sponsor.url ? ` — ${sponsor.url}` : ''}
+                              {sponsor.url ? `: ${sponsor.url}` : ''}
                             </li>
                           ))}
                         </ul>
@@ -386,7 +394,7 @@ export default async function ReviewEventPage({ params }) {
                           {ticketTypes.map((tier) => (
                             <li key={tier.id} className="flex flex-wrap items-center gap-2">
                               <span>
-                                {tier.name} — {formatPrice(tier.priceCents, tier.currency)}
+                                {tier.name}: {formatPrice(tier.priceCents, tier.currency)}
                               </span>
                               {tier.visibility === 'HIDDEN' ? (
                                 <Badge variant="neutral" srLabel="Visibility:">
@@ -415,7 +423,7 @@ export default async function ReviewEventPage({ params }) {
                   <div>
                     <dt className="font-medium text-ink">Refund policy</dt>
                     <dd className="text-ink-muted">
-                      {policies.refund ?? 'None given — an event cannot be published without one.'}
+                      {policies.refund ?? 'None given: an event cannot be published without one.'}
                     </dd>
                   </div>
                 </dl>
@@ -446,12 +454,12 @@ export default async function ReviewEventPage({ params }) {
                   {/* A platform fact, not an opinion about the listing. An
                       unverified organisation cannot publish at all, so this is
                       the first thing worth knowing. */}
-                  <Badge
-                    variant={readiness.organizerVerified ? 'success' : 'warning'}
+                  <StatusWord
+                    tone={readiness.organizerVerified ? 'success' : 'warning'}
                     srLabel="Verification:"
                   >
                     {readiness.organizerVerified ? 'Verified' : 'Not verified'}
-                  </Badge>
+                  </StatusWord>
                 </p>
                 {event.organization?.description ? (
                   <p className="mt-2 text-sm text-ink-muted">{event.organization.description}</p>

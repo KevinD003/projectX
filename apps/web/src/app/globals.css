@@ -1,7 +1,7 @@
 /*
  * Global stylesheet for The Desi Events web app.
  *
- * The design tokens — colour in both registers, the Fraunces and Manrope
+ * The design tokens — colour in every register, the Anek Latin and Mukta
  * stacks, the type scale, radii, shadows and motion timings — come from the
  * shared theme, so the app and `@desi-event/ui` cannot drift apart. Importing
  * the library's stylesheet pulls in that theme *and* registers the library's
@@ -13,16 +13,20 @@
  * service. Tailwind inlines each package's `@font-face` rules and the build
  * copies the `woff2` files next to the app's own assets, so a visitor's
  * browser never asks a third party for anything. Both are SIL Open Font
- * License. What a first visit downloads is decided by `unicode-range`: an
- * English page fetches the Latin files only — Manrope's (25 KB, weights
- * 200-800) and Fraunces' upright (121 KB, with the opsz, SOFT and WONK axes);
- * Fraunces' italic (150 KB) only if a page sets something in italic.
+ * License, both from Ek Type (Mumbai). Anek Latin is the display face, with
+ * its width axis (`wdth.css`, 104 KB for Latin, weights 100-800 and widths
+ * 75-125%), so a poster title can be set condensed; `unicode-range` keeps
+ * an English page to the Latin file. Mukta carries everything read at text
+ * size, as four static Latin weights (400, 500, 600, 700; about 21 KB each)
+ * and nothing else: no Devanagari, no thin or black cuts nobody uses.
  * `font-display: swap` shows the fallback stack until they arrive.
  */
 
-@import '@fontsource-variable/fraunces/full.css';
-@import '@fontsource-variable/fraunces/full-italic.css';
-@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/anek-latin/wdth.css';
+@import '@fontsource/mukta/latin-400.css';
+@import '@fontsource/mukta/latin-500.css';
+@import '@fontsource/mukta/latin-600.css';
+@import '@fontsource/mukta/latin-700.css';
 @import '@desi-event/ui/styles.css';
 
 /* This app's own sources, relative to this file (src/app → src). */
@@ -32,9 +36,17 @@
   html {
     scroll-behavior: smooth;
     /*
-     * The public header is sticky and 72px tall. Without this, a link or
-     * control reached by Tab or by an in-page anchor can scroll to sit under
-     * it — hidden while focused, which WCAG 2.4.11 does not allow.
+     * How tall the sticky chrome at the top of the page is: the public
+     * header's 64px row and its 2px brand rule. The workspace shell sets its
+     * own (its bar is 56px) on its root. Sticky things below the chrome (a
+     * page header, the workspace rail, the account's own navigation) sit at
+     * this offset.
+     */
+    --chrome-top: 4.125rem;
+    /*
+     * The headers are sticky. Without this, a link or control reached by Tab
+     * or by an in-page anchor can scroll to sit under one — hidden while
+     * focused, which WCAG 2.4.11 does not allow.
      */
     scroll-padding-top: 5.5rem;
   }
@@ -52,29 +64,61 @@
   }
 
   /*
-   * Headings are set in Fraunces, and so is anything that asks for the
-   * display face by class. `font-optical-sizing` lets the opsz axis draw a
-   * 64px headline with finer hairlines than a 22px one; SOFT rounds the
-   * terminals — warmer, less bookish — and WONK stays off, because the
-   * leaning letters it swaps in are a novelty in a heading people have to
-   * read. A fallback face ignores all three.
+   * Headings are set in Anek Latin, the display face, bold and condensed the
+   * way a poster sets its title: the width axis narrows as the size grows
+   * (80% at h1, 86% at h2, 92% at h3 and for anything that asks for the face
+   * by class, where a narrower letter starts to cost legibility). Tracking
+   * tightens with size too, and never past -0.02em, the floor below which a
+   * condensed face starts to touch. A fallback face ignores the width and
+   * keeps its own.
    */
   h1,
   h2,
   h3,
   .font-display {
-    font-optical-sizing: auto;
-    font-variation-settings:
-      'SOFT' 50,
-      'WONK' 0;
+    font-family: var(--font-display);
+    font-stretch: 92%;
+    font-weight: 700;
   }
 
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.005em;
     text-wrap: balance;
+  }
+
+  h1 {
+    font-stretch: 80%;
+    letter-spacing: -0.015em;
+  }
+
+  h2 {
+    font-stretch: 86%;
+    letter-spacing: -0.01em;
+  }
+
+  /*
+   * Figures line up. A time, a table cell or a data value sets its digits on
+   * one width, so a column of prices or a ticking counter does not shimmer
+   * as its digits change. Everywhere else, proportional figures read better.
+   */
+  time,
+  data,
+  output,
+  td,
+  th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * A header cell starts where its column's text starts. A browser centres
+   * a `<th>` by default, which floats a row's label in the middle of a wide
+   * column and leaves a column header off its own numbers. A numeric column
+   * still asks for `text-right` by class, which wins over this base rule.
+   */
+  th {
+    text-align: start;
   }
 
   p {
@@ -160,32 +204,21 @@
   }
 
   /*
-   * Mirror-work: a chain of small diamonds, tip to tip, in rani pink,
-   * marigold and peacock — the divider under the header and between the
-   * night bands and the page.
-   *
-   * Drawn in CSS from the tokens rather than as an image. The colour is a
-   * stripe that changes every tile; the diamonds are cut out of it by a mask
-   * of four gradients, each clearing one corner of the tile, intersected. It
-   * is decoration: give the element `aria-hidden="true"` and no content.
+   * A ticket's tear line: two half-round notches cut from its edges, a third
+   * of the way down, the way a stub is punched before it is torn. A mask, so
+   * the ground behind shows through and the ticket keeps any fill. Decoration:
+   * put it on an element hidden from assistive technology.
    */
-  .mirror-band {
-    --mirror-tile: 0.875rem;
+  .stub-notches {
+    --notch: 1.25rem;
 
-    display: block;
-    block-size: 0.5rem;
-    background-image: repeating-linear-gradient(
-      90deg,
-      var(--color-accent) 0 var(--mirror-tile),
-      var(--color-highlight) var(--mirror-tile) calc(var(--mirror-tile) * 2),
-      var(--color-accent-secondary) calc(var(--mirror-tile) * 2) calc(var(--mirror-tile) * 3)
-    );
     mask-image:
-      linear-gradient(to top left, black 75%, transparent 75%),
-      linear-gradient(to top right, black 75%, transparent 75%),
-      linear-gradient(to bottom left, black 75%, transparent 75%),
-      linear-gradient(to bottom right, black 75%, transparent 75%);
-    mask-size: var(--mirror-tile) 100%;
+      radial-gradient(circle at 0 62%, transparent var(--notch), black calc(var(--notch) + 0.5px)),
+      radial-gradient(
+        circle at 100% 62%,
+        transparent var(--notch),
+        black calc(var(--notch) + 0.5px)
+      );
     mask-composite: intersect;
   }
 
@@ -201,5 +234,238 @@
       transparent 0 5px,
       color-mix(in oklch, var(--color-seat-unavailable-ink) 35%, transparent) 5px 6px
     );
+  }
+}
+
+/*
+ * Page transitions (components/page-transition.jsx).
+ *
+ * A navigation crossfades the page's content and nothing else: 180ms on the
+ * public site, 150ms in the workspace, on the theme's exit curve. The shell
+ * never moves. Its header (or the workspace's bar), the workspace rail and
+ * the footer each carry a `view-transition-name`, and their groups are drawn
+ * once, in place, with no animation: the old picture is not shown at all, so
+ * there is never a moment with two headers. The page's own root does not
+ * fade either, because the content box is what changes.
+ *
+ * The overlay lets clicks through to the live page, so a transition never
+ * eats a tap. Reduced motion stops every `::view-transition-*` animation in
+ * the theme (packages/config/src/tailwind.css), so the new page is simply
+ * there.
+ */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(site-header),
+::view-transition-group(app-rail),
+::view-transition-group(site-footer) {
+  animation: none;
+  z-index: 10;
+}
+
+::view-transition-old(site-header),
+::view-transition-old(app-rail),
+::view-transition-old(site-footer) {
+  display: none;
+}
+
+::view-transition-new(site-header),
+::view-transition-new(app-rail),
+::view-transition-new(site-footer) {
+  animation: none;
+}
+
+::view-transition-group(.page-fade),
+::view-transition-old(.page-fade),
+::view-transition-new(.page-fade) {
+  animation-duration: 180ms;
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-group(.workspace-fade),
+::view-transition-old(.workspace-fade),
+::view-transition-new(.workspace-fade) {
+  animation-duration: 150ms;
+  animation-timing-function: var(--ease-out);
+}
+
+/*
+ * Direction, for a step forward or back through checkout (a link carrying the
+ * `nav-forward` or `nav-back` transition type): the old page fades out 12px
+ * towards where it came from, the new one slides in 12px from where it is
+ * going. Short, on one axis, and stopped by reduced motion with the rest.
+ */
+::view-transition-group(.page-forward),
+::view-transition-group(.page-back) {
+  animation-duration: 250ms;
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-old(.page-forward) {
+  animation: 180ms var(--ease-out) both page-slide-to-start;
+}
+
+::view-transition-new(.page-forward) {
+  animation: 250ms var(--ease-out) both page-slide-from-end;
+}
+
+::view-transition-old(.page-back) {
+  animation: 180ms var(--ease-out) both page-slide-to-end;
+}
+
+::view-transition-new(.page-back) {
+  animation: 250ms var(--ease-out) both page-slide-from-start;
+}
+
+@keyframes page-slide-to-start {
+  to {
+    opacity: 0;
+    translate: -12px 0;
+  }
+}
+
+@keyframes page-slide-from-end {
+  from {
+    opacity: 0;
+    translate: 12px 0;
+  }
+}
+
+@keyframes page-slide-to-end {
+  to {
+    opacity: 0;
+    translate: 12px 0;
+  }
+}
+
+@keyframes page-slide-from-start {
+  from {
+    opacity: 0;
+    translate: -12px 0;
+  }
+}
+
+/*
+ * The shared poster (components/event-art.jsx, `transitionName`): a poster on
+ * the listing becomes the event page's hero, moving and scaling as one object
+ * over 300ms (`--duration-page`) on the morphing curve. Reduced motion stops
+ * it with every other view transition.
+ */
+::view-transition-group(.poster-morph) {
+  animation-duration: var(--duration-page);
+  animation-timing-function: var(--ease-in-out);
+}
+
+/*
+ * The house poster at small sizes (components/poster.jsx). The poster is its
+ * own size container: below 11rem across it drops the line under the title
+ * and the snipe, and below 7rem the title too, leaving the category's mark on
+ * the plate. A thumbnail is a swatch, not a poster too small to read.
+ */
+.poster-mark {
+  display: none;
+}
+
+@container (max-width: 11rem) {
+  .poster-small-print {
+    display: none;
+  }
+}
+
+@container (max-width: 7rem) {
+  .poster-lettering {
+    display: none;
+  }
+
+  .poster-mark {
+    display: flex;
+  }
+}
+
+/*
+ * Plate registration (components/poster.jsx, `registration`).
+ *
+ * The event page's poster and the home page's feature print themselves once
+ * as they arrive, the way a screen-printed flyer lands colour by colour: a
+ * magenta and a gold impression of the title, and the foil impression of the
+ * shape, start 6px out of register and slide into it over 450ms on the
+ * theme's exit curve, then the title's impressions drop out behind the key
+ * plate. The key plate (the title a reader reads) never moves or fades. At
+ * rest, and always under reduced motion, the impressions are hidden, so
+ * nothing is ever left misregistered.
+ *
+ * Once per load: after a client navigation `<html>` carries
+ * `data-navigated` (components/navigation-mark.jsx) and none of this runs,
+ * because a poster reached that way arrives by the view transition's morph
+ * from its card, and two signature motions on one object is one too many.
+ */
+.poster-impression {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-navigated]) [data-registration] .poster-impression {
+    animation: poster-impression 450ms var(--ease-out) both;
+  }
+
+  :root:not([data-navigated]) [data-registration] [data-impression='magenta'] {
+    --impression-x: -6px;
+    --impression-y: 4px;
+  }
+
+  :root:not([data-navigated]) [data-registration] [data-impression='gold'] {
+    --impression-x: 6px;
+    --impression-y: -4px;
+    animation-delay: 60ms;
+  }
+
+  :root:not([data-navigated]) [data-registration] [data-plate='ghost'] {
+    animation: poster-ghost 450ms var(--ease-out) both;
+  }
+}
+
+@keyframes poster-impression {
+  0% {
+    opacity: 1;
+    transform: translate(var(--impression-x, 0), var(--impression-y, 0));
+  }
+
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* In the drawing's own units: 1.5 of its 100 is about 6px on a 400px poster. */
+@keyframes poster-ghost {
+  from {
+    transform: translate(1.5px, -1.5px);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+/*
+ * The event page's buy bar (components/sticky-buy-bar.jsx) is fixed to the
+ * foot of a phone's screen. Scrolling leaves room for it, so a control that
+ * takes focus is never hidden behind it (WCAG 2.4.11).
+ */
+@media (width < 64rem) {
+  html:has([data-buy-bar]) {
+    scroll-padding-bottom: 6rem;
   }
 }

@@ -13,11 +13,11 @@ import {
 } from './attendee-names.jsx'
 
 const SLOTS = [
-  { key: 'a', label: 'Ticket 1 of 2 — General admission', ticketTypeId: 'ttgeneralxxxx' },
-  { key: 'b', label: 'Ticket 2 of 2 — General admission', ticketTypeId: 'ttgeneralxxxx' },
+  { key: 'a', label: 'Ticket 1 of 2: General admission', ticketTypeId: 'ttgeneralxxxx' },
+  { key: 'b', label: 'Ticket 2 of 2: General admission', ticketTypeId: 'ttgeneralxxxx' },
   {
     key: 'c',
-    label: 'Seat A1, row A, Stalls — Front stalls',
+    label: 'Seat A1, row A, Stalls: Front stalls',
     ticketTypeId: 'ttfrontxxxxxx',
     eventSeatId: 'esa1xxxxxxxxx',
   },
@@ -81,7 +81,7 @@ describe('the name boxes', () => {
 
     expect(screen.getByRole('group', { name: 'Who is going?' })).toBeInTheDocument()
     expect(screen.getAllByRole('textbox')).toHaveLength(3)
-    expect(screen.getByLabelText('Seat A1, row A, Stalls — Front stalls')).toHaveAttribute(
+    expect(screen.getByLabelText('Seat A1, row A, Stalls: Front stalls')).toHaveAttribute(
       'maxLength',
       '100',
     )
@@ -95,7 +95,7 @@ describe('the name boxes', () => {
 
     render(<Harness />)
 
-    const box = screen.getByLabelText('Ticket 1 of 2 — General admission')
+    const box = screen.getByLabelText('Ticket 1 of 2: General admission')
 
     await user.type(box, 'ravi@example.test')
 

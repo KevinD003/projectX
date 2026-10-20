@@ -13,8 +13,8 @@
  * puts it back (ADR 0014 §6). A published event comes back published at the
  * same web address; what any other comes back as is said on its row.
  *
- * Each row also says the event's booking fee (the platform fee) — the site
- * default, none, or its own terms — and whether it can be paid for at the
+ * Each row also says the event's booking fee (the platform fee): the site
+ * default, none, or its own terms; and whether it can be paid for at the
  * venue, with its limit (SPEC3 §7.3). Both are set on the event's own page.
  *
  * The filters are links and a GET form, so they work without JavaScript and
@@ -28,18 +28,19 @@
 import Link from 'next/link'
 import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 
+import { FilterLinks, Instant, StatusWord, formatTimeIn } from '../../../components/admin-kit.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
-import { TABLE_FRAME, TEXT_LINK } from '../../../components/workspace-kit.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
+import { PageHeader, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
-import { feeListText, venueListText } from '../../../lib/event-control.js'
+import { eventRowSummary, feeListText, venueListText } from '../../../lib/event-control.js'
 import { statusReading } from '../../../lib/event-status.js'
+import { formatDateIn } from '../../../lib/format.js'
 import { listPlatformEvents } from '../../../lib/organizer-api.js'
 import { readSession } from '../../../lib/session.js'
 import {
   LIST_PAGE_SIZE,
   PAGER_LINK_CLASSES,
-  formatInstant,
   isPastTheEnd,
   listHref,
   readPage,
@@ -158,6 +159,95 @@ function hrefParams(filters, changes = {}) {
 }
 
 /**
+ * The list's layout. From `xl` it is a table with fixed columns, wide enough
+ * beside the rail for every heading to sit on its own; below that each event
+ * is a ruled record, its title first and each value under a visible label,
+ * so nothing scrolls sideways on a phone or at 200% zoom (WCAG 1.4.10). The
+ * column headings stay in the markup for assistive technology either way.
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
+export const EVENT_TABLE = Object.freeze({
+  frame:
+    'mt-6 overflow-hidden rounded-card border border-line bg-surface-raised shadow-card xl:overflow-x-auto',
+  table: 'block w-full border-collapse text-sm xl:table xl:table-fixed',
+  thead: 'sr-only xl:not-sr-only xl:table-header-group',
+  th: 'border-b border-line-strong bg-surface-subtle px-3 py-3 align-bottom text-xs font-semibold text-ink-muted first:pl-4 last:pr-4',
+  tbody: 'block divide-y divide-line xl:table-row-group xl:divide-y-0',
+  row: 'grid grid-cols-2 gap-x-6 gap-y-1 p-3 sm:grid-cols-3 md:gap-y-3 md:p-4 xl:table-row xl:p-0',
+  // Below md, a cell that the row's heading cell already says.
+  wide: 'max-md:hidden',
+  // Below md, the state and the start on one line under the title.
+  stateStart: 'mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-ink md:hidden',
+  summary: 'mt-0.5 block text-xs leading-4 text-ink-muted md:hidden',
+  cell: 'min-w-0 xl:table-cell xl:border-b xl:border-line xl:px-3 xl:py-3 xl:align-top xl:first:pl-4 xl:last:pr-4',
+  label: 'mb-0.5 block text-xs font-medium text-ink-muted xl:hidden',
+  // A label shown from md to xl only: below md the value needs none.
+  midLabel: 'mb-0.5 hidden text-xs font-medium text-ink-muted md:block xl:hidden',
+  inlineLabel: 'text-xs font-medium text-ink-muted xl:hidden',
+})
+
+/**
+ * The columns, their headings and their widths from `xl`. The event's own
+ * column takes what is left.
+ *
+ * @type {ReadonlyArray<{heading: string, width?: string, numeric?: boolean}>}
+ */
+export const EVENT_COLUMNS = Object.freeze([
+  { heading: 'Event' },
+  { heading: 'State', width: 'w-[8.5rem]' },
+  { heading: 'Starts (UTC)', width: 'w-[7.25rem]' },
+  { heading: 'Paid orders', width: 'w-[4.75rem]', numeric: true },
+  { heading: 'Pictures waiting', width: 'w-[5.5rem]', numeric: true },
+  { heading: 'Booking fee', width: 'w-[7rem]' },
+  { heading: 'Pay at the venue', width: 'w-[7rem]' },
+  { heading: 'Last changed', width: 'w-[7.25rem]' },
+  { heading: 'Actions', width: 'w-[8.75rem]' },
+])
+
+/**
+ * One value in a row, with the label it shows below `xl`.
+ *
+ * @param {object} props Component props.
+ * @param {string} props.label The column's heading.
+ * @param {boolean} [props.numeric] Right-aligned in the table.
+ * @param {boolean} [props.inline] Below `xl`, the label and a short value share one line.
+ * @param {boolean} [props.wide] Left out below `md`, where the row's heading cell says it.
+ * @param {boolean} [props.unlabelledNarrow] Below `md`, the value shows without its label.
+ * @param {string} [props.className] Extra classes.
+ * @param {ReactNode} props.children The value.
+ * @returns {JSX.Element} The cell.
+ */
+function Cell({
+  label,
+  numeric = false,
+  inline = false,
+  wide = false,
+  unlabelledNarrow = false,
+  className = '',
+  children,
+}) {
+  const labelClasses = inline
+    ? EVENT_TABLE.inlineLabel
+    : unlabelledNarrow
+      ? EVENT_TABLE.midLabel
+      : EVENT_TABLE.label
+
+  return (
+    <td
+      className={`${EVENT_TABLE.cell} ${numeric ? 'tabular-nums xl:text-right' : ''} ${
+        inline ? 'flex items-baseline justify-between gap-2' : ''
+      } ${wide ? EVENT_TABLE.wide : ''} ${className}`}
+    >
+      <span aria-hidden="true" className={labelClasses}>
+        {label}
+      </span>
+      {children}
+    </td>
+  )
+}
+
+/**
  * One event's row.
  *
  * @param {object} props Component props.
@@ -169,65 +259,103 @@ function EventRow({ row, filters }) {
   const reading = statusReading(row.status)
   const deleted = row.status === 'DELETED'
   const href = `${PATH}/${encodeURIComponent(row.id)}`
-  const updated = formatInstant(row.updatedAt)
+  const startDay = formatDateIn(row.startsAt, 'UTC')
+  const startTime = formatTimeIn(row.startsAt, 'UTC')
 
   return (
-    <tr className="border-b border-line align-top text-sm">
-      <th scope="row" className="pr-4 text-left font-medium text-ink">
-        <span className="break-words">{row.title}</span>
-        {PUBLICLY_VISIBLE_STATUSES.has(row.status) ? (
-          <span className="block text-xs font-normal">
+    <tr className={EVENT_TABLE.row}>
+      <th
+        scope="row"
+        className={`${EVENT_TABLE.cell} col-span-full text-left font-normal text-ink`}
+      >
+        <span className="block font-semibold break-words">{row.title}</span>
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:mt-1">
+          <Link
+            href={listHref(
+              PATH,
+              hrefParams(filters, { organizationId: row.organization.id, page: 1 }),
+            )}
+            className={TEXT_LINK}
+          >
+            {row.organization.name}
+            <span className="sr-only">: only this organisation’s events</span>
+          </Link>
+          {PUBLICLY_VISIBLE_STATUSES.has(row.status) ? (
             <Link href={`/events/${encodeURIComponent(row.slug)}`} className={TEXT_LINK}>
               Public page<span className="sr-only">: {row.title}</span>
             </Link>
-          </span>
-        ) : null}
-        {row.imported ? (
-          <span className="mt-1 block">
-            <Badge variant="neutral">Imported</Badge>
-          </span>
-        ) : null}
+          ) : null}
+          {row.imported ? (
+            <span className="rounded-plate border border-line-strong px-1.5 py-px font-semibold text-ink-muted">
+              Imported
+            </span>
+          ) : null}
+        </span>
+        {/* Below md: the state and the start on one line, then the four
+            smaller columns on another, inside the row's own heading cell so
+            the table's columns stay as they are. An event is then its title,
+            those two lines, and its actions. */}
+        <span className={EVENT_TABLE.stateStart} data-slot="row-state-start">
+          <StatusWord tone={reading.tone} srLabel="State:">
+            {reading.label}
+          </StatusWord>
+          {startDay && startTime ? (
+            <>
+              <span aria-hidden="true" className="text-ink-muted">
+                ·
+              </span>
+              <time dateTime={row.startsAt} className="tabular-nums">
+                <span className="sr-only">Starts </span>
+                {startDay}, {startTime}
+              </time>
+            </>
+          ) : null}
+          {deleted && row.deletion ? (
+            <span className="basis-full text-ink-muted">
+              Restores as {statusReading(row.deletion.restoreTo).label.toLowerCase()}
+            </span>
+          ) : null}
+        </span>
+        <span className={EVENT_TABLE.summary} data-slot="row-summary">
+          {eventRowSummary(row)}
+        </span>
       </th>
-      <td className="pr-4 text-ink">
-        <Link
-          href={listHref(
-            PATH,
-            hrefParams(filters, { organizationId: row.organization.id, page: 1 }),
-          )}
-          className={TEXT_LINK}
-        >
-          {row.organization.name}
-          <span className="sr-only">: only this organisation’s events</span>
-        </Link>
-      </td>
-      <td className="pr-4">
-        <Badge variant={reading.tone} srLabel="State:">
+      <Cell label="State" wide>
+        <StatusWord tone={reading.tone} srLabel="State:">
           {reading.label}
-        </Badge>
+        </StatusWord>
         {deleted && row.deletion ? (
           <span className="mt-1 block text-xs text-ink-muted">
             Restores as {statusReading(row.deletion.restoreTo).label.toLowerCase()}
           </span>
         ) : null}
-      </td>
-      <td className="pr-4 text-ink">
-        <time dateTime={row.startsAt}>{formatInstant(row.startsAt)}</time>
-      </td>
-      <td className="pr-4 text-right text-ink tabular-nums">
-        {row.paidOrders.toLocaleString('en-US')}
-      </td>
-      <td className="pr-4 text-right text-ink tabular-nums">
-        {row.picturesWaiting.toLocaleString('en-US')}
-      </td>
-      <td className="pr-4 text-ink">{feeListText(row)}</td>
-      <td className="pr-4 text-ink">{venueListText(row)}</td>
-      <td className="pr-4 text-ink-muted">
-        {updated ? <time dateTime={row.updatedAt}>{updated}</time> : null}
-      </td>
-      <td>
-        <ul className="flex flex-col gap-1">
+      </Cell>
+      <Cell label="Starts (UTC)" wide>
+        <Instant value={row.startsAt} />
+      </Cell>
+      <Cell label="Paid orders" numeric inline wide>
+        <span className={row.paidOrders === 0 ? 'text-ink-muted' : 'text-ink'}>
+          {row.paidOrders.toLocaleString('en-US')}
+        </span>
+      </Cell>
+      <Cell label="Pictures waiting" numeric inline wide>
+        <span className={row.picturesWaiting === 0 ? 'text-ink-muted' : 'font-semibold text-ink'}>
+          {row.picturesWaiting.toLocaleString('en-US')}
+        </span>
+      </Cell>
+      <Cell label="Booking fee" inline wide>
+        <span className="text-right xl:text-left">{feeListText(row)}</span>
+      </Cell>
+      <Cell label="Pay at the venue" inline wide>
+        <span className="text-right xl:text-left">{venueListText(row)}</span>
+      </Cell>
+      <Cell label="Last changed" wide className="text-ink-muted">
+        <Instant value={row.updatedAt} />
+      </Cell>
+      <Cell label="Actions" unlabelledNarrow className="col-span-full md:col-span-1">
+        <ul className="flex flex-row flex-wrap gap-x-6 gap-y-1 md:flex-col md:gap-1">
           <li>
-            <Link href={href} className={TEXT_LINK}>
+            <Link href={href} className={`${TEXT_LINK} inline-flex min-h-6 items-center`}>
               {deleted ? 'Open its record' : 'Open in the editor'}
               <span className="sr-only">: {row.title}</span>
             </Link>
@@ -235,14 +363,14 @@ function EventRow({ row, filters }) {
           <li>
             <Link
               href={`${href}#${deleted ? 'restore-event' : 'delete-event'}`}
-              className={TEXT_LINK}
+              className={`${TEXT_LINK} inline-flex min-h-6 items-center`}
             >
               {deleted ? 'Restore…' : 'Delete…'}
               <span className="sr-only"> {row.title}</span>
             </Link>
           </li>
         </ul>
-      </td>
+      </Cell>
     </tr>
   )
 }
@@ -263,14 +391,7 @@ export default async function AdminEventsPage({ searchParams } = {}) {
   const filters = readFilters(query)
   const session = await readSession()
 
-  const heading = (
-    <>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">All events</h1>
-    </>
-  )
+  const heading = <PageHeader title="All events" description={INTRODUCTION} />
 
   if (!sessionCan(session, 'event:platform_edit')) {
     return (
@@ -312,59 +433,30 @@ export default async function AdminEventsPage({ searchParams } = {}) {
   return (
     <div>
       {heading}
-      <p className="mt-2 max-w-3xl text-ink-muted">{INTRODUCTION}</p>
 
       <p role="status" aria-live="polite" className="mt-2 text-sm font-medium text-ink">
         {query.deleted === '1' ? DELETED_STATUS : ''}
       </p>
 
-      <nav aria-label="Which events" className="mt-4">
-        <ul className="flex flex-wrap gap-2">
-          {SHOWING.map((each) => {
-            const current = each.value === filters.deleted
-
-            return (
-              <li key={each.value}>
-                <Link
-                  href={listHref(PATH, hrefParams(filters, { deleted: each.value, page: 1 }))}
-                  aria-current={current ? 'page' : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
-                    current
-                      ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
-                      : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
-                  }`}
-                >
-                  {each.label}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
-
-      <nav aria-label="Where events come from" className="mt-2">
-        <ul className="flex flex-wrap gap-2">
-          {SOURCES.map((each) => {
-            const current = each.value === filters.imported
-
-            return (
-              <li key={each.label}>
-                <Link
-                  href={listHref(PATH, hrefParams(filters, { imported: each.value, page: 1 }))}
-                  aria-current={current ? 'page' : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
-                    current
-                      ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
-                      : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
-                  }`}
-                >
-                  {each.label}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
+      <div className="mt-6 flex flex-wrap items-start gap-x-6 gap-y-2">
+        <FilterLinks
+          label="Which events"
+          items={SHOWING.map((each) => ({
+            key: each.value,
+            label: each.label,
+            href: listHref(PATH, hrefParams(filters, { deleted: each.value, page: 1 })),
+            current: each.value === filters.deleted,
+          }))}
+        />
+        <FilterLinks
+          label="Where events come from"
+          items={SOURCES.map((each) => ({
+            label: each.label,
+            href: listHref(PATH, hrefParams(filters, { imported: each.value, page: 1 })),
+            current: each.value === filters.imported,
+          }))}
+        />
+      </div>
 
       {filters.deleted !== 'exclude' ? (
         <p className="mt-4 max-w-3xl rounded-card border border-line bg-surface-subtle p-4 text-sm text-ink">
@@ -397,7 +489,7 @@ export default async function AdminEventsPage({ searchParams } = {}) {
             maxLength={SEARCH_MAX}
             autoComplete="off"
             aria-describedby={filters.searchDropped ? 'admin-events-search-note' : undefined}
-            className="min-h-11 w-72 max-w-full rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+            className="min-h-11 w-72 max-w-full rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
           />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -408,7 +500,7 @@ export default async function AdminEventsPage({ searchParams } = {}) {
             id="admin-events-status"
             name="status"
             defaultValue={filters.status ?? ''}
-            className="min-h-11 rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+            className="min-h-11 rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
           >
             <option value="">Any status</option>
             {STATUSES.map((status) => (
@@ -426,7 +518,7 @@ export default async function AdminEventsPage({ searchParams } = {}) {
             id="admin-events-sort"
             name="sort"
             defaultValue={filters.sort}
-            className="min-h-11 rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+            className="min-h-11 rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
           >
             {SORTS.map((each) => (
               <option key={each.value} value={each.value}>
@@ -510,8 +602,8 @@ export default async function AdminEventsPage({ searchParams } = {}) {
       ) : null}
 
       {events.length > 0 ? (
-        <div className={`mt-6 ${TABLE_FRAME}`}>
-          <table className="w-full min-w-[68rem] border-collapse">
+        <div className={EVENT_TABLE.frame}>
+          <table className={EVENT_TABLE.table}>
             <caption className="sr-only">
               Events
               {Number.isInteger(pagination?.total)
@@ -519,25 +611,20 @@ export default async function AdminEventsPage({ searchParams } = {}) {
                 : ''}
               , {SORTS.find((each) => each.value === filters.sort)?.label.toLowerCase()} first
             </caption>
-            <thead>
-              <tr className="border-b border-line text-left text-xs font-semibold tracking-wide text-ink-muted uppercase">
-                <th scope="col">Event</th>
-                <th scope="col">Organisation</th>
-                <th scope="col">State</th>
-                <th scope="col">Starts (UTC)</th>
-                <th scope="col" className="text-right">
-                  Paid orders
-                </th>
-                <th scope="col" className="text-right">
-                  Pictures waiting
-                </th>
-                <th scope="col">Booking fee</th>
-                <th scope="col">Pay at the venue</th>
-                <th scope="col">Last changed</th>
-                <th scope="col">Actions</th>
+            <thead className={EVENT_TABLE.thead}>
+              <tr>
+                {EVENT_COLUMNS.map((column) => (
+                  <th
+                    key={column.heading}
+                    scope="col"
+                    className={`${EVENT_TABLE.th} ${column.width ?? ''} ${column.numeric ? 'text-right' : 'text-left'}`}
+                  >
+                    {column.heading}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className={EVENT_TABLE.tbody}>
               {events.map((row) => (
                 <EventRow key={row.id} row={row} filters={filters} />
               ))}

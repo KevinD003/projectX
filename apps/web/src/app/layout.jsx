@@ -6,8 +6,10 @@
 
 import './globals.css'
 
-import { SiteFooter } from '../components/site-footer.jsx'
-import { SiteHeader } from '../components/site-header.jsx'
+import { MotionProvider } from '../components/motion.jsx'
+import { NavigationMark } from '../components/navigation-mark.jsx'
+import { RegisterSync } from '../components/register-sync.jsx'
+import { ViewTransitionGuard } from '../components/view-transition-guard.jsx'
 import { SHARE_IMAGE } from '../lib/brand.js'
 import { registerFor } from '../lib/register.js'
 import { requestPathname } from '../lib/request-path.js'
@@ -28,34 +30,34 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3000'
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'The Desi Events — garba and dandiya nights across the USA and Canada',
+    default: 'The Desi Events · South Asian events across the USA and Canada',
     template: '%s · The Desi Events',
   },
   description:
-    'Find Navratri garba and dandiya nights, beginner garba classes and Navratri melas across the USA and Canada — Edison, Queens, Houston, Chicago, the Bay Area, Atlanta and more. Tickets sold here are priced in US dollars, or Canadian dollars at a venue in Canada, with their fee shown; events imported from organisers’ public ticket listings are sold at the prices the organiser listed.',
+    'Concerts, comedy, garba and dandiya, Durga Puja, Diwali melas, Bollywood nights and classical evenings across the USA and Canada, in one place. Tickets sold here are priced in US dollars, or Canadian dollars at a venue in Canada, with their fee shown; events imported from organisers’ public ticket listings are sold at the prices the organiser listed.',
   applicationName: 'The Desi Events',
   keywords: [
+    'South Asian events',
+    'desi events near me',
+    'Bollywood night tickets',
+    'desi comedy tickets',
     'garba tickets',
-    'dandiya night',
-    'Navratri garba USA',
-    'garba near me',
-    'dandiya raas',
-    'Navratri events',
-    'garba class',
+    'Durga Puja',
+    'Diwali mela',
   ],
   openGraph: {
     type: 'website',
     siteName: 'The Desi Events',
     locale: 'en_US',
-    title: 'The Desi Events — garba and dandiya nights across the USA and Canada',
+    title: 'The Desi Events · South Asian events across the USA and Canada',
     description:
-      'Nine nights of garba in Edison, dandiya to a live dhol in Houston, a glow night in Santa Clara and a mela in Queens. All in one place, priced in dollars.',
+      'Garba in Edison, comedy in New York, a Durga Puja in Atlanta and a Bollywood night in the Bay Area. Every moment, one place.',
     images: [SHARE_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'The Desi Events',
-    description: 'Garba and dandiya nights across the USA and Canada, in one place.',
+    description: 'South Asian events across the USA and Canada, in one place.',
     images: [SHARE_IMAGE],
   },
   robots: { index: true, follow: true },
@@ -67,10 +69,10 @@ export const metadata = {
  * The page token as hex, because this is metadata rather than CSS and cannot
  * read a custom property. `semantic-classes.test.js` checks it still equals the
  * token. It used to be a bright marigold that no token declared, which put a
- * saturated band above a page that is nearly cream.
+ * saturated band above the page; it is now the white page and header.
  */
 export const viewport = {
-  themeColor: '#fff9f0',
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
 }
@@ -81,14 +83,22 @@ export const viewport = {
  */
 
 /**
- * The application shell.
+ * The document: `<html>`, `<body>` and the skip link.
  *
- * The skip link is first in the tab order and `main` carries `tabIndex={-1}`
- * so that following it actually moves focus rather than only scrolling — a
- * skip link that leaves focus in the header skips nothing for a keyboard user.
+ * The skip link is first in the tab order on every page. Its target, `main`
+ * with `tabIndex={-1}` so that following it actually moves focus rather than
+ * only scrolling, belongs to the shell each area's layout draws: the public
+ * shell (`components/public-shell.jsx`) for the site and the attendee's own
+ * pages, the workspace shell (`components/workspace-shell.jsx`) for the
+ * organiser and platform areas. Each draws exactly one `banner`, one `main`
+ * and one `contentinfo`; this layout draws none of them, so a working screen
+ * no longer sits inside the public header and footer.
  *
  * `data-register` puts a signed-in area in the Quiet Courtyard register (see
- * `lib/register.js`); a public page carries none and stays editorial.
+ * `lib/register.js`); a public page carries none and stays in the poster
+ * register. This layout is not rendered again on a soft navigation, so
+ * {@link RegisterSync} keeps the attribute in step with the route after the
+ * first paint.
  *
  * @param {RootLayoutProps} props Component props.
  * @returns {Promise<JSX.Element>} The rendered document.
@@ -102,14 +112,15 @@ export default async function RootLayout({ children }) {
         className="flex min-h-dvh flex-col"
         data-register={register === 'courtyard' ? 'courtyard' : undefined}
       >
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
-        <SiteHeader />
-        <main id="main-content" tabIndex={-1} className="flex-1">
+        <RegisterSync />
+        <NavigationMark />
+        <ViewTransitionGuard />
+        <MotionProvider>
+          <a className="skip-link" href="#main-content">
+            Skip to main content
+          </a>
           {children}
-        </main>
-        <SiteFooter />
+        </MotionProvider>
       </body>
     </html>
   )

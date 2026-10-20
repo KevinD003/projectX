@@ -88,7 +88,7 @@ export const ORGANIZER_INVITATION_SENTENCES = Object.freeze({
   ADDRESS_ERASED:
     "This invitation's address was erased at the person's request, so there is nobody to send a new code to.",
   INVITATION_UNUSABLE:
-    'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address — sign in with the address the invitation was sent to.',
+    'That code cannot be used by this account. It may have expired, been withdrawn or used already, or it was sent to a different email address. Sign in with the address the invitation was sent to.',
   WRONG_INVITATION_KIND:
     "That is a team invitation code. Enter it at Your account → Join an organisation's team (/account/invitations).",
   ALREADY_USED:

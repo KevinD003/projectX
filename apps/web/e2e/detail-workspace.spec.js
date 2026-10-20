@@ -192,6 +192,17 @@ const OWNER_RAIL = Object.freeze([
  * @type {ReadonlyArray<string>}
  */
 const PLATFORM_RAIL = Object.freeze([
+  // The Platform group leads for a platform:admin session: the /admin
+  // overview, then the pages for the team at The Desi Events (SPEC3 §12.10
+  // referral codes and booking fee refunds among them) and People and roles.
+  'Platform overview',
+  'All events',
+  'Imports',
+  'People and roles',
+  'Organiser invitations',
+  'Referral codes',
+  'Booking fee refunds',
+  'Website links',
   'Overview',
   'Events',
   'Venues',
@@ -209,14 +220,6 @@ const PLATFORM_RAIL = Object.freeze([
   'Retention',
   'Organisation checks',
   'Pictures waiting',
-  'Website links',
-  'Organiser invitations',
-  'All events',
-  // SPEC3 §12.10: referral codes and booking fee refunds, for the team at The Desi Events.
-  'Referral codes',
-  'Booking fee refunds',
-  'Imports',
-  'People and roles',
 ])
 
 /**
@@ -229,6 +232,17 @@ const PLATFORM_RAIL = Object.freeze([
  * @type {ReadonlyArray<string>}
  */
 const ADMIN_RAIL = Object.freeze([
+  // The Platform group leads for a platform:admin session: the /admin
+  // overview, then the pages for the team at The Desi Events (SPEC3 §12.10
+  // referral codes and booking fee refunds among them) and People and roles.
+  'Platform overview',
+  'All events',
+  'Imports',
+  'People and roles',
+  'Organiser invitations',
+  'Referral codes',
+  'Booking fee refunds',
+  'Website links',
   'Overview',
   'Events',
   'Venues',
@@ -244,14 +258,6 @@ const ADMIN_RAIL = Object.freeze([
   'Retention',
   'Organisation checks',
   'Pictures waiting',
-  'Website links',
-  'Organiser invitations',
-  'All events',
-  // SPEC3 §12.10: referral codes and booking fee refunds, for the team at The Desi Events.
-  'Referral codes',
-  'Booking fee refunds',
-  'Imports',
-  'People and roles',
 ])
 
 /**
@@ -816,7 +822,7 @@ test.describe('the refund list', () => {
       ),
     ).toBeVisible()
     // Simulated, and said before any figure is read.
-    await expect(statusSaying(owner, 'DEMO — no money moved.')).toBeVisible()
+    await expect(statusSaying(owner, 'Demonstration data: No money moved.')).toBeVisible()
 
     const link = owner.locator(`main a[href="/finance/refunds/${refundId}"]`)
 

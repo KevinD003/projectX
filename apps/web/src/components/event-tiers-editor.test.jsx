@@ -384,7 +384,7 @@ describe('adding a ticket type', () => {
     await user.click(screen.getByLabelText(/^Complimentary/))
 
     expect(screen.getByLabelText(/^Face value/, { selector: '#tier-price' })).toBeDisabled()
-    expect(screen.getByLabelText(/^Hidden — only your team can book it/)).toBeChecked()
+    expect(screen.getByLabelText(/^Hidden: only your team can book it/)).toBeChecked()
     expect(screen.getByLabelText(/^Shown on the event page/)).toBeDisabled()
   })
 
@@ -456,7 +456,7 @@ describe('a tier’s card', () => {
 
     expect(screen.getByText('Hidden')).toBeInTheDocument()
     expect(screen.getByText('Complimentary')).toBeInTheDocument()
-    expect(screen.getByText(/Reserved — Stalls at Session 2/)).toBeInTheDocument()
+    expect(screen.getByText(/Reserved: Stalls at Session 2/)).toBeInTheDocument()
     expect(screen.getByText(/3 sold · 2 held/)).toBeInTheDocument()
   })
 })

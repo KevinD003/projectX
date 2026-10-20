@@ -138,10 +138,15 @@ test.describe.serial('a night’s tickets, a promo code and a guest’s name', (
     await expect(nights).toHaveCount(2)
     await expect(nights.nth(0).getByRole('heading', { level: 3 })).toHaveText(/^Night 1 · /u)
     await expect(nights.nth(1).getByRole('heading', { level: 3 })).toHaveText(/^Night 2 · /u)
-    // In the venue's zone, and said to be.
+    // In the venue's zone, and said to be, in words: Eastern Time with its
+    // letters on the first night (EDT or EST, by the season the world's
+    // nights fall in), never the database's America/New_York.
     await expect(
-      buyer.getByText(/the local time at the venue \(America\/New_York\)/u),
+      buyer.getByText(
+        /^All times are Eastern Time \(E[DS]T\), the local time at the venue, not yours\.$/u,
+      ),
     ).toBeVisible()
+    await expect(buyer.getByRole('main')).not.toContainText('America/New_York')
     // The nights say what is on, never how fast it is going.
     expect(normalise(await buyer.getByRole('main').innerText())).not.toMatch(URGENCY)
 
@@ -181,9 +186,9 @@ test.describe.serial('a night’s tickets, a promo code and a guest’s name', (
     const who = buyer.getByRole('group', { name: 'Who is going?' })
 
     await expect(who.getByRole('textbox')).toHaveCount(2)
-    await who.getByLabel(new RegExp(`^Ticket 1 of 2 — ${TIER}, Night 2 · `, 'u')).fill(GUEST)
+    await who.getByLabel(new RegExp(`^Ticket 1 of 2: ${TIER}, Night 2 · `, 'u')).fill(GUEST)
     await expect(
-      who.getByLabel(new RegExp(`^Ticket 2 of 2 — ${TIER}, Night 2 · `, 'u')),
+      who.getByLabel(new RegExp(`^Ticket 2 of 2: ${TIER}, Night 2 · `, 'u')),
     ).toHaveValue('')
 
     const code = summary.getByLabel('Promo code')

@@ -34,7 +34,7 @@ describe('AuthFrame', () => {
     expect(panel).toHaveTextContent('receipts are not emailed')
     expect(panel).not.toHaveTextContent(/sends no email/i)
     expect(panel).toHaveTextContent(
-      'Payments on this site are simulated — no card, no money moves.',
+      'Payments on this site are simulated. No card is charged and no money moves.',
     )
   })
 
@@ -56,5 +56,24 @@ describe('AuthFrame', () => {
     expect(image).toHaveAttribute('height', '40')
     expect(screen.queryAllByRole('img')).toHaveLength(0)
     expect(container.querySelectorAll('img')).toHaveLength(1)
+  })
+})
+
+describe('AuthFrame, as a poster plate', () => {
+  it('sets its one line upright and large, with no entrance to wait on', () => {
+    const { container } = render(
+      <AuthFrame headingId="sign-in-heading" title="Sign in" lead="Your tickets live here.">
+        <p>form</p>
+      </AuthFrame>,
+    )
+
+    const panel = screen.getByRole('complementary', { name: 'What an account is for' })
+
+    expect(panel).toHaveClass('bg-surface-inverse')
+    expect(panel.querySelector('p')).toHaveTextContent('One account for every night out.')
+    // Anek has no italic: a slanted display line would be a faked one.
+    expect(container.querySelector('.italic')).toBeNull()
+    expect(container.querySelector('[data-motion]')).toBeNull()
+    expect(panel.querySelectorAll('li')).toHaveLength(3)
   })
 })

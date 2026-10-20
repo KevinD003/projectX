@@ -121,7 +121,7 @@ test.describe.serial('authoring an event whose state the lifecycle never reaches
   test('a reserved ticket type picks its night and its zone, and preparing prices the seats', async ({
     gamma,
   }) => {
-    const planName = `Gamma plan ${ids().tag} v1 — ${SEATS} seats`
+    const planName = `Gamma plan ${ids().tag} v1, ${SEATS} seats`
 
     // A second night, on the venue's published seating plan.
     await openStep(gamma, seeded.draftEventId, /^step 3\s*sessions$/iu)
@@ -167,7 +167,7 @@ test.describe.serial('authoring an event whose state the lifecycle never reaches
     await add.getByRole('button', { name: 'Add ticket type', exact: true }).click()
     await expect(gamma.getByText('Added "Balcony seats".')).toBeVisible()
     await expect(tierCard(gamma, 'Balcony seats')).toContainText(
-      /Reserved — Balcony at .*Balcony night/u,
+      /Reserved: Balcony at .*Balcony night/u,
     )
 
     // Preparing the night makes a seat for every place on the plan, and every

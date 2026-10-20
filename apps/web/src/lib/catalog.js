@@ -37,7 +37,7 @@ export const EVENT_CATEGORIES = Object.freeze([
   {
     value: 'MUSIC_CONCERT',
     label: 'Live Music',
-    blurb: 'Qawwali, ghazal, indie and playback — amplified and in person.',
+    blurb: 'Qawwali, ghazal, indie and playback, amplified and in person.',
     glyph: '♪',
   },
   {

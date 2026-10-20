@@ -12,6 +12,7 @@ import {
   formatVenueAddress,
   toDateTimeAttribute,
   toParagraphs,
+  zoneWords,
 } from './format.js'
 
 describe('formatEventDate', () => {
@@ -177,6 +178,24 @@ describe('formatEventStart', () => {
   it('is empty when there is no start', () => {
     expect(formatEventStart({})).toBe('')
     expect(formatEventStart(null)).toBe('')
+  })
+})
+
+describe('zoneWords', () => {
+  it('names a zone in everyday words with its letters on the day', () => {
+    expect(zoneWords('America/New_York', '2026-10-03T23:30:00.000Z')).toBe('Eastern Time (EDT)')
+    expect(zoneWords('America/New_York', '2026-12-05T00:30:00.000Z')).toBe('Eastern Time (EST)')
+    expect(zoneWords('America/Los_Angeles', '2026-10-03T23:30:00.000Z')).toBe('Pacific Time (PDT)')
+  })
+
+  it('leaves off letters a zone does not have, rather than printing an offset', () => {
+    expect(zoneWords('Asia/Kolkata', '2026-10-03T23:30:00.000Z')).toBe('India Standard Time')
+  })
+
+  it('falls back to the zone as stored when the runtime cannot name it, and to null with none', () => {
+    expect(zoneWords('Not/A_Zone')).toBe('Not/A_Zone')
+    expect(zoneWords(null)).toBeNull()
+    expect(zoneWords('')).toBeNull()
   })
 })
 

@@ -42,6 +42,9 @@ describe('manifest', () => {
       /Tickets sold here are priced in US dollars, or Canadian dollars at a venue in Canada/u,
     )
     expect(value.description).not.toMatch(/every price shown in US dollars/u)
+    expect(value.description).toMatch(
+      /^South Asian events across the USA and Canada, from concerts and comedy to garba and Durga Puja\./u,
+    )
   })
 
   it('names the site and opens at the front page, inside the site', () => {

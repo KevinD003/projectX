@@ -14,8 +14,9 @@
 
 import Link from 'next/link'
 
+import { StatusWord } from '../../../components/admin-kit.jsx'
 import { ReadRefusal } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
 import { PANEL, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { verificationReading } from '../../../lib/organization-vocabulary.js'
 import {
@@ -141,10 +142,7 @@ export default async function VerificationQueuePage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Trust and safety
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Organisation checks</h1>
+      <h1 className="text-h2 font-semibold text-ink">Organisation checks</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">
         {filter.intro} Verification is what lets an organisation publish events and be paid.
       </p>
@@ -162,7 +160,7 @@ export default async function VerificationQueuePage({ searchParams }) {
                 <Link
                   href={href}
                   aria-current={current ? 'page' : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
+                  className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
                     current
                       ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
                       : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
@@ -221,7 +219,7 @@ export default async function VerificationQueuePage({ searchParams }) {
             return (
               <li
                 key={organization.organizationId}
-                className={`p-4 transition-shadow duration-(--duration-base) ease-standard focus-within:ring-2 focus-within:ring-focus focus-within:ring-offset-2 hover:shadow-card-hover sm:p-5 ${PANEL}`}
+                className={`p-4 transition-shadow duration-(--duration-base) ease-standard focus-within:outline-2 focus-within:outline-focus focus-within:outline-offset-2 hover:shadow-card-hover sm:p-5 ${PANEL}`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -249,9 +247,9 @@ export default async function VerificationQueuePage({ searchParams }) {
                       {` · ${organization.eventCount} event${organization.eventCount === 1 ? '' : 's'}`}
                     </p>
                   </div>
-                  <Badge variant={reading.tone} size="lg" srLabel="State:">
+                  <StatusWord tone={reading.tone} srLabel="State:">
                     {reading.label}
-                  </Badge>
+                  </StatusWord>
                 </div>
                 {note ? (
                   <p className="mt-3 text-sm break-words text-ink">

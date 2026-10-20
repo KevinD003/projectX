@@ -28,6 +28,8 @@
  * @file app/organizer/check-in/page
  */
 
+import './door.css'
+
 import { DoorEventFilter } from '../../../components/door-event-filter.jsx'
 import { DoorWorkspace } from '../../../components/door-workspace.jsx'
 import { Empty } from '../../../components/page-state.jsx'
@@ -122,17 +124,22 @@ export default async function CheckInPage({ searchParams }) {
   const venuePaymentsFor =
     events && events.length > 0 ? await venuePaymentEvents(await readSession(), events) : []
 
+  // The door is drawn in its own register, Showtime: a dark purple ground
+  // for a phone at a dim entrance, light ink, gold for the action and the
+  // focus. It fills the space beside the rail, which folds itself here so
+  // the scanner has the room (`components/workspace-nav.jsx`).
   return (
-    <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Events and venues
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Check-in</h1>
-      <p className="mt-2 max-w-2xl text-ink-muted">
-        Look each ticket up, check the name, then admit. Looking up changes nothing; only{' '}
-        <strong>Admit</strong> does, and a ticket admits once — or, on an event of several nights,
-        once on its own night, or once each night when it is good for every night.
-      </p>
+    <div
+      data-register="door"
+      className="flex min-h-[calc(100dvh-var(--chrome-top))] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-10 lg:py-8"
+    >
+      <div>
+        <h1 className="text-h1 text-ink">Check-in</h1>
+        <p className="mt-2 max-w-2xl text-ink-muted">
+          Look the ticket up, check the name, then admit. Only <strong>Admit</strong> changes
+          anything. A ticket admits once, or once a night when it is good for every night.
+        </p>
+      </div>
 
       {failure ? (
         <ReadRefusal
@@ -175,7 +182,7 @@ export default async function CheckInPage({ searchParams }) {
       ) : null}
 
       {events && events.length > 0 ? (
-        <div className="mt-8">
+        <div className="mt-6">
           {/* Keyed on the filter, so a new list starts with nothing chosen. */}
           <DoorWorkspace
             key={`${organizationId}|${q}`}

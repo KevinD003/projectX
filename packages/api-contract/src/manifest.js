@@ -62,7 +62,7 @@ export function routeManifestSource(routes) {
     .join('\n')
 
   return `/**
- * The route table as a browser sees it. **Generated — do not edit.**
+ * The route table as a browser sees it. **Generated: do not edit.**
  *
  * Run \`pnpm --filter @desi-event/api-contract run manifest:emit\` to
  * regenerate. \`manifest.test.js\` fails when this disagrees with
@@ -70,8 +70,8 @@ export function routeManifestSource(routes) {
  *
  * It exists so that \`createApiClient\` can place a request without importing
  * the request and response schemas. Those describe every column of every
- * entity — including an organiser's contact address and the currency they are
- * paid in — and a browser has no business holding the description of them.
+ * entity (including an organiser's contact address and the currency they are
+ * paid in) and a browser has no business holding the description of them.
  *
  * @module @desi-event/api-contract/route-manifest
  */

@@ -120,7 +120,7 @@ function Evidence({ caption, evidence, absent }) {
     return (
       <Empty
         title={caption}
-        description="Something was recorded, and none of it was on the list of things this screen may show. That is the allow list working, not an error — ask an engineer to read the row if the decision needs it."
+        description="Something was recorded, and none of it was on the list of things this screen may show. That is the allow list working, not an error: ask an engineer to read the row if the decision needs it."
       />
     )
   }
@@ -142,10 +142,10 @@ function Evidence({ caption, evidence, absent }) {
         <tbody>
           {rows.map(([key, value]) => (
             <tr key={key}>
-              <th scope="row" className={`${TD} font-normal`}>
+              <th scope="row" className={`${TD} text-left font-normal`}>
                 {key}
               </th>
-              <td className={`${TD} font-mono`}>{value === null ? '—' : String(value)}</td>
+              <td className={`${TD} font-mono`}>{value === null ? 'None' : String(value)}</td>
             </tr>
           ))}
         </tbody>
@@ -292,7 +292,7 @@ export default async function ReconciliationDetailPage({ params }) {
             <dd className="text-ink">
               {task.organizationId
                 ? 'Scoped to one organisation'
-                : 'Not scoped — only the platform can see this one'}
+                : 'Not scoped: only the platform can see this one'}
             </dd>
           </div>
         </dl>
@@ -371,7 +371,7 @@ export default async function ReconciliationDetailPage({ params }) {
         </h2>
         <p className="mt-1 text-sm text-ink-muted">
           Five things, and none of them writes a payment, an order, a ticket, a refund or a ledger
-          row directly. Resolving asks the provider once more and applies what it says — so an
+          row directly. Resolving asks the provider once more and applies what it says: so an
           unknown answer leaves the item open, and a disagreement has to be escalated rather than
           closed.
         </p>
@@ -381,7 +381,7 @@ export default async function ReconciliationDetailPage({ params }) {
       <p className="mt-8 text-sm">
         <Link
           href="/operations"
-          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
         >
           Back to operations
         </Link>

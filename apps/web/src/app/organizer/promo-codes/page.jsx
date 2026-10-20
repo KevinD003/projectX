@@ -53,7 +53,7 @@ const PAGE_SHAPE = /^[1-9][0-9]{0,4}$/u
 
 /** Classes for a Previous or Next link. */
 const PAGER =
-  'inline-flex min-h-11 items-center justify-center rounded-control border border-action-secondary-line bg-action-secondary px-4 text-sm font-semibold text-action-secondary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2'
+  'inline-flex min-h-11 items-center justify-center rounded-control border border-action-secondary-line bg-action-secondary px-4 text-sm font-semibold text-action-secondary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-secondary-hover focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2'
 
 /**
  * The page asked for, or the first.
@@ -187,10 +187,7 @@ export default async function PromoCodesPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Sales
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Promo codes</h1>
+      <h1 className="text-h2 text-ink">Promo codes</h1>
       <p className="mt-2 max-w-3xl text-ink-muted">
         Discounts {selected.organizationName ?? 'this organisation'} offers at checkout. Anybody who
         has a code can use it, so share it only with the people it is for. A code for one event
@@ -208,7 +205,7 @@ export default async function PromoCodesPage({ searchParams }) {
                   <Link
                     href={`/organizer/promo-codes?organizationId=${encodeURIComponent(organization.organizationId)}`}
                     aria-current={current ? 'page' : undefined}
-                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
+                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
                       current
                         ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
                         : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
@@ -311,13 +308,18 @@ export default async function PromoCodesPage({ searchParams }) {
 
                       return (
                         <tr key={code.id}>
-                          <th scope="row" className={`${TD} font-mono font-semibold`}>
+                          <th
+                            scope="row"
+                            className={`${TD} text-left font-mono font-semibold whitespace-nowrap`}
+                          >
                             {code.code}
                           </th>
                           <td className={TD}>{describeDiscount(code)}</td>
                           <td className={TD}>{code.event ? code.event.title : 'All events'}</td>
                           <td className={`${TD} text-ink-muted`}>{promoWindowText(code, zone)}</td>
-                          <td className={TD}>{usesText(code)}</td>
+                          <td className={`${TD} whitespace-nowrap tabular-nums`}>
+                            {usesText(code)}
+                          </td>
                           <td className={TD}>
                             <span className="inline-flex items-center gap-1.5">
                               <StatusIcon tone={STATUS_TONES[code.status] ?? 'neutral'} />

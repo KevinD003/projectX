@@ -26,7 +26,7 @@ source report is right and this file is stale** — tell somebody.
 | Real Stripe                          | `EXTERNAL VERIFICATION PENDING`                                  |
 | Real Stripe Connect                  | `EXTERNAL VERIFICATION PENDING`                                  |
 | Payment mode                         | `MOCK` — production payment processing `DISABLED`                |
-| Retention durations                  | `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`                       |
+| Retention durations                  | `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`                        |
 | Personal data redacted in production | **None.** Every redaction has run against disposable test data   |
 
 **No personal data has been redacted by this system. No retention deletion has
@@ -153,7 +153,7 @@ invalidation or deletion (`ExportArtifact` is schema), and retention **execution
 > retention deletion has ever run, and no real Stripe call has ever been made.
 > Nothing in this update touches any of them. The retention machinery still has
 > no deletion path, and the durations remain
-> `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`. (Updated by SPEC2: the one
+> `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`. (Updated by SPEC2: the one
 > deletion on a timer in the repository is the traffic roll-up's, of raw visit
 > rows it has already added up into daily totals. Those rows hold no address,
 > browser description or account, and the roll-up is not a retention sweep;
@@ -392,7 +392,7 @@ disposable data, under this project's own internal gates.
 - production incident readiness.
 
 No compliance claim is made for GDPR, CCPA/CPRA, PCI DSS, HIPAA or any other
-regime. Retention durations are `PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW`. A
+regime. Retention durations are `PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW`. A
 data subject cannot truthfully be told their erasure is complete while historic
 immutable audit rows stand.
 

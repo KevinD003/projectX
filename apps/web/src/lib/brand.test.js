@@ -145,7 +145,7 @@ describe('the share picture', () => {
 
   it('says in its alternative text the words drawn in it: the name and the kit’s tagline', () => {
     expect(TAGLINE).toBe('Every moment, one place.')
-    expect(SHARE_IMAGE.alt).toBe('The Desi Events — Every moment, one place.')
+    expect(SHARE_IMAGE.alt).toBe('The Desi Events: Every moment, one place.')
   })
 })
 

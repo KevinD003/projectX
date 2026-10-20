@@ -46,7 +46,7 @@ being correct:
 
 ## Every number you will see is a proposal
 
-`PROPOSED — REQUIRES LEGAL/PRIVACY REVIEW` is attached to every class, every row
+`PROPOSED: REQUIRES LEGAL/PRIVACY REVIEW` is attached to every class, every row
 in the database, and every row on the screen. It is attached per row and not once
 in a heading, so that a figure copied into a ticket carries its status with it.
 

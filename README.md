@@ -349,7 +349,8 @@ Run from the repository root.
 | `pnpm test:e2e`           | Playwright end-to-end suite (`@desi-event/web`)                                                                   |
 | `pnpm policy:check`       | Enforce the JavaScript-only language policy                                                                       |
 | `pnpm secrets:scan`       | Scan every tracked file for credentials                                                                           |
-| `pnpm bundle:scan`        | Refuse server contract that leaked into a browser artefact                                                        |
+| `pnpm bundle:scan`        | Refuse server contract that leaked into a browser artefact, then check the bundle budget                          |
+| `pnpm bundle:budget`      | Fail a route whose first-load client script, gzipped, is over its budget (`scripts/lib/bundle-budget.mjs`)        |
 | `pnpm skips:check`        | Fail an undeclared skipped test                                                                                   |
 | `pnpm verify:tests:fresh` | Delete every report, run every test task with the cache refused, refuse any report not proved fresh. What CI runs |
 | `pnpm contract:check`     | Structurally validate the API contract and OpenAPI document                                                       |

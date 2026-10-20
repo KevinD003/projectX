@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { formatAmount, priceSelection } from '../lib/pricing.js'
+import { PaymentModeNotice } from './payment-mode-notice.jsx'
 import { CheckoutBasket, maxSelectable } from './checkout-basket.jsx'
 
 const event = {
@@ -344,7 +345,11 @@ describe('buying', () => {
 
     const pay = await screen.findByRole('button', { name: /^Pay .* \(simulated\)$/ })
 
-    expect(screen.getByText(/no money moves/)).toBeInTheDocument()
+    // The held notice says until when and what comes next; that payments are
+    // simulated is said once on the screen, by the page's notice, not here.
+    expect(
+      screen.getAllByRole('status').find((status) => status.textContent.includes('Tickets held')),
+    ).not.toHaveTextContent(/simulated|no money/u)
 
     await user.click(pay)
 
@@ -362,6 +367,33 @@ describe('buying', () => {
       expect.objectContaining({ ticketTypeId: 'ttqawwaligarden', quantity: 1 }),
     ])
     expect(request.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('moves focus to the held notice after Reserve, and to Booked after Pay, never to the page', async () => {
+    const user = renderBasket({
+      reserve: vi.fn().mockResolvedValue(HOLDS),
+      placeOrder: vi.fn().mockResolvedValue(ORDER),
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Add one Garden Seating' }))
+    await user.click(screen.getByRole('button', { name: 'Reserve tickets' }))
+
+    const pay = await screen.findByRole('button', { name: /^Pay .* \(simulated\)$/u })
+    const held = document.querySelector('[data-slot="held-notice"]')
+
+    // Reserve turned into Pay; the notice saying what is held, and until
+    // when, has focus.
+    expect(held).toHaveAttribute('tabindex', '-1')
+    expect(held).toHaveFocus()
+    expect(held).toHaveTextContent('Tickets held')
+
+    await user.click(pay)
+
+    const booked = await screen.findByRole('heading', { name: 'Booked' })
+
+    expect(booked).toHaveAttribute('id', 'booked-heading')
+    expect(booked).toHaveAttribute('tabindex', '-1')
+    expect(booked).toHaveFocus()
   })
 
   it('says the booking was simulated, and where the tickets are', async () => {
@@ -716,18 +748,7 @@ describe('the basket for an event in the United States', () => {
     expect(screen.getByTestId('summary-total')).toHaveTextContent('$76.11')
   })
 
-  it('shows the poster beside the summary as decoration, not as a second image', () => {
-    const { container } = render(
-      <CheckoutBasket event={edison} ticketTypes={tiers} buyer={BUYER} />,
-    )
-
-    const poster = container.querySelector('[data-slot="poster"]')
-
-    expect(poster.closest('[aria-hidden="true"]')).not.toBeNull()
-    expect(screen.queryByRole('img')).toBeNull()
-  })
-
-  it('shows the approved cover there instead when there is one, still as decoration', () => {
+  it('draws no second picture of the event beside the summary: the band names it', () => {
     const { container } = render(
       <CheckoutBasket
         event={{
@@ -746,12 +767,45 @@ describe('the basket for an event in the United States', () => {
       />,
     )
 
-    const cover = container.querySelector('[data-slot="event-art"] img')
-
     expect(container.querySelector('[data-slot="poster"]')).toBeNull()
-    expect(cover).toHaveAttribute('alt', '')
-    expect(cover.closest('[aria-hidden="true"]')).not.toBeNull()
+    expect(container.querySelector('[data-slot="event-art"]')).toBeNull()
     expect(screen.queryByRole('img')).toBeNull()
+  })
+
+  it('heads the summary with the notice it is given, once, and drops it once booked', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <CheckoutBasket
+        event={event}
+        ticketTypes={ticketTypes}
+        buyer={BUYER}
+        notice={<PaymentModeNotice />}
+        reserve={vi.fn().mockResolvedValue(HOLDS)}
+        release={vi.fn().mockResolvedValue(undefined)}
+        quote={fakeQuote()}
+        placeOrder={vi.fn().mockResolvedValue(ORDER)}
+      />,
+    )
+
+    const summary = screen.getByRole('region', { name: 'Order summary' })
+
+    expect(within(summary).getAllByTestId('payment-mode-notice')).toHaveLength(1)
+    // Before the summary's own heading, so it is read with the money.
+    expect(
+      within(summary)
+        .getByTestId('payment-mode-notice')
+        .compareDocumentPosition(within(summary).getByRole('heading', { name: 'Order summary' })),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+
+    await user.click(screen.getByRole('button', { name: 'Add one Garden Seating' }))
+    await user.click(screen.getByRole('button', { name: 'Reserve tickets' }))
+    await user.click(await screen.findByRole('button', { name: /^Pay .* \(simulated\)$/ }))
+
+    expect(await screen.findByRole('heading', { name: 'Booked' })).toBeInTheDocument()
+    expect(screen.queryByTestId('payment-mode-notice')).toBeNull()
+    // The booking says it once, as a fact about this order.
+    expect(document.body.textContent.match(/simulated/gu)).toHaveLength(1)
   })
 
   /**
@@ -957,8 +1011,8 @@ describe('the server’s quote, promo codes and guests’ names', () => {
     const names = screen.getByRole('group', { name: 'Who is going?' })
     expect(names).toHaveTextContent('Leave a box blank to put your own name, Meera Iyer')
 
-    await user.type(screen.getByLabelText('Ticket 1 of 3 — Garden Seating'), 'Asha Patel')
-    await user.type(screen.getByLabelText('Ticket 3 of 3 — Garden Seating'), '  Ravi Patel ')
+    await user.type(screen.getByLabelText('Ticket 1 of 3: Garden Seating'), 'Asha Patel')
+    await user.type(screen.getByLabelText('Ticket 3 of 3: Garden Seating'), '  Ravi Patel ')
 
     await user.click(screen.getByRole('button', { name: /^Pay / }))
     await screen.findByRole('heading', { name: 'Booked' })
@@ -976,7 +1030,7 @@ describe('the server’s quote, promo codes and guests’ names', () => {
 
     await holdGarden(user)
 
-    const box = screen.getByLabelText('Ticket 1 of 1 — Garden Seating')
+    const box = screen.getByLabelText('Ticket 1 of 1: Garden Seating')
     await user.type(box, 'asha@example.com')
 
     expect(box).toHaveAttribute('aria-invalid', 'true')
@@ -990,7 +1044,7 @@ describe('the server’s quote, promo codes and guests’ names', () => {
     const user = renderBasket({ reserve: vi.fn().mockResolvedValue(HOLDS), placeOrder })
 
     await holdGarden(user, 2)
-    await user.type(screen.getByLabelText('Ticket 2 of 2 — Garden Seating'), 'asha@example.com')
+    await user.type(screen.getByLabelText('Ticket 2 of 2: Garden Seating'), 'asha@example.com')
     expect(screen.getByRole('button', { name: /^Pay / })).toBeDisabled()
 
     // One fewer: the second box, and what was typed in it, is gone from the page.
@@ -998,7 +1052,7 @@ describe('the server’s quote, promo codes and guests’ names', () => {
     await user.click(screen.getByRole('button', { name: 'Reserve tickets' }))
     await screen.findByText('Tickets held')
 
-    expect(screen.queryByLabelText('Ticket 2 of 2 — Garden Seating')).toBeNull()
+    expect(screen.queryByLabelText('Ticket 2 of 2: Garden Seating')).toBeNull()
     expect(screen.queryByText('One of the names needs changing before you can pay.')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: /^Pay / }))
@@ -1257,7 +1311,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Pay booking fee $3.31 (simulated)' }))
-    await screen.findByRole('heading', { name: 'Booked — pay at the door' })
+    await screen.findByRole('heading', { name: 'Booked, pay at the door' })
 
     expect(placeOrder.mock.calls[0][0]).toMatchObject({
       paymentMethod: 'AT_VENUE',
@@ -1266,7 +1320,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     })
   })
 
-  it('reads "Book now — pay … at the door" when nothing is paid online', async () => {
+  it('reads "Book now, pay … at the door" when nothing is paid online', async () => {
     const user = renderVenueBasket({
       quote: vi.fn(async (request) =>
         venueQuote({ ...request, referralCode: 'PARTNER-2026' }, { referral: null }),
@@ -1277,7 +1331,7 @@ describe('paying at the venue and referral codes (SPEC3 §6.5, §12.1)', () => {
     await user.click(screen.getByRole('radio', { name: 'Pay at the venue' }))
 
     expect(
-      await screen.findByRole('button', { name: 'Book now — pay $40.00 at the door' }),
+      await screen.findByRole('button', { name: 'Book now, pay $40.00 at the door' }),
     ).toBeInTheDocument()
     expect(screen.getByTestId('summary-online')).toHaveTextContent('Nothing to pay online')
   })

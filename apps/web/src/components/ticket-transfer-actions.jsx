@@ -334,7 +334,7 @@ export function TicketTransferActions({
                 Withdraw this ticket
               </Button>
               <p className="mt-1 text-sm text-ink-muted">
-                Stops it admitting anybody, permanently. It does not give any money back — a refund
+                Stops it admitting anybody, permanently. It does not give any money back: a refund
                 is a separate decision with its own record.
               </p>
             </li>
@@ -361,7 +361,7 @@ export function TicketTransferActions({
                 ? 'Withdraw the offer'
                 : 'Withdraw this ticket'
           }
-          className="mt-3 rounded-card border border-line-strong bg-surface-raised p-5 shadow-card focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="mt-3 rounded-card border border-line-strong bg-surface-raised p-5 shadow-card focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
         >
           {error ? (
             <div className="mb-3">
@@ -478,7 +478,7 @@ export function TicketTransferActions({
             <>
               <h3 className="font-semibold text-ink">Withdraw this ticket</h3>
               <p className="mt-1 text-sm text-ink-muted">
-                Permanent. It will admit nobody, and whoever holds it is told. No money moves — a
+                Permanent. It will admit nobody, and whoever holds it is told. No money moves: a
                 refund is a separate decision with its own record.
               </p>
               <div className="mt-3">

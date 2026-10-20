@@ -82,6 +82,7 @@ import Link from 'next/link'
 
 import { EventChangesList } from '../../../../components/event-changes-list.jsx'
 import { GroupPass } from '../../../../components/group-pass.jsx'
+import { TicketObject } from '../../../../components/ticket-object.jsx'
 import { Breadcrumbs } from '../../../../components/page-state.jsx'
 import { ReadRefusal } from '../../../../components/read-refusal.jsx'
 import { getMyOrder } from '../../../../lib/account-api.js'
@@ -117,7 +118,7 @@ export const metadata = { title: 'Order', robots: { index: false, follow: false 
 
 /** Classes for a text link. */
 const LINK =
-  'rounded-sm font-medium text-accent-strong underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus'
+  'rounded-sm font-medium text-accent-strong underline underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /** Refusal states that all mean "there is no such order on this account". */
 const NOT_ON_THIS_ACCOUNT = new Set(['not-found', 'permission-denied', 'validation'])
@@ -206,7 +207,7 @@ function paymentSentence(order) {
     return 'Nothing was paid online for this order.'
   }
 
-  if (tookPayment(order)) return 'Simulated payment — no card was charged and no money moved.'
+  if (tookPayment(order)) return 'Simulated payment: no card was charged and no money moved.'
   if (['PENDING', 'CANCELLED', 'EXPIRED'].includes(order.status)) return 'Not paid.'
 
   return null
@@ -642,21 +643,37 @@ function GroupPassSection({ order, holder }) {
   const offered = currentTickets(order).some((ticket) => ticket.status === 'TRANSFER_PENDING')
 
   return (
-    <section id="group-pass" aria-labelledby="order-group-pass" className="mt-8">
-      <h2 id="order-group-pass" className="text-xl font-semibold text-ink">
-        Group pass (admits {summary.admits})
-      </h2>
-      <p className="mt-2 max-w-prose text-sm text-ink">
-        One QR that lets in every ticket on this order that you still hold. Each ticket keeps its
-        own pass as well.
-      </p>
-      {offered ? (
-        <p className="mt-2 max-w-prose text-sm text-ink-muted">
-          A ticket you have offered to somebody is let in by the group pass until they accept. If it
-          is let in first, the offer can no longer be accepted.
-        </p>
-      ) : null}
-      <GroupPass reference={order.reference} admits={summary.admits} />
+    // Drawn as a ticket: what it is on the face, the pass on the stub.
+    <section id="group-pass" aria-labelledby="order-group-pass" className="mt-10">
+      <TicketObject
+        as="div"
+        stubClassName="md:w-80"
+        face={
+          <>
+            <h2 id="order-group-pass" className="font-display text-h3 font-bold text-ticket-ink">
+              Group pass (admits {summary.admits})
+            </h2>
+            {order.event?.title ? (
+              <p className="mt-1 text-label font-semibold">{order.event.title}</p>
+            ) : null}
+            <p className="mt-3 max-w-prose text-sm text-ticket-ink">
+              One QR that lets in every ticket on this order that you still hold. Each ticket keeps
+              its own pass as well.
+            </p>
+            {offered ? (
+              <p className="mt-2 max-w-prose text-sm text-ink-muted">
+                A ticket you have offered to somebody is let in by the group pass until they accept.
+                If it is let in first, the offer can no longer be accepted.
+              </p>
+            ) : null}
+          </>
+        }
+        stub={
+          <div className="pt-2 md:pt-0 md:pl-2">
+            <GroupPass reference={order.reference} admits={summary.admits} />
+          </div>
+        }
+      />
     </section>
   )
 }
@@ -933,7 +950,7 @@ export default async function OrderPage({ params }) {
               href={order.onlineJoinUrl}
               rel="noopener noreferrer"
               referrerPolicy="no-referrer"
-              className="rounded-sm font-bold text-accent-strong underline underline-offset-2 hover:decoration-2 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+              className="rounded-sm font-bold text-accent-strong underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
             >
               Join online at {joinLinkHost(order.onlineJoinUrl)}
             </a>

@@ -1,6 +1,6 @@
 /**
- * The listing: a night band with the page's heading, the filter bar over its
- * edge, a sentence that says what matched, the cards, and the pages.
+ * The listing: the page's heading, the filter bar under it, a sentence that
+ * says what matched, the poster wall, and the pages.
  *
  * @module app/events/page.test
  */
@@ -14,6 +14,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('../../lib/api.js', () => ({
   loadEventList: vi.fn(),
   loadCatalogueFacets: vi.fn(),
+  OVERVIEW_LOOKBACK_MS: 24 * 60 * 60 * 1000,
 }))
 // The visit counting reads the session, which only a request has; it is
 // tested on its own (`components/traffic-scope.test.jsx`). Here it is a marker.
@@ -25,7 +26,7 @@ vi.mock('../../components/traffic-scope.jsx', () => ({
 
 const { loadCatalogueFacets, loadEventList } = await import('../../lib/api.js')
 const { sampleEventSummaries } = await import('../../lib/sample-data.js')
-const { default: EventsPage, metadata } = await import('./page.jsx')
+const { default: EventsPage, generateMetadata } = await import('./page.jsx')
 
 /**
  * Render the listing for a query and a page of results.
@@ -37,6 +38,7 @@ const { default: EventsPage, metadata } = await import('./page.jsx')
  * @param {boolean} [options.usedFallback] Whether the sample catalogue answered.
  * @param {boolean} [options.facetsFellBack] Whether the facets came from the sample catalogue; as `usedFallback` unless given.
  * @param {object} [options.facets] Facet lists to add to (or replace) the default ones.
+ * @param {object[]} [options.onNow] What the read for the nights under way answers.
  * @returns {Promise<HTMLElement>} The render container.
  */
 async function draw({
@@ -46,10 +48,10 @@ async function draw({
   usedFallback = false,
   facetsFellBack = usedFallback,
   facets = {},
+  onNow = [],
 } = {}) {
   const page = events ?? sampleEventSummaries().slice(0, 12)
-
-  loadEventList.mockResolvedValue({
+  const listing = {
     events: page,
     pagination: pagination ?? {
       page: 1,
@@ -60,7 +62,22 @@ async function draw({
       hasPreviousPage: false,
     },
     usedFallback,
-  })
+  }
+  // The read for the nights under way is the one bounded on both sides.
+  const underWay = {
+    events: onNow,
+    pagination: {
+      page: 1,
+      perPage: 48,
+      total: onNow.length,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+    usedFallback,
+  }
+
+  loadEventList.mockImplementation(async (filters) => (filters.startsBefore ? underWay : listing))
   loadCatalogueFacets.mockResolvedValue({
     facets: {
       categories: [
@@ -188,19 +205,51 @@ describe('the listing', () => {
     expect(screen.queryByText('Showing our sample programme')).toBeNull()
   })
 
-  it('keeps its posters fan out of the reading order: the cards carry the names', async () => {
+  it('names one poster per card, and puts nothing else on the wall', async () => {
     const container = await draw({ events: sampleEventSummaries().slice(0, 3) })
 
     const images = screen.getAllByRole('img')
 
-    // One named poster per card, and the three in the fan are hidden.
+    // One named poster per card, and no decorative fan of posters above the
+    // results: the wall is the page's one place for them.
     expect(images).toHaveLength(3)
-    expect(container.querySelectorAll('[data-slot="poster"]')).toHaveLength(6)
+    expect(container.querySelectorAll('[data-slot="poster"]')).toHaveLength(3)
+    expect(
+      within(screen.getByRole('list', { name: 'Matching events' })).getAllByRole('img'),
+    ).toHaveLength(3)
   })
 
-  it('describes the catalogue as it is now', () => {
+  it('describes the whole catalogue, not one kind of night', async () => {
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({}) })
+
     expect(metadata.title).toBe('All events')
-    expect(metadata.description).toMatch(/garba/i)
+    expect(metadata.description).toBe(
+      'Concerts, comedy, garba, Durga Puja, Diwali melas, Bollywood nights and more across the USA and Canada. Filter by category, state or province, city, date, language or price, or search.',
+    )
+  })
+
+  it('is canonical at /events, and indexed only when nothing is chosen', async () => {
+    const plain = await generateMetadata({ searchParams: Promise.resolve({}) })
+
+    expect(plain.alternates).toEqual({ canonical: '/events' })
+    expect(plain.robots).toBeUndefined()
+
+    for (const query of [
+      { category: 'COMEDY' },
+      { q: 'garba' },
+      { page: '2' },
+      { city: ['Edison'] },
+    ]) {
+      const view = await generateMetadata({ searchParams: Promise.resolve(query) })
+
+      expect(view.alternates).toEqual({ canonical: '/events' })
+      expect(view.robots).toEqual({ index: false, follow: true })
+    }
+
+    // An empty value chooses nothing: `/events?q=` is the listing itself.
+    const empty = await generateMetadata({ searchParams: Promise.resolve({ q: '  ' }) })
+
+    expect(empty.robots).toBeUndefined()
   })
 })
 
@@ -242,6 +291,139 @@ const PLACES = Object.freeze({
     },
   ],
   languages: [{ value: 'Hindi', count: 4 }],
+})
+
+describe('where the listing starts', () => {
+  const NOW = new Date('2026-10-19T16:00:00.000Z')
+
+  /** The first read with no `startsBefore`: the upcoming listing. */
+  const listingCall = () => loadEventList.mock.calls.find(([filters]) => !filters.startsBefore)[0]
+  /** The read bounded on both sides: the nights under way. */
+  const onNowCall = () => loadEventList.mock.calls.find(([filters]) => filters.startsBefore)?.[0]
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('starts the listing at now when no date is chosen, so finished nights do not lead it', async () => {
+    await draw()
+
+    expect(loadEventList).toHaveBeenCalledTimes(2)
+    expect(listingCall()).toEqual({
+      category: '',
+      region: '',
+      city: '',
+      q: '',
+      language: '',
+      when: '',
+      from: '',
+      to: '',
+      format: '',
+      free: false,
+      onSale: false,
+      page: 1,
+      perPage: 12,
+      startsAfter: '2026-10-19T16:00:00.000Z',
+    })
+  })
+
+  it('reads the nights under way from a day back, with the same filters', async () => {
+    await draw({ query: { category: 'COMEDY', page: '3' } })
+
+    expect(onNowCall()).toEqual(
+      expect.objectContaining({
+        category: 'COMEDY',
+        page: 1,
+        perPage: 48,
+        startsAfter: '2026-10-18T16:00:00.000Z',
+        startsBefore: '2026-10-19T16:00:00.000Z',
+      }),
+    )
+    expect(listingCall()).toEqual(
+      expect.objectContaining({ category: 'COMEDY', page: 3, startsAfter: NOW.toISOString() }),
+    )
+  })
+
+  it('shows a night that is on now first, counts it, and drops one that has ended', async () => {
+    const [first, second, third] = sampleEventSummaries()
+    const onNow = {
+      ...first,
+      title: 'On right now',
+      startsAt: '2026-10-19T14:00:00.000Z',
+      endsAt: '2026-10-19T19:00:00.000Z',
+    }
+    const ended = {
+      ...second,
+      title: 'Finished this morning',
+      startsAt: '2026-10-19T02:00:00.000Z',
+      endsAt: '2026-10-19T06:00:00.000Z',
+    }
+
+    await draw({ events: [third], onNow: [ended, onNow] })
+
+    const cards = within(screen.getByRole('list', { name: 'Matching events' })).getAllByRole(
+      'heading',
+    )
+
+    expect(cards.map((card) => card.textContent)).toEqual(['On right now', third.title])
+    expect(screen.getByTestId('result-count')).toHaveTextContent(/^2 events$/u)
+  })
+
+  it('keeps the nights under way to the first page, though it still counts them', async () => {
+    const [first, second] = sampleEventSummaries()
+    const onNow = { ...first, startsAt: NOW.toISOString(), endsAt: '2026-10-19T20:00:00.000Z' }
+
+    await draw({
+      query: { page: '2' },
+      events: [second],
+      onNow: [onNow],
+      pagination: {
+        page: 2,
+        perPage: 12,
+        total: 13,
+        totalPages: 2,
+        hasNextPage: false,
+        hasPreviousPage: true,
+      },
+    })
+
+    const cards = within(screen.getByRole('list', { name: 'Matching events' })).getAllByRole(
+      'heading',
+    )
+
+    expect(cards.map((card) => card.textContent)).toEqual([second.title])
+    expect(screen.getByTestId('result-count')).toHaveTextContent(/^14 events$/u)
+  })
+
+  it.each([[{ when: 'weekend' }], [{ when: 'dates', from: '2026-10-01', to: '2026-10-31' }]])(
+    'leaves a chosen day or span as the visitor set it: %o',
+    async (query) => {
+      await draw({ query })
+
+      expect(loadEventList).toHaveBeenCalledTimes(1)
+      expect(listingCall()).not.toHaveProperty('startsAfter')
+      expect(listingCall()).toMatchObject(query)
+    },
+  )
+
+  it('keeps the window out of the links it writes', async () => {
+    await draw({
+      pagination: {
+        page: 1,
+        perPage: 12,
+        total: 30,
+        totalPages: 3,
+        hasNextPage: true,
+        hasPreviousPage: false,
+      },
+    })
+
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.getAttribute('href') ?? '').not.toMatch(/startsAfter|startsBefore/u)
+    }
+  })
 })
 
 describe('state, then city', () => {
@@ -305,10 +487,14 @@ describe('state, then city', () => {
       events: sampleEventSummaries().slice(0, 1),
     })
 
-    expect(loadEventList).toHaveBeenCalledTimes(1)
-    expect(loadEventList).toHaveBeenLastCalledWith(
-      expect.objectContaining({ region: 'CA-ON', city: 'Brampton', language: 'Punjabi' }),
-    )
+    // Read once, not again after reconciling: the upcoming listing and the
+    // nights under way, both with the URL's filters.
+    expect(loadEventList).toHaveBeenCalledTimes(2)
+    for (const [filters] of loadEventList.mock.calls) {
+      expect(filters).toEqual(
+        expect.objectContaining({ region: 'CA-ON', city: 'Brampton', language: 'Punjabi' }),
+      )
+    }
     expect(screen.getByLabelText('State or province')).toHaveValue('CA-ON')
     expect(screen.getByRole('option', { name: 'Ontario' })).toHaveValue('CA-ON')
     expect(screen.getByLabelText('City')).toHaveValue('Brampton')

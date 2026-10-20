@@ -375,7 +375,7 @@ export function TierForm({
               })
             }
           />
-          Reserved seating — buyers choose a specific seat
+          Reserved seating: buyers choose a specific seat
         </label>
         {mapped.length === 0 ? (
           <p id={id('reserved-help')} className="text-sm text-ink-muted">
@@ -441,7 +441,7 @@ export function TierForm({
             checked={values.visibility === 'HIDDEN'}
             onChange={() => set({ visibility: 'HIDDEN' })}
           />
-          Hidden — only your team can book it
+          Hidden: only your team can book it
         </label>
         {errors.visibility ? (
           <p id={id('visibility-error')} className="text-sm font-medium text-status-danger">

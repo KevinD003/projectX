@@ -329,7 +329,7 @@ describe('escalation through an invitation', () => {
       expect(refused.json().error).toMatchObject({
         code: 'POSTING_ROLE_NEEDS_PLATFORM',
         message:
-          'Roles that create or publish events — event manager, manager, administrator and owner — are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.',
+          'Roles that create or publish events (event manager, manager, administrator and owner) are given by the team at The Desi Events, not from this page. Ask the team at The Desi Events to add this person to your organisation.',
       })
     }
 
@@ -2090,7 +2090,7 @@ describe('handing ownership on', () => {
     expect(response.json().error).toMatchObject({
       code: 'HEIR_MUST_POST_EVENTS',
       message:
-        'Ownership can go only to somebody who already creates events here — an event manager, manager or administrator.',
+        'Ownership can go only to somebody who already creates events here: an event manager, manager or administrator.',
     })
     // Nothing moved: a transfer never makes somebody new a poster of events.
     expect(prisma._store.membership.find((row) => row.id === viewer.id).role).toBe('VIEWER')

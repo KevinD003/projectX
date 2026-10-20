@@ -59,7 +59,7 @@ const STACKED = Object.freeze({
 
 /** A link's classes: a 44px target, underlined, with a visible focus ring. */
 const LINK =
-  'inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'inline-flex min-h-11 items-center rounded-sm font-medium underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 
 /** How a payment was taken, in words. */
 const VIA = Object.freeze({ DOOR_TICKET: 'One ticket', DOOR_GROUP: 'Group pass' })
@@ -215,7 +215,7 @@ export default async function VenuePaymentsPage({ params, searchParams }) {
       <div>
         <Breadcrumbs trail={trail} />
         <h1 className="mt-3 text-h2 font-semibold break-words text-ink">
-          Payments at the venue — {event.title}
+          Payments at the venue for {event.title}
         </h1>
         <ReadRefusal
           error={reportFailure}
@@ -239,7 +239,7 @@ export default async function VenuePaymentsPage({ params, searchParams }) {
     <div>
       <Breadcrumbs trail={trail} />
       <h1 className="mt-3 text-h2 font-semibold break-words text-ink">
-        Payments at the venue — {event.title}
+        Payments at the venue for {event.title}
       </h1>
 
       <section aria-labelledby="venue-figures-heading" className="mt-6">

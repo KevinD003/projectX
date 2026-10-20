@@ -176,8 +176,8 @@ export function registerFinanceRoutes(app, { prisma, providers }) {
       mode: providers.payments.name === 'in-memory-payments' ? 'MOCK' : 'STRIPE_TEST',
       modeNotice:
         providers.payments.name === 'in-memory-payments'
-          ? 'DEMO — no money moved. These figures describe a demonstration and are not an accounting record.'
-          : "SANDBOX — settled in Stripe's test mode. No real money moved.",
+          ? 'No money moved. These figures describe a demonstration and are not an accounting record.'
+          : "Settled in Stripe's test mode. No real money moved.",
       ...summary,
     }
   }

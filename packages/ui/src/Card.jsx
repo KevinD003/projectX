@@ -11,11 +11,11 @@ import { cn } from './cn.js'
 /**
  * A surface that groups related content.
  *
- * Rounded at the theme's 20px card radius and seated on the page with the
- * two-layer card shadow. An `interactive` card deepens that shadow on hover
- * and draws the focus ring round itself when the link inside it has focus;
- * the lift, if any, comes from `HoverLift` in the web app, which respects
- * reduced motion.
+ * Rounded at the theme's 16px card radius and edged with the card keyline
+ * rather than a resting shadow. An `interactive` card casts the hover shadow
+ * when hovered and draws the focus outline round itself when the link inside
+ * it has focus. It never lifts: the poster inside it may zoom (`HoverZoom` in
+ * the web app), which respects reduced motion.
  *
  * The element is deliberately configurable through `as`: a card inside a list
  * should be an `li`, and a card describing one entity should be an `article`,
@@ -31,7 +31,7 @@ export function Card({ as: Component = 'div', interactive = false, className, ch
       className={cn(
         'rounded-card border border-line bg-surface-raised text-ink shadow-card',
         interactive &&
-          'transition-shadow duration-(--duration-base) ease-standard hover:shadow-card-hover focus-within:ring-2 focus-within:ring-focus focus-within:ring-offset-2',
+          'transition-shadow duration-(--duration-base) ease-standard hover:shadow-card-hover focus-within:outline-2 focus-within:outline-focus focus-within:outline-offset-2',
         className,
       )}
       {...rest}

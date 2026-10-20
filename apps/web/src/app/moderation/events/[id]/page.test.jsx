@@ -206,9 +206,9 @@ describe('what the listing says, as the moderator reads it', () => {
     expect(screen.getByText('Chai').tagName).toBe('LI')
     expect(screen.getByText('Instagram: https://instagram.com/banyan.nights')).toBeInTheDocument()
     expect(
-      screen.getByText(/Chai Point \(Gold\) — https:\/\/chai\.example\/sponsor/),
+      screen.getByText(/Chai Point \(Gold\): https:\/\/chai\.example\/sponsor/),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Nizami Bandhu — Qawwals/)).toBeInTheDocument()
+    expect(screen.getByText(/Nizami Bandhu: Qawwals/)).toBeInTheDocument()
     expect(screen.getByText('Comfortable.')).toBeInTheDocument()
   })
 
@@ -230,6 +230,26 @@ describe('what the listing says, as the moderator reads it', () => {
     // A bare address is its own label, and is not written twice.
     expect(screen.getByRole('link', { name: 'https://banyan.example/faq' })).toBeInTheDocument()
     expect(screen.queryByText('(https://banyan.example/faq)')).not.toBeInTheDocument()
+  })
+
+  it('says when in the zone’s words and 12-hour times, as the public page does', async () => {
+    getEventMedia.mockResolvedValue({ data: [], meta: { revision: 6 } })
+    getOrganizerEvent.mockResolvedValue({
+      ...EVENT,
+      runningOrder: [
+        { time: '19:00', title: 'Doors open', note: null },
+        { time: '20:15', title: 'Qawwali', note: null },
+      ],
+    })
+
+    await renderPage()
+
+    const when = screen.getByText('When').nextElementSibling
+
+    expect(when.textContent).toMatch(/^Sun, Nov 1, 2026 · 6:30 PM, Eastern Time \(EST\)$/u)
+    expect(screen.getByText('7:00 PM Doors open')).toBeInTheDocument()
+    expect(screen.getByText('8:15 PM Qawwali')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/America\/New_York|\b19:00\b/u)
   })
 
   it('flags hidden and complimentary ticket types', async () => {
@@ -259,7 +279,7 @@ describe('what the listing says, as the moderator reads it', () => {
 
     expect(screen.getByText('Hidden')).toBeInTheDocument()
     expect(screen.getByText('Complimentary')).toBeInTheDocument()
-    expect(screen.getByText(/General — \$35\.00/)).toBeInTheDocument()
+    expect(screen.getByText(/General: \$35\.00/)).toBeInTheDocument()
   })
 })
 
@@ -280,7 +300,7 @@ describe('the decision, once it is taken', () => {
     await user.click(screen.getByRole('button', { name: 'Approve' }))
     await user.click(screen.getByRole('button', { name: /yes, approve/i }))
 
-    const said = await screen.findByText('Approve — this event is now APPROVED.')
+    const said = await screen.findByText('Approve: this event is now APPROVED.')
     const region = said.closest('[role="status"]')
 
     // What `router.refresh()` does: the server renders the page again, now
@@ -292,7 +312,7 @@ describe('the decision, once it is taken', () => {
     rerender(await ReviewEventPage(params))
 
     expect(region).toBeInTheDocument()
-    expect(region).toHaveTextContent('Approve — this event is now APPROVED.')
+    expect(region).toHaveTextContent('Approve: this event is now APPROVED.')
     expect(screen.getByText('Nothing to decide')).toBeInTheDocument()
     expect(
       screen.getByText(

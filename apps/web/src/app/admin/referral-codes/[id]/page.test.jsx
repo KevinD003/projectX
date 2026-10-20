@@ -156,7 +156,7 @@ describe('one referral code', () => {
 
     expect(counted).toHaveTextContent('DE-7Q2K9')
     expect(counted).toHaveTextContent('At the venue')
-    expect(counted).toHaveTextContent('—')
+    expect(counted).toHaveTextContent('Not given back')
     expect(givenBack).toHaveTextContent('Card')
     expect(givenBack).toHaveTextContent('Oct 6, 2026: Refunded in full')
     expect(table).not.toHaveTextContent(/@/u)

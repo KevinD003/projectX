@@ -169,7 +169,7 @@ function analytics(overrides = {}) {
     to: null,
     timeZone: 'UTC',
     mode: 'MOCK',
-    modeNotice: 'DEMO — no money moved.',
+    modeNotice: 'No money moved.',
     moneyVisible: false,
     moneyWithheld: 'CAPABILITY',
     money: null,
@@ -217,22 +217,76 @@ describe('the organisation view', () => {
     await renderPage(OWNER)
 
     const section = screen.getByRole('region', { name: 'Visits to your event pages' })
-    const terms = within(section)
+    const [figures, methods] = section.querySelectorAll('dl')
+    const terms = within(figures)
       .getAllByRole('term')
       .map((term) => term.textContent)
-
-    expect(terms).toEqual([
+    const LABELS = [
       'Page views',
       'Visitors',
       'Event card clicks',
       'Ticket and seat clicks',
       'Visits to your website',
       'Visitors to paid orders',
-    ])
+    ]
+
+    expect(terms).toEqual(LABELS)
+    // The tiles carry the figures alone; how each is counted is said once,
+    // in a disclosure under them, in the same order.
+    expect(figures.textContent).not.toMatch(/half an hour|without cookies|guide rather than/u)
+    expect(methods.closest('details').querySelector('summary').textContent).toBe(
+      'How these are counted',
+    )
+    expect(methods.closest('details')).not.toHaveAttribute('open')
+    expect([...methods.querySelectorAll('dt')].map((term) => term.textContent)).toEqual(LABELS)
+    expect(methods.querySelector('dd').textContent).toBe(
+      'Each time the page was opened. Opening it again within half an hour counts once.',
+    )
     expect(within(section).getByText('1,204')).toBeTruthy()
     expect(within(section).getByText('42')).toBeTruthy()
     expect(within(section).getByText('1.1%')).toBeTruthy()
     expect(within(section).getByText(/These figures run to 14:20 UTC on Oct 3\./u)).toBeTruthy()
+  })
+
+  it('says each tier’s status in words in the inventory, never as the API spells it', async () => {
+    getAnalytics.mockResolvedValue(
+      analytics({
+        inventory: {
+          generalAdmission: [
+            {
+              ticketTypeId: 'tt_on_sale',
+              name: 'Early bird',
+              quantitySold: 10,
+              quantityTotal: 100,
+              quantityRemaining: 90,
+              oversold: false,
+              status: 'ON_SALE',
+            },
+            {
+              ticketTypeId: 'tt_draft',
+              name: 'VIP table',
+              quantitySold: 0,
+              quantityTotal: 8,
+              quantityRemaining: 8,
+              oversold: false,
+              status: 'DRAFT',
+            },
+          ],
+          reserved: { bySection: [], byPriceZone: [], statuses: [] },
+        },
+      }),
+    )
+    await renderPage(OWNER)
+
+    const section = screen.getByRole('region', { name: 'Inventory' })
+    const rows = within(section).getAllByRole('row').slice(1)
+
+    expect(within(rows[0]).getByRole('rowheader')).toHaveTextContent('Early bird')
+    expect(within(rows[0]).getAllByRole('cell').at(-1)).toHaveTextContent(/^On sale$/u)
+    expect(within(rows[1]).getAllByRole('cell').at(-1)).toHaveTextContent(
+      /^Not on sale \(draft\)$/u,
+    )
+    expect(section.textContent).not.toMatch(/ON_SALE|DRAFT/u)
   })
 
   it('draws the chart with its table, the sources, the placements and the events', async () => {
@@ -242,6 +296,10 @@ describe('the organisation view', () => {
     expect(screen.getByRole('img', { name: 'Page views and visitors per day (UTC)' })).toBeTruthy()
     expect(screen.getByRole('table', { name: 'Visits per day (UTC)' })).toBeTruthy()
     expect(screen.getByText('Visits per day, as a table', { selector: 'summary' })).toBeTruthy()
+    // Folded under the chart, whatever the period: the chart already says it.
+    expect(
+      screen.getByText('Visits per day, as a table', { selector: 'summary' }).closest('details'),
+    ).not.toHaveAttribute('open')
     expect(screen.getByRole('table', { name: 'Where page views came from' })).toBeTruthy()
     expect(screen.getByRole('table', { name: 'Where the event card was clicked' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Your events' })).toBeTruthy()
@@ -350,6 +408,54 @@ describe('the organisation view', () => {
     expect(href.searchParams.get('organizationId')).toBe(ORG)
     expect(href.searchParams.get('from')).toMatch(/T00:00:00\.000Z$/u)
     expect(screen.getByText(/no visitor code/u)).toBeTruthy()
+  })
+
+  it('marks both disclosures with a chevron that turns once open, in place of the dropped triangle', async () => {
+    getAnalytics.mockResolvedValue(analytics())
+    await renderPage(OWNER)
+
+    for (const name of ['How these are counted', 'Visits per day, as a table']) {
+      const summary = screen.getByText(name, { selector: 'summary' })
+      const chevron = summary.querySelector('[data-slot="disclosure-chevron"]')
+
+      expect(summary.textContent, name).toBe(name)
+      expect(summary, name).toHaveClass('inline-flex', 'list-none')
+      expect(chevron, name).toHaveAttribute('data-icon', 'chevron-down')
+      expect(chevron, name).toHaveAttribute('aria-hidden', 'true')
+      expect(chevron, name).toHaveClass('group-open/disclosure:rotate-180')
+      expect(summary.closest('details'), name).toHaveClass('group/disclosure')
+    }
+  })
+
+  it('writes each day of the sales by date in words, keeping the day in a time element', async () => {
+    getAnalytics.mockResolvedValue(
+      analytics({
+        sales: {
+          byEvent: [],
+          bySession: [],
+          byTicketType: [],
+          byDate: [
+            {
+              id: '2026-10-04',
+              label: '2026-10-04',
+              currency: 'USD',
+              quantity: 3,
+              lineValueCents: 13500,
+              refundedQuantity: 0,
+              cancelledQuantity: 0,
+            },
+          ],
+        },
+      }),
+    )
+    await renderPage(OWNER)
+
+    const table = screen.getByRole('table', { name: 'Sales by date' })
+    const header = within(within(table).getAllByRole('row')[1]).getByRole('rowheader')
+
+    expect(header).toHaveTextContent(/^Oct 4, 2026$/u)
+    expect(header.querySelector('time')).toHaveAttribute('datetime', '2026-10-04')
+    expect(table.textContent).not.toContain('2026-10-04')
   })
 })
 
@@ -495,7 +601,10 @@ describe('who may see which organisation', () => {
       within(section).getByText(/^Website link: On since .*Turned on by Anil Administrator\./u),
     ).toBeTruthy()
     expect(within(section).queryByText(/Your event page/u)).toBeNull()
-    expect(within(section).getByText('Visits to the organiser’s website')).toBeTruthy()
+    // Named once among the figures, and once again where it says how it is counted.
+    expect(
+      within(section.querySelector('dl')).getByText('Visits to the organiser’s website'),
+    ).toBeTruthy()
   })
 
   it('tells a platform administrator with no organisation where every event’s visits are', async () => {
@@ -640,6 +749,38 @@ describe('paying at the venue (SPEC3 §9.10, SPEC3-XI §9.10)', () => {
 
     expect(within(table).getByRole('columnheader', { name: 'Cancelled unpaid' })).toBeTruthy()
     expect(within(table).getAllByRole('row')[1]).toHaveTextContent('1')
+  })
+
+  it('prints a free tier\'s line value as money, $0.00, not the shop window\'s "Free"', async () => {
+    getAnalytics.mockResolvedValue(
+      analytics({
+        moneyVisible: true,
+        moneyWithheld: null,
+        sales: {
+          byEvent: [
+            {
+              id: EVENT,
+              label: 'Navratri on the Lawn',
+              currency: 'USD',
+              quantity: 4,
+              lineValueCents: 0,
+              refundedQuantity: 0,
+            },
+          ],
+          bySession: [],
+          byTicketType: [],
+          byDate: [],
+        },
+      }),
+    )
+    await renderPage(OWNER)
+
+    const table = screen.getByRole('table', { name: 'Sales by event' })
+    const row = within(table).getAllByRole('row')[1]
+
+    expect(within(table).getByRole('columnheader', { name: 'Line value' })).toBeTruthy()
+    expect(within(row).getByText('$0.00')).toBeTruthy()
+    expect(within(table).queryByText('Free')).toBeNull()
   })
 
   it('puts the sentences in the singular and the plural', () => {

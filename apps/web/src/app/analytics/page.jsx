@@ -45,6 +45,8 @@ import { CAPTION, NUM, ROW_TH, TABLE, TD, TH, TH_NUM } from '../../components/re
 import { TrafficChart } from '../../components/traffic-chart.jsx'
 import {
   CardPlacements,
+  DISCLOSURE,
+  DisclosureSummary,
   EventsTraffic,
   TrafficByDay,
   TrafficSources,
@@ -54,8 +56,9 @@ import { Alert } from '../../components/ui.jsx'
 import { TEXT_LINK } from '../../components/workspace-kit.jsx'
 import { admits } from '../../lib/areas.js'
 import { getAnalytics } from '../../lib/organizer-api.js'
-import { formatPrice } from '../../lib/pricing.js'
+import { formatAmount } from '../../lib/pricing.js'
 import { readSession, sessionCan } from '../../lib/session.js'
+import { tierStatusLabel } from '../../lib/tier-status.js'
 import { CHART_CAPTION } from '../../lib/traffic-chart.js'
 import {
   DEFAULT_ANALYTICS_PERIOD,
@@ -64,6 +67,7 @@ import {
   PERIODS,
   REFUNDED_ORDERS_NOTE,
   VISIT_COUNTING_NOTES,
+  formatDay,
   freshness,
   periodFor,
   periodFrom,
@@ -115,9 +119,12 @@ export const FUNNEL_TITLE = 'From visit to payment'
 
 /** The classes of a period or organisation chip, current or not. */
 const CHIP =
-  'inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none'
+  'inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus'
 const CHIP_CURRENT = `${CHIP} bg-action-primary font-semibold text-action-primary-ink shadow-control`
 const CHIP_OTHER = `${CHIP} border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink`
+
+/** A UTC day as the API keys it. */
+const UTC_DAY = /^\d{4}-\d{2}-\d{2}$/u
 
 /**
  * One breakdown, as a table.
@@ -131,9 +138,10 @@ const CHIP_OTHER = `${CHIP} border border-line bg-surface-raised font-medium tex
  * @param {string} props.unit What the first numeric column holds.
  * @param {Array<object>} props.rows The grouped rows.
  * @param {boolean} props.money Whether to show the value column.
+ * @param {boolean} [props.days] Each row is a UTC day, keyed `YYYY-MM-DD`: written in words, as every other date on the page is.
  * @returns {JSX.Element} The table, or an empty note.
  */
-function Breakdown({ caption, unit, rows, money }) {
+function Breakdown({ caption, unit, rows, money, days = false }) {
   if (rows.length === 0) {
     return <Empty title={caption} description="Nothing has been sold in this grouping." />
   }
@@ -174,11 +182,15 @@ function Breakdown({ caption, unit, rows, money }) {
           {rows.map((row) => (
             <tr key={`${row.id}-${row.currency}`}>
               <th scope="row" className={ROW_TH}>
-                {row.label}
+                {days && UTC_DAY.test(row.label) ? (
+                  <time dateTime={row.label}>{formatDay(row.label, { withYear: true })}</time>
+                ) : (
+                  row.label
+                )}
               </th>
               <td className={NUM}>{row.quantity}</td>
               {money ? (
-                <td className={NUM}>{formatPrice(row.lineValueCents, row.currency)}</td>
+                <td className={NUM}>{formatAmount(row.lineValueCents, row.currency)}</td>
               ) : null}
               <td className={NUM}>{row.refundedQuantity}</td>
               {cancelled ? <td className={NUM}>{row.cancelledQuantity ?? 0}</td> : null}
@@ -189,6 +201,9 @@ function Breakdown({ caption, unit, rows, money }) {
     </ScrollableTable>
   )
 }
+
+/** The disclosure under the visit figures that says how each is counted. */
+export const COUNTED_SUMMARY = 'How these are counted'
 
 /**
  * The visits: how fresh they are, the six figures, the chart and its table,
@@ -206,6 +221,42 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
   const fresh = freshness(traffic)
   const totals = traffic.totals
   const percent = traffic.conversion.visitorToOrderPercent
+  const figures = [
+    {
+      label: 'Page views',
+      value: totals.views,
+      method: 'Each time the page was opened. Opening it again within half an hour counts once.',
+    },
+    {
+      label: 'Visitors',
+      value: totals.visitors,
+      method: `Counted once a day for each event, without cookies and without keeping anybody’s address. Somebody who comes back on another day is counted again.${
+        eventView ? '' : ' This total adds up each event’s daily visitors.'
+      }`,
+    },
+    {
+      label: 'Event card clicks',
+      value: totals.cardClicks,
+      method: 'Clicks on the event’s card on the home page, the events list and search results.',
+    },
+    {
+      label: 'Ticket and seat clicks',
+      value: ticketAndSeatClicks(totals),
+      method: 'Presses of “Choose tickets” and “Choose seats” on the event page.',
+    },
+    {
+      label: own ? 'Visits to your website' : 'Visits to the organiser’s website',
+      value: totals.websiteRedirects,
+      method: `People sent to ${
+        own ? 'your own website' : 'the organiser’s own website'
+      } by the event page’s link. Counted only while the team at The Desi Events has that link turned on.`,
+    },
+    {
+      label: 'Visitors to paid orders',
+      value: percent === null ? 'No visitors counted' : `${percent}%`,
+      method: `${ORDERS_PAID_ON_DAYS_LABEL} divided by visitors over the same days. ${REFUNDED_ORDERS_NOTE} An order can come from somebody whose visit was not counted, so this is a guide rather than an exact rate.`,
+    },
+  ]
 
   return (
     <>
@@ -231,42 +282,24 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
           <p className="mt-1 text-sm text-ink-muted">{fresh.sentence} Days are UTC days.</p>
         )}
 
+        {/* The figures alone, so the row reads at a glance; how each one is
+            counted is said once, below them, for whoever asks. */}
         <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <CountFigure
-            label="Page views"
-            value={totals.views}
-            hint="Each time the page was opened. Opening it again within half an hour counts once."
-          />
-          <CountFigure
-            label="Visitors"
-            value={totals.visitors}
-            hint={`Counted once a day for each event, without cookies and without keeping anybody’s address. Somebody who comes back on another day is counted again.${
-              eventView ? '' : ' This total adds up each event’s daily visitors.'
-            }`}
-          />
-          <CountFigure
-            label="Event card clicks"
-            value={totals.cardClicks}
-            hint="Clicks on the event’s card on the home page, the events list and search results."
-          />
-          <CountFigure
-            label="Ticket and seat clicks"
-            value={ticketAndSeatClicks(totals)}
-            hint="Presses of “Choose tickets” and “Choose seats” on the event page."
-          />
-          <CountFigure
-            label={own ? 'Visits to your website' : 'Visits to the organiser’s website'}
-            value={totals.websiteRedirects}
-            hint={`People sent to ${
-              own ? 'your own website' : 'the organiser’s own website'
-            } by the event page’s link. Counted only while the team at The Desi Events has that link turned on.`}
-          />
-          <CountFigure
-            label="Visitors to paid orders"
-            value={percent === null ? 'No visitors counted' : `${percent}%`}
-            hint={`${ORDERS_PAID_ON_DAYS_LABEL} divided by visitors over the same days. ${REFUNDED_ORDERS_NOTE} An order can come from somebody whose visit was not counted, so this is a guide rather than an exact rate.`}
-          />
+          {figures.map((figure) => (
+            <CountFigure key={figure.label} label={figure.label} value={figure.value} />
+          ))}
         </dl>
+        <details className={`mt-3 ${DISCLOSURE}`}>
+          <DisclosureSummary>{COUNTED_SUMMARY}</DisclosureSummary>
+          <dl className="mt-2 grid max-w-3xl gap-3 text-sm">
+            {figures.map((figure) => (
+              <div key={figure.label}>
+                <dt className="font-semibold text-ink">{figure.label}</dt>
+                <dd className="text-ink-muted">{figure.method}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
 
         {eventView ? (
           <p className="mt-4 text-sm text-ink">
@@ -280,7 +313,9 @@ function Visits({ traffic, eventView, organizationId, own, keep }) {
           Per day
         </h2>
         <TrafficChart id="visits-chart" caption={CHART_CAPTION} days={traffic.byDay} />
-        <TrafficByDay days={traffic.byDay} open={traffic.byDay.length <= 31} />
+        {/* The chart says it; the table is there for whoever wants the
+            numbers, folded so eighteen rows do not run the page on. */}
+        <TrafficByDay days={traffic.byDay} open={false} />
         <p className="mt-2 text-sm text-ink-muted">
           {ORDERS_PAID_ON_DAYS_LABEL} counts the orders paid in each UTC day. {REFUNDED_ORDERS_NOTE}
         </p>
@@ -565,7 +600,7 @@ export default async function AnalyticsPage({ searchParams }) {
 
           <p className="mt-2 text-sm text-ink-muted">
             Dates and windows are in <strong>{view.timeZone}</strong>. Money figures are in{' '}
-            <strong>{view.currency}</strong> only — amounts in another currency are counted in their
+            <strong>{view.currency}</strong> only: amounts in another currency are counted in their
             own rows and never added to these.
           </p>
 
@@ -632,7 +667,7 @@ export default async function AnalyticsPage({ searchParams }) {
                   <p className="mt-3 text-sm">
                     <Link
                       href={`/sign-in?next=${encodeURIComponent(`/analytics?organizationId=${view.organizationId}`)}`}
-                      className="rounded-sm font-medium text-ink underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                      className="rounded-sm font-medium text-ink underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                     >
                       Confirm your identity
                     </Link>
@@ -641,7 +676,7 @@ export default async function AnalyticsPage({ searchParams }) {
               ) : (
                 <Empty
                   title="Money figures are not included for this account"
-                  description="Seeing what an organisation is owed needs the finance capability in it. The figures are not hidden on this page — the server did not send them."
+                  description="Seeing what an organisation is owed needs the finance capability in it. The figures are not hidden on this page: the server did not send them."
                 />
               )}
             </section>
@@ -745,7 +780,7 @@ export default async function AnalyticsPage({ searchParams }) {
                         <td className={NUM}>{type.quantityRemaining}</td>
                         <td className={TD}>
                           {/* The word, not only a colour. */}
-                          {type.oversold ? 'Oversold — investigate' : type.status}
+                          {type.oversold ? 'Oversold: look into it' : tierStatusLabel(type.status)}
                         </td>
                       </tr>
                     ))}
@@ -858,7 +893,7 @@ export default async function AnalyticsPage({ searchParams }) {
               Sales
             </h2>
             <p className="mt-1 text-sm text-ink-muted">
-              Line value is what the order lines were priced at — not revenue. What the organisation
+              Line value is what the order lines were priced at, not revenue. What the organisation
               keeps after fees, tax and everything given back is in the money section above.
             </p>
 
@@ -885,6 +920,7 @@ export default async function AnalyticsPage({ searchParams }) {
               unit="Tickets"
               rows={view.sales.byDate}
               money={view.moneyVisible}
+              days
             />
           </section>
 
@@ -1006,15 +1042,15 @@ export default async function AnalyticsPage({ searchParams }) {
                   to,
                 }).filter(([, value]) => Boolean(value)),
               ).toString()}`}
-              className="inline-flex min-h-11 items-center justify-center rounded-control bg-action-primary px-4 text-sm font-semibold text-action-primary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-primary-hover focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-action-primary px-4 text-sm font-semibold text-action-primary-ink shadow-control transition-colors duration-(--duration-fast) hover:bg-action-primary-hover focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2"
             >
               Download as CSV
             </a>
           </p>
           <p className="mt-2 text-sm text-ink-muted">
-            The export carries the same figures under an explicit column list — no buyer, no
-            address, no visitor code, and nothing about how anybody paid. Its first rows say which
-            payment mode produced it and how visits were counted.
+            The export carries the same figures under an explicit column list: no buyer, no address,
+            no visitor code, and nothing about how anybody paid. Its first rows say which payment
+            mode produced it and how visits were counted.
           </p>
         </>
       ) : null}

@@ -199,7 +199,7 @@ export async function compareArtifact({ path = ARTIFACT_PATH, version } = {}) {
   // Three distinct failures, and the operator does something different in each
   // case, so they are named differently rather than folded into "it differs".
   const reason = semantic
-    ? 'the committed artefact describes the same API but is not byte-identical — regenerate it'
+    ? 'the committed artefact describes the same API but is not byte-identical: regenerate it'
     : missing.length || unexpected.length
       ? 'the committed artefact describes a different set of operations'
       : 'the committed artefact describes the same operations with different contents'

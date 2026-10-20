@@ -283,5 +283,5 @@ export function sessionLabel(session, index) {
     when = String(session.startsAt ?? '')
   }
 
-  return `${session.label || `Session ${index + 1}`} — ${when}`
+  return `${session.label || `Session ${index + 1}`}: ${when}`
 }

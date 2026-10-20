@@ -5,7 +5,7 @@
  * Tailwind v4 emits a utility only for a token it knows. `bg-accent-secondry`
  * or `shadow-crad` is not an error anywhere: it is a class that quietly
  * generates nothing, and the control renders unstyled. So besides pinning the
- * Garba Nights contract — 12px controls, 20px cards, the card shadow, one
+ * Poster House contract — 10px controls, 16px cards, the card keyline, one
  * outline focus ring, a 0.98 press that only runs where motion is welcome,
  * 44px targets — this file renders every primitive in every variant and checks
  * each colour, shadow and radius class it emits against the theme's own
@@ -23,7 +23,7 @@ import { render, screen } from '@testing-library/react'
 
 import { Alert } from './Alert.jsx'
 import { Badge } from './Badge.jsx'
-import { Button } from './Button.jsx'
+import { Button, ButtonLink } from './Button.jsx'
 import { Card, CardBody, CardFooter, CardHeader } from './Card.jsx'
 import { EmptyState } from './EmptyState.jsx'
 import { FormField } from './FormField.jsx'
@@ -36,6 +36,15 @@ import { Spinner } from './Spinner.jsx'
 import { StatusIcon } from './StatusIcon.jsx'
 import { Tabs } from './Tabs.jsx'
 import { Textarea } from './Textarea.jsx'
+import { TextLink } from './TextLink.jsx'
+import { Sheet } from './Sheet.jsx'
+import { Popover } from './Popover.jsx'
+import { Menu } from './Menu.jsx'
+import { Tooltip } from './Tooltip.jsx'
+import { Stat } from './Stat.jsx'
+import { Kbd } from './Kbd.jsx'
+import { SegmentedControl } from './SegmentedControl.jsx'
+import { Icon } from './icons/Icon.jsx'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const theme = readFileSync(path.join(here, '..', '..', 'config', 'src', 'tailwind.css'), 'utf8')
@@ -55,6 +64,9 @@ function declared(namespace) {
 const COLOURS = declared('color')
 const SHADOWS = declared('shadow')
 const RADII = declared('radius')
+// `text-` names a colour or a size. A size the theme declares (`text-h3`,
+// `text-label`) is a token too, and is checked against its own namespace.
+const TEXT_SIZES = declared('text')
 
 /** Tailwind's own sizes and keywords, which are not tokens and need no declaration. */
 const BUILT_IN =
@@ -88,6 +100,9 @@ function tokensNamed(classes) {
 
       if (radius && !BUILT_IN.test(radius[1])) return [{ cls, set: RADII, name: radius[1] }]
       if (shadow && !BUILT_IN.test(shadow[1])) return [{ cls, set: SHADOWS, name: shadow[1] }]
+      if (colour && /^text-/.test(utility) && TEXT_SIZES.has(colour[1])) {
+        return [{ cls, set: TEXT_SIZES, name: colour[1] }]
+      }
       if (colour && !BUILT_IN.test(colour[1])) return [{ cls, set: COLOURS, name: colour[1] }]
 
       return []
@@ -153,6 +168,49 @@ function Everything() {
       <Modal open onClose={() => {}} title="Dialog" description="About" footer="Footer">
         Body
       </Modal>
+      {['primary', 'secondary', 'accent', 'ink', 'inverse', 'danger'].map((variant) => (
+        <ButtonLink key={variant} href="#x" variant={variant}>
+          {variant}
+        </ButtonLink>
+      ))}
+      {['accent', 'ink', 'inverse'].map((tone) => (
+        <TextLink key={tone} href="#x" tone={tone}>
+          {tone}
+        </TextLink>
+      ))}
+      <Sheet id="sheet" open onClose={() => {}}>
+        Sheet
+      </Sheet>
+      <Popover open trigger={<button type="button">Open</button>} title="Filters">
+        Panel
+      </Popover>
+      <Menu
+        open
+        trigger={<button type="button">More</button>}
+        items={[
+          { label: 'Edit', onSelect: () => {} },
+          { separator: true },
+          { label: 'Delete', tone: 'danger', onSelect: () => {} },
+        ]}
+      />
+      <Tooltip open content="Copy">
+        <button type="button" aria-label="Copy">
+          <Icon name="copy" />
+        </button>
+      </Tooltip>
+      <Stat label="Tickets sold" value={1284} hint="This week" />
+      <Kbd>Esc</Kbd>
+      <SegmentedControl
+        label="View"
+        options={[
+          { value: 'list', label: 'List' },
+          { value: 'map', label: 'Map' },
+        ]}
+      />
+      {['text', 'title', 'block', 'circle', 'button'].map((variant) => (
+        <Skeleton key={variant} variant={variant} />
+      ))}
+      <Skeleton rows={2} />
     </>
   )
 }
@@ -160,8 +218,11 @@ function Everything() {
 describe('every primitive names only tokens the theme declares', () => {
   it('finds the theme’s namespaces, so the check below is not vacuous', () => {
     expect(COLOURS.has('action-primary')).toBe(true)
-    expect(SHADOWS).toEqual(new Set(['card', 'card-hover', 'control', 'dialog']))
-    expect(RADII).toEqual(new Set(['card', 'control']))
+    // Poster House added one depth (`floating`, for menus, popovers and
+    // sheets) and one shape (`plate`, the 4px poster corner); each set is
+    // pinned exactly, so a further token is a decision someone writes down.
+    expect(SHADOWS).toEqual(new Set(['card', 'card-hover', 'control', 'floating', 'dialog']))
+    expect(RADII).toEqual(new Set(['plate', 'card', 'control']))
   })
 
   it('renders no colour, shadow or radius class without a declaration behind it', () => {
@@ -184,6 +245,9 @@ describe('every primitive names only tokens the theme declares', () => {
       [],
     )
     expect(tokensNamed('border-b-accent-strng')[0].name).toBe('accent-strng')
+    // A declared size is a token of its own namespace; a misspelt one is not.
+    expect(tokensNamed('text-h3')[0].set).toBe(TEXT_SIZES)
+    expect(tokensNamed('text-titel')[0].set.has('titel')).toBe(false)
   })
 })
 
@@ -245,7 +309,7 @@ describe('form controls', () => {
     ['Input', <Input key="i" aria-label="Control" />],
     ['Select', <Select key="s" aria-label="Control" options={[{ value: 'a', label: 'A' }]} />],
     ['Textarea', <Textarea key="t" aria-label="Control" />],
-  ])('%s is a 44px, 12px-round control with the outline focus ring', (_name, control) => {
+  ])('%s is a 44px, 10px-round control with the outline focus ring', (_name, control) => {
     render(control)
 
     const element = screen.getByLabelText('Control')

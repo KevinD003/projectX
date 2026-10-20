@@ -93,10 +93,10 @@ function stateLabel(member) {
  * Render a timestamp as a plain ISO day, or a dash.
  *
  * @param {string|null} value An ISO timestamp.
- * @returns {string} The day, or an em dash.
+ * @returns {string} The day, or “Not recorded”.
  */
 function day(value) {
-  return typeof value === 'string' && value !== '' ? value.slice(0, 10) : '—'
+  return typeof value === 'string' && value !== '' ? value.slice(0, 10) : 'Not recorded'
 }
 
 /**
@@ -106,7 +106,7 @@ function day(value) {
  * @returns {string} The sentence for the cell.
  */
 function contains(count) {
-  if (count === 0) return 'Nobody — aggregate figures only'
+  if (count === 0) return 'Nobody: aggregate figures only'
 
   return count === 1 ? '1 person' : `${count} people`
 }
@@ -179,13 +179,10 @@ export default async function ExportRegisterPage({ searchParams }) {
   return (
     <>
       <header>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Trust and safety
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Export register</h1>
+        <h1 className="text-h2 font-semibold text-ink">Export register</h1>
         <p className="mt-2 max-w-3xl text-ink-muted">
           Which exports this organisation has produced, and whether any of them is known to contain
-          a person. It records that an export happened — never what was in it — and there is nothing
+          a person. It records that an export happened (never what was in it) and there is nothing
           to download here: every export is streamed to whoever asked and nothing is kept.
         </p>
       </header>
@@ -209,7 +206,7 @@ export default async function ExportRegisterPage({ searchParams }) {
       {artifacts && artifacts.length === 0 ? (
         <Empty
           title="No exports recorded"
-          description="Nothing has been exported from this organisation since the register began. A platform-wide finance export is not recorded here at all — it belongs to no organisation, and the register is organisation-scoped."
+          description="Nothing has been exported from this organisation since the register began. A platform-wide finance export is not recorded here at all: it belongs to no organisation, and the register is organisation-scoped."
         />
       ) : null}
 
@@ -252,7 +249,7 @@ export default async function ExportRegisterPage({ searchParams }) {
                     <td className="py-3 pr-4">{stateLabel(artifact.state)}</td>
                     <td className="py-3 pr-4">{contains(artifact.subjectCount)}</td>
                     <td className="py-3 pr-4">
-                      {artifact.stored ? 'Yes' : 'No — streamed and not kept'}
+                      {artifact.stored ? 'Yes' : 'No: streamed and not kept'}
                     </td>
                     <td className="py-3 pr-4 break-all">{requestedBy(artifact.requestedById)}</td>
                     <td className="py-3 pr-4 tabular-nums">{day(artifact.generatedAt)}</td>

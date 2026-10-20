@@ -338,7 +338,7 @@ export function MapEditor({ version, initialLayout, readOnly }) {
                   {issue.key ? (
                     <button
                       type="button"
-                      className="rounded-sm text-left underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+                      className="rounded-sm text-left underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
                       onClick={() => {
                         setSelected(issue.key)
                         document.getElementById(`seat-${issue.key}`)?.focus()
@@ -399,7 +399,7 @@ export function MapEditor({ version, initialLayout, readOnly }) {
             <div className="mt-3 space-y-3 text-ink-muted">
               <p>
                 Publishing freezes this layout permanently. After it, no section, row or seat in
-                this version can be changed, renamed or removed — by you or by anybody else.
+                this version can be changed, renamed or removed: by you or by anybody else.
               </p>
               <p>
                 That is not a policy we could relax later: once a session sells against a version,
@@ -478,7 +478,7 @@ function PlanView({ sections, selected, onSelect }) {
 
           {section.kind === 'STANDING' ? (
             <p className="mt-2 text-ink-muted">
-              Standing, capacity {section.standingCapacity ?? '—'}. No numbered seats.
+              Standing, capacity {section.standingCapacity ?? 'not set'}. No numbered seats.
             </p>
           ) : null}
 
@@ -597,7 +597,8 @@ function PreviewView({ layout }) {
 
             {section.kind === 'STANDING' ? (
               <p className="mt-2 text-ink-muted">
-                Standing room for {section.standingCapacity ?? '—'}. No numbered seats.
+                Standing room for {section.standingCapacity ?? 'a number not set yet'}. No numbered
+                seats.
               </p>
             ) : null}
 
@@ -713,7 +714,7 @@ function SeatButton({ seat, section, row, selected, tabIndex, onSelect, onKeyDow
       onKeyDown={onKeyDown}
       className={[
         'h-9 min-w-9 rounded border px-1 text-xs font-medium transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-1 focus-visible:outline-none',
+        'focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-1',
         selected
           ? 'border-accent bg-accent-soft text-ink'
           : 'border-line-strong bg-surface-raised text-ink-muted hover:bg-surface-subtle',
@@ -780,8 +781,8 @@ function ListView({ sections, selected, onSelect }) {
                   {seat.label}
                 </th>
                 <td className="py-2 pr-4">{section.name}</td>
-                <td className="py-2 pr-4">{row?.label ?? '—'}</td>
-                <td className="py-2 pr-4">{seat.zoneKey ?? '—'}</td>
+                <td className="py-2 pr-4">{row?.label ?? 'None'}</td>
+                <td className="py-2 pr-4">{seat.zoneKey ?? 'None'}</td>
                 <td className="py-2 pr-4">
                   {[
                     seat.accessible ? 'Accessible space' : null,
@@ -790,7 +791,7 @@ function ListView({ sections, selected, onSelect }) {
                     seat.restricted ? 'Restricted' : null,
                   ]
                     .filter(Boolean)
-                    .join(', ') || '—'}
+                    .join(', ') || 'None'}
                 </td>
                 <td className="py-2">
                   <Button
@@ -989,10 +990,13 @@ function StructureControls({ layout, change }) {
                       Add a seat to row {row.label}
                     </Button>
 
+                    {/* A quiet removal: one per row would otherwise stack
+                        solid red buttons down the whole editor. */}
                     <Button
                       type="button"
                       size="sm"
-                      variant="danger"
+                      variant="ghost"
+                      className="text-status-danger hover:bg-status-danger-soft hover:text-status-danger"
                       onClick={() =>
                         change((draft) => {
                           draft.sections[sIndex].rows.splice(rIndex, 1)
@@ -1012,8 +1016,8 @@ function StructureControls({ layout, change }) {
               <Button
                 type="button"
                 size="sm"
-                variant="danger"
-                className="mt-4"
+                variant="ghost"
+                className="mt-4 text-status-danger hover:bg-status-danger-soft hover:text-status-danger"
                 onClick={() =>
                   change((draft) => {
                     draft.sections.splice(sIndex, 1)

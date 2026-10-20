@@ -694,7 +694,7 @@ const EVENT_DEFINITIONS = [
       'A two-hour class in Jersey City for complete beginners, covering the three steps you will meet most over Navratri.',
     description: [
       'If you have ever stood at the edge of a garba circle trying to work out when to clap, this class is for you. In two hours at Hudson Riverside Pavilion, a Mirrorwork Events teacher takes a small group through the three steps you will see most over the nine nights.',
-      'Two-taali comes first, then three-taali, then dodhiyu — the travelling step with the turn that catches most people out. Each one is taught slowly, then to music, then in a practice circle where getting it wrong is the point.',
+      'Two-taali comes first, then three-taali, then dodhiyu: the travelling step with the turn that catches most people out. Each one is taught slowly, then to music, then in a practice circle where getting it wrong is the point.',
       'No partner and no experience needed. Wear comfortable shoes and clothes you can turn in; the floor is sprung wood and the room is step-free.',
     ].join('\n\n'),
     category: 'WORKSHOP',
@@ -751,7 +751,7 @@ const EVENT_DEFINITIONS = [
     summary:
       'The first night of Navratri at Lamplight Expo Hall: a live band, a lit garbo at the centre of the floor, and room for every circle.',
     description: [
-      'Navratri opens the way it should — an aarti at the garbo, a moment of quiet, and then the first beat of the dhol. Mirrorwork Events lays out the Lamplight Expo Hall floor as one great ring around a lit garbo, with room for slow circles at the edge and fast ones towards the middle.',
+      'Navratri opens the way it should: an aarti at the garbo, a moment of quiet, and then the first beat of the dhol. Mirrorwork Events lays out the Lamplight Expo Hall floor as one great ring around a lit garbo, with room for slow circles at the edge and fast ones towards the middle.',
       'The music is live all night: a Gujarati folk band with dhol, shehnai and two singers, moving from slow garba through two-taali and three-taali, then into dandiya raas after the break. Sticks are sold at the door if you forget yours.',
       'Couple Entry admits two. VIP Circle holders have a reserved area beside the band and a separate entrance. Traditional dress is welcome and never required; comfortable shoes are strongly advised.',
     ].join('\n\n'),
@@ -814,7 +814,7 @@ const EVENT_DEFINITIONS = [
     tiers: [
       {
         id: 'ttninenightsseason',
-        name: 'Season Pass — All Nine Nights',
+        name: 'Season Pass: All Nine Nights',
         description: 'One wristband, every night.',
         priceCents: 22_000,
         quantityTotal: 300,
@@ -840,7 +840,7 @@ const EVENT_DEFINITIONS = [
       'The first night of Lakeshore Raas’s Navratri season at Lakeshore Pavilion in Schaumburg, with a live band and an aarti at the garbo.',
     description: [
       'Opening night at Lakeshore Pavilion is the start of Lakeshore Raas’s Navratri season: an aarti at the garbo, a live band on the stage, and a floor laid out as one wide circle so that nobody dances with their back to the lamp.',
-      'The band plays traditional garba for the first half and moves into dandiya after the break. The pavilion is heated, the floor is sprung, and there is a coat check by the main doors — useful in a Chicago October.',
+      'The band plays traditional garba for the first half and moves into dandiya after the break. The pavilion is heated, the floor is sprung, and there is a coat check by the main doors: useful in a Chicago October.',
       'VIP tickets include a reserved table at the edge of the floor and priority entry. Traditional dress is welcome and never required.',
     ].join('\n\n'),
     category: 'GARBA_DANDIYA',
@@ -1069,7 +1069,7 @@ const EVENT_DEFINITIONS = [
     summary:
       'The Mirrorwork Ensemble plays a concert of garba and Gujarati folk songs at Lamplight Expo Hall, with a standing floor and a seated balcony.',
     description: [
-      'The band behind Mirrorwork Events’ Navratri nights takes the stage for a concert of its own. The Mirrorwork Ensemble — dhol, tabla, harmonium, shehnai and three singers — plays the garba and folk songs of the season, arranged for listening as well as for dancing.',
+      'The band behind Mirrorwork Events’ Navratri nights takes the stage for a concert of its own. The Mirrorwork Ensemble (dhol, tabla, harmonium, shehnai and three singers) plays the garba and folk songs of the season, arranged for listening as well as for dancing.',
       'The floor at Lamplight Expo Hall is standing and open to anyone who wants to dance. The balcony is seated, for anyone who would rather listen.',
       'The concert runs in two halves with an interval. Food and drink are served in the lobby and stay off the dance floor.',
     ].join('\n\n'),
@@ -1118,7 +1118,7 @@ const EVENT_DEFINITIONS = [
     tiers: [
       {
         id: 'ttlivebandfloor',
-        name: 'General Admission — Standing Floor',
+        name: 'General Admission: Standing Floor',
         description: 'Standing entry to the dance floor.',
         priceCents: 4500,
         quantityTotal: 1500,
@@ -1126,7 +1126,7 @@ const EVENT_DEFINITIONS = [
       },
       {
         id: 'ttlivebandbalcony',
-        name: 'Balcony — Reserved Seating',
+        name: 'Balcony: Reserved Seating',
         description: 'A numbered seat in the balcony.',
         priceCents: 6500,
         quantityTotal: 0,
@@ -1265,7 +1265,7 @@ const EVENT_DEFINITIONS = [
     title: 'Navratri Mela & Garba',
     slug: 'navratri-mela-queens',
     summary:
-      'A Navratri mela at Queens Community Arena — food stalls, crafts and henna — followed by live garba on the arena floor.',
+      'A Navratri mela at Queens Community Arena (food stalls, crafts and henna) followed by live garba on the arena floor.',
     description: [
       'The Navratri Mela fills the Queens Community Arena concourse with stalls: Gujarati snacks and chaat, chaniya choli and jewellery sellers, henna artists, and a stall for dandiya sticks. The arena floor opens for garba later in the evening.',
       'Mela Entry covers the stalls and the performances on the concourse stage, including a children’s dance showcase. Mela + Garba adds the arena floor for the live garba that follows.',
@@ -1332,7 +1332,7 @@ const EVENT_DEFINITIONS = [
       'College raas and garba teams from across Texas perform their competition sets at Trinity Convention Hall.',
     description: [
       'Collegiate raas-garba is its own world: student teams, costumes made by hand, and eight-minute sets choreographed to the second. Lone Star Navratri’s showcase brings college teams from across Texas to the Trinity Convention Hall stage.',
-      'It is a showcase rather than a competition — no judges and no trophies, just each team’s set performed for an audience that knows what it is watching. Spectator tickets are unreserved seating.',
+      'It is a showcase rather than a competition: no judges and no trophies, just each team’s set performed for an audience that knows what it is watching. Spectator tickets are unreserved seating.',
     ].join('\n\n'),
     category: 'CULTURAL_FESTIVAL',
     status: 'CANCELLED',
@@ -1360,7 +1360,7 @@ const EVENT_DEFINITIONS = [
       'Garba on the night of the Sharad Poonam full moon at Trinity Convention Hall in Irving, closing with doodh-pauva for everyone.',
     description: [
       'Sharad Poonam, the full moon that follows Navratri, is traditionally a night for one more garba. Lone Star Navratri marks it at Trinity Convention Hall with a live band and the courtyard doors open, so that the moon is part of the evening.',
-      'The music leans traditional — slow garba, two-taali and three-taali, and a long raas to finish. Near midnight the organisers serve doodh-pauva, the sweetened milk and flattened rice eaten on Sharad Poonam, to everyone in the hall.',
+      'The music leans traditional: slow garba, two-taali and three-taali, and a long raas to finish. Near midnight the organisers serve doodh-pauva, the sweetened milk and flattened rice eaten on Sharad Poonam, to everyone in the hall.',
       'One ticket type, general admission, for the whole evening.',
     ].join('\n\n'),
     category: 'GARBA_DANDIYA',

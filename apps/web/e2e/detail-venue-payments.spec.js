@@ -1151,7 +1151,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
       'Paying at the venue turned on, up to 50 tickets waiting to be paid at the door.',
     )
     await expect(panel.getByTestId('venue-status')).toHaveText(
-      'On — up to 50 tickets waiting to be paid at the door',
+      'On, up to 50 tickets waiting to be paid at the door',
     )
     // What the limit counts, under its field.
     await expect(panel).toContainText('Unpaid tickets for nights that are over still count.')
@@ -1171,7 +1171,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     bought.b2Ga = await payAndBook(
       buyer2,
       'Pay booking fee $5.78 (simulated)',
-      'Booked — pay at the door',
+      'Booked, pay at the door',
     )
     await expect(buyer2.locator('main')).toContainText('Booked. Pay $80.00 at the door.')
 
@@ -1196,7 +1196,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     await buyer2.goto('/account/orders')
     await expect(
       buyer2.getByRole('listitem').filter({ hasText: bought.b2Ga }).first(),
-    ).toContainText('Booked — pay $80.00 at the door')
+    ).toContainText('Booked, pay $80.00 at the door')
 
     // Each ticket owes its price, and can be passed on like any other.
     await buyer2.goto('/tickets')
@@ -1250,7 +1250,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     bought.b1Toronto = await payAndBook(
       buyer1,
       'Pay booking fee $3.35 (simulated)',
-      'Booked — pay at the door',
+      'Booked, pay at the door',
     )
 
     await buyer1.goto(`/account/orders/${bought.b1Toronto}`)
@@ -1287,8 +1287,8 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     bought.b1GaVenue = await payAndBook(
       buyer1,
-      'Book now — pay $80.00 at the door',
-      'Booked — pay at the door',
+      'Book now, pay $80.00 at the door',
+      'Booked, pay at the door',
     )
 
     // Nothing was paid online: the whole $5.78 fee was waived.
@@ -1438,9 +1438,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     await expect(main).toContainText('Take $40.00 for this ticket before letting them in.')
     await expect(main).toContainText('This booking has 1 more ticket to pay at the door ($40.00).')
-    await scanner
-      .getByRole('button', { name: 'Payment taken: $40.00 — admit', exact: true })
-      .click()
+    await scanner.getByRole('button', { name: 'Payment taken: $40.00, admit', exact: true }).click()
     await expect(main).toContainText('Admitted. Payment recorded: $40.00.')
 
     // buyer1's group pass, read from the order page that shows it on request.
@@ -1467,7 +1465,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     await typeCode(scanner, groupCode)
     await expect(main).toContainText('Payment to take for the ticked tickets: $80.00')
     await scanner
-      .getByRole('button', { name: 'Payment taken: $80.00 — admit 2', exact: true })
+      .getByRole('button', { name: 'Payment taken: $80.00, admit 2', exact: true })
       .click()
     await expect(main).toContainText('Payment recorded: $80.00.')
     // Both tickets of the group are in.
@@ -1563,7 +1561,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     // The giver no longer owes it, and is told who does.
     await buyer2.goto(`/account/orders/${bought.b2Ga}`)
     await expect(buyer2.locator('main')).toContainText(
-      'Passed on — its new holder pays $40.00 at the door',
+      'Passed on, its new holder pays $40.00 at the door',
     )
     await expect(valueOf(buyer2.locator('main'), 'Status')).toContainText('Paid at the door')
 
@@ -1576,9 +1574,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     await typeCode(scanner, passed.code)
     await expect(main).toContainText('Take $40.00 for this ticket before letting them in.')
     await expect(main).not.toContainText(/This booking has \d+ more/u)
-    await scanner
-      .getByRole('button', { name: 'Payment taken: $40.00 — admit', exact: true })
-      .click()
+    await scanner.getByRole('button', { name: 'Payment taken: $40.00, admit', exact: true }).click()
     await expect(main).toContainText('Admitted. Payment recorded: $40.00.')
 
     await buyer2.goto(`/account/orders/${bought.b2Ga}`)
@@ -1615,7 +1611,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     await openVenuePayments(owner, twoNights.id)
 
     const { dialog, tickets } = await cancelUnpaid(owner, reference)
-    const boxes = tickets.getByRole('checkbox', { name: /Every night — \$45\.00$/u })
+    const boxes = tickets.getByRole('checkbox', { name: /Every night · \$45\.00$/u })
 
     await expect(boxes).toHaveCount(2)
     await expect(boxes.nth(0)).toBeChecked()
@@ -1665,7 +1661,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
       .getByRole('listitem')
       .filter({ hasText: reference })
       .filter({ has: buyer1.locator('h3 a[href^="/tickets/"]') })
-      .filter({ hasText: 'Cancelled — not paid' })
+      .filter({ hasText: 'Cancelled, not paid' })
 
     await expect(cancelledCard).toHaveCount(1)
     // Its holder reads why, as the organiser gave it, and never the internal
@@ -1681,7 +1677,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     await openDoor(scanner, twoNights.title, /^Night 1 · /u)
     await typeCode(scanner, cancelledTicket.code)
-    await expect(scanner.getByRole('heading', { name: 'Cancelled — not paid' })).toBeVisible()
+    await expect(scanner.getByRole('heading', { name: 'Cancelled, not paid' })).toBeVisible()
     await expect(scanner.locator('main')).toContainText(
       "This ticket was cancelled because it had not been paid for. Don't let it in.",
     )
@@ -1751,7 +1747,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     await expect(panel).toContainText('1 ticket is waiting now.')
     await expect(panel.getByTestId('venue-status')).toHaveText(
-      'On — up to 1 ticket waiting to be paid at the door',
+      'On, up to 1 ticket waiting to be paid at the door',
     )
     // The limit counts every unpaid ticket, a night that is over included.
     await expect(panel).toContainText(
@@ -1797,8 +1793,8 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     bought.b3GaVenue = await payAndBook(
       buyer3,
-      'Book now — pay $40.00 at the door',
-      'Booked — pay at the door',
+      'Book now, pay $40.00 at the door',
+      'Booked, pay at the door',
     )
 
     await admin.goto('/admin/referral-codes')
@@ -1808,7 +1804,9 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     const panel = await termsPanel(admin, ga.id)
 
     await panel
-      .getByRole('link', { name: /^Bookings waiting to be paid at the door: 1 ticket — review$/u })
+      .getByRole('link', {
+        name: /^Bookings waiting to be paid at the door: 1 ticket\. Review them$/u,
+      })
       .click()
     await expect(admin).toHaveURL(new RegExp(`/admin/events/${ga.id}/venue-bookings$`, 'u'))
 
@@ -1867,7 +1865,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
 
     await expect(order).toContainText(/The Desi Events team cancelled 1 ticket on /u)
     await expect(order).toContainText('Nothing was paid online for it.')
-    await expect(valueOf(order, 'Status')).toContainText('Cancelled — not paid at the door')
+    await expect(valueOf(order, 'Status')).toContainText('Cancelled, not paid at the door')
 
     for (const address of visited) {
       expect(address, 'an address carried a referral code').not.toContain(codes.gaReturn)
@@ -1933,7 +1931,7 @@ test.describe.serial('booking fees, referral codes and paying at the venue', () 
     const buyer3 = await windowFor(browser, 'buyer3')
 
     await buyer3.goto(`/account/orders/${reference}`)
-    await expect(valueOf(buyer3.locator('main'), 'Status')).toHaveText('Paid — simulated')
+    await expect(valueOf(buyer3.locator('main'), 'Status')).toHaveText('Paid (simulated)')
 
     const [ticket] = await ticketsOf(reference)
     const scanner = await windowFor(browser, 'scanner')

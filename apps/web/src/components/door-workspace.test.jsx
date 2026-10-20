@@ -10,7 +10,7 @@ vi.mock('../lib/qr-decode.js', () => ({ decodeFrame: vi.fn() }))
 
 const { apiFetch } = await import('../lib/api-fetch.js')
 const { decodeFrame } = await import('../lib/qr-decode.js')
-const { DoorWorkspace } = await import('./door-workspace.jsx')
+const { DOOR_DISABLED_PRIMARY, DoorWorkspace } = await import('./door-workspace.jsx')
 
 const EVENT = {
   id: 'eventaaaaaaaaaaaaaaaaaaaa',
@@ -155,6 +155,29 @@ describe('DoorWorkspace: looking up, then admitting', () => {
 
     expect(screen.getByText(EVENT.title)).toBeTruthy()
     expect(screen.getByText('Assigned to this event (scanner)')).toBeTruthy()
+  })
+
+  it('names the event’s zone in words, never as the database spells it', async () => {
+    const user = userEvent.setup()
+    const chicago = {
+      ...EVENT,
+      startsAt: '2026-10-24T00:30:00.000Z',
+      timezone: 'America/Chicago',
+    }
+
+    apiFetch.mockResolvedValueOnce(answer(200, { data: { ...ADMISSIBLE.data, event: chicago } }))
+    render(<DoorWorkspace events={[{ ...ENTRY, event: chicago }]} />)
+
+    // On the event's plate, before any lookup.
+    expect(screen.getByText(/· Central Time \(CDT\)$/u)).toBeTruthy()
+
+    await lookUp(user)
+    await screen.findByRole('heading', { name: /check the ticket, then admit/iu })
+
+    const starts = screen.getByText('Starts', { selector: 'dt' }).nextElementSibling
+
+    expect(starts.textContent).toBe('Oct 23, 2026, 7:30 PM · Central Time (CDT)')
+    expect(document.body.textContent).not.toContain('America/Chicago')
   })
 
   it('looks a ticket up without admitting it, and names who it is', async () => {
@@ -600,6 +623,21 @@ describe('DoorWorkspace: looking up, then admitting', () => {
   })
 })
 
+describe('DoorWorkspace: Look up, while it cannot be pressed', () => {
+  it('is drawn as the quiet door plate, not the gold one faded', () => {
+    render(<DoorWorkspace events={[ENTRY]} />)
+
+    const lookUp = screen.getByRole('button', { name: 'Look up' })
+
+    expect(lookUp).toBeDisabled()
+    expect(DOOR_DISABLED_PRIMARY).toBe(
+      'disabled:opacity-100 disabled:bg-surface-subtle disabled:text-ink-muted',
+    )
+    expect(lookUp).toHaveClass(...DOOR_DISABLED_PRIMARY.split(' '))
+    expect(lookUp.className).not.toMatch(/disabled:opacity-60/u)
+  })
+})
+
 describe('DoorWorkspace: the camera', () => {
   const original = navigator.mediaDevices
 
@@ -678,6 +716,57 @@ describe('DoorWorkspace: the camera', () => {
   function afterAFewFrames() {
     return act(() => new Promise((done) => setTimeout(done, 500)))
   }
+
+  it('gives keyboard focus back to the camera’s control once the camera is on', async () => {
+    const user = userEvent.setup()
+    const { tracks, stream, grant } = slowCamera()
+
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+
+    const start = screen.getByRole('button', { name: 'Start camera' })
+
+    start.focus()
+    await user.keyboard('{Enter}')
+    // While the browser asks, the control is busy and disabled, and a real
+    // browser drops focus from a disabled control to the page (jsdom keeps
+    // it, so the page's answer is stood in for).
+    expect(start).toBeDisabled()
+
+    const active = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(document.body)
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+
+    try {
+      await grant()
+
+      const stopButton = await screen.findByRole('button', { name: 'Stop camera' })
+
+      expect(focus.mock.contexts).toContain(stopButton)
+    } finally {
+      active.mockRestore()
+      focus.mockRestore()
+    }
+    expect(tracks[0].stop).not.toHaveBeenCalled()
+    expect(stream.getTracks()).toBe(tracks)
+  })
+
+  it('leaves focus where it is when the camera was started some other way', async () => {
+    const user = userEvent.setup()
+    const { grant } = slowCamera()
+
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+    await user.click(screen.getByRole('button', { name: 'Start camera' }))
+
+    const code = screen.queryByRole('textbox')
+
+    // Focus moved on by the steward while the camera was asked for stays put.
+    screen.getByRole('button', { name: /scan the qr pass/iu }).focus()
+    await grant()
+
+    expect(await screen.findByRole('button', { name: 'Stop camera' })).not.toHaveFocus()
+    expect(code).toBeNull()
+  })
 
   it('asks for the camera only when the steward presses Start camera', async () => {
     const user = userEvent.setup()
@@ -896,6 +985,69 @@ describe('DoorWorkspace: the camera', () => {
     await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(2))
 
     expect(sent(1)).toEqual({ credential: pass, expectedEventId: EVENT.id })
+  })
+
+  /**
+   * The viewfinder, and what is drawn in it.
+   *
+   * @returns {{frame: HTMLElement, brackets: number, line: HTMLElement|null}} The frame, its bracket count and the scan line if any.
+   */
+  function viewfinder() {
+    const frame = document.querySelector('[data-slot="door-viewfinder"]')
+
+    return {
+      frame,
+      brackets: frame.querySelectorAll('.door-bracket').length,
+      line: frame.querySelector('[data-slot="door-scanline"]'),
+    }
+  }
+
+  it('draws an empty viewfinder before the camera starts, with its brackets and no scan line', async () => {
+    const user = userEvent.setup()
+
+    camera(async () => ({ getTracks: () => [{ stop: vi.fn() }] }))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+
+    const { frame, brackets, line } = viewfinder()
+
+    expect(frame.tagName).toBe('FIGURE')
+    expect(frame.getAttribute('data-look')).toBe('off')
+    expect(brackets).toBe(4)
+    expect(line).toBeNull()
+    // The drawing is decoration: nothing in it but the preview is announced.
+    for (const drawn of frame.querySelectorAll(':scope > div')) {
+      expect(drawn.getAttribute('aria-hidden')).toBe('true')
+    }
+    expect(screen.getByText('The camera is off.')).toBeTruthy()
+  })
+
+  it('runs the scan line while it looks, and stops it and locks the brackets on a read', async () => {
+    const user = userEvent.setup()
+    const pass = `pass_${'y'.repeat(40)}`
+
+    framesArrive()
+    camera(async () => ({ getTracks: () => [{ stop: vi.fn() }] }))
+
+    let found
+    decodeFrame.mockImplementation(() => new Promise((done) => (found = done)))
+    apiFetch.mockResolvedValue(answer(200, { data: { ...ADMISSIBLE.data, method: 'QR_SCAN' } }))
+
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await user.click(screen.getByRole('button', { name: /scan the qr pass/iu }))
+    await user.click(screen.getByRole('button', { name: /start camera/iu }))
+    await screen.findByRole('button', { name: /stop camera/iu })
+
+    expect(viewfinder().frame.getAttribute('data-look')).toBe('scanning')
+    expect(viewfinder().line).not.toBeNull()
+    expect(viewfinder().line.getAttribute('class')).toBe('door-scanline')
+
+    await waitFor(() => expect(found).toBeTypeOf('function'))
+    await act(async () => found({ pass }))
+    await screen.findByRole('heading', { name: 'Check the ticket, then admit' })
+
+    expect(viewfinder().frame.getAttribute('data-look')).toBe('locked')
+    expect(viewfinder().line).toBeNull()
   })
 })
 
@@ -1129,8 +1281,8 @@ describe('DoorWorkspace: a group pass', () => {
     const group = await screen.findByRole('group', { name: 'Who is at the door now' })
 
     expect(within(group).getAllByRole('checkbox')).toHaveLength(1)
-    expect(screen.getByText(/Guest 2 · General Admission — already in at/u)).toBeTruthy()
-    expect(screen.getByText(/Guest 3 · General Admission — This ticket was refunded/u)).toBeTruthy()
+    expect(screen.getByText(/Guest 2 · General Admission: already in at/u)).toBeTruthy()
+    expect(screen.getByText(/Guest 3 · General Admission: This ticket was refunded/u)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Admit 1' })).toBeTruthy()
   })
 
@@ -1226,8 +1378,8 @@ describe('DoorWorkspace: a platform administrator', () => {
       .getAllByRole('option')
       .map((option) => option.textContent)
 
-    expect(options[1]).toMatch(/^Navratri Garba Night — Rangoli — /u)
-    expect(options[2]).toMatch(/^Dhol Night — Dhol Nation — /u)
+    expect(options[1]).toMatch(/^Navratri Garba Night · Rangoli · /u)
+    expect(options[2]).toMatch(/^Dhol Night · Dhol Nation · /u)
 
     await user.selectOptions(
       screen.getByLabelText(/event you are admitting to/iu),
@@ -1527,7 +1679,7 @@ describe('DoorWorkspace: an event of more than one night', () => {
     expect(screen.getByLabelText('Guest 1 · Season · Every night')).toBeTruthy()
     expect(
       screen.getByText(
-        'Guest 2 · Night 1 only · Night 1 · Thu, Oct 1 · 7:00 PM — This ticket is for a different night. Do not admit.',
+        'Guest 2 · Night 1 only · Night 1 · Thu, Oct 1 · 7:00 PM: This ticket is for a different night. Do not admit.',
       ),
     ).toBeTruthy()
   })
@@ -1592,7 +1744,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     expect(politeRegion(container).textContent).toBe('Found: Asha Door. Payment to take: $40.00.')
 
     apiFetch.mockResolvedValueOnce(answer(200, PAID_ADMISSION))
-    await user.click(within(card).getByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(within(card).getByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect(apiFetch).toHaveBeenCalledTimes(2)
     expect(apiFetch.mock.calls[1][0]).toBe('/v1/tickets/check-in')
@@ -1711,7 +1863,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     await lookUp(user)
 
     apiFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
-    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'No answer from the server. The payment may or may not have been recorded, and the ticket may or may not be in. Keep the money in hand and press Retry: it cannot record the payment twice.',
@@ -1727,7 +1879,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
         },
       }),
     )
-    await user.click(screen.getByRole('button', { name: 'Retry: payment taken $40.00 — admit' }))
+    await user.click(screen.getByRole('button', { name: 'Retry: payment taken $40.00, admit' }))
 
     // The identical request: the same pass, reference and amount.
     expect(sent(2)).toEqual(sent(1))
@@ -1763,7 +1915,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
         },
       }),
     )
-    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect(
       await screen.findByRole('heading', { name: 'Already admitted by another steward' }),
@@ -1796,7 +1948,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
       await lookUp(user)
 
       apiFetch.mockResolvedValueOnce(answer(status, { error: { code, message } }))
-      await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+      await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
       expect((await screen.findByRole('alert')).textContent).toBe(message)
       expect(screen.queryByRole('heading', { name: 'Admitted' })).toBeNull()
@@ -1824,7 +1976,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     render(<DoorWorkspace events={[ENTRY]} />)
     await lookUp(user)
 
-    const heading = await screen.findByRole('heading', { name: 'Cancelled — not paid' })
+    const heading = await screen.findByRole('heading', { name: 'Cancelled, not paid' })
 
     await waitFor(() => expect(document.activeElement).toBe(heading))
     expect(screen.getByRole('alert').textContent).toBe(
@@ -1849,9 +2001,9 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
         },
       }),
     )
-    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
-    expect(await screen.findByRole('heading', { name: 'Cancelled — not paid' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Cancelled, not paid' })).toBeTruthy()
     expect(screen.getByRole('alert').textContent).toMatch(
       /had not been paid for\. Don't let it in\./u,
     )
@@ -1955,9 +2107,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
           },
         }),
       )
-      await user.click(
-        within(card).getByRole('button', { name: 'Payment taken: $40.00 — admit 2' }),
-      )
+      await user.click(within(card).getByRole('button', { name: 'Payment taken: $40.00, admit 2' }))
 
       expect(sent(1)).toEqual({
         code: 'DEG-ABCDEFGH2345',
@@ -2008,7 +2158,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
 
       apiFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
       await user.click(
-        await screen.findByRole('button', { name: 'Payment taken: $80.00 — admit 3' }),
+        await screen.findByRole('button', { name: 'Payment taken: $80.00, admit 3' }),
       )
 
       expect((await screen.findByRole('alert')).textContent).toMatch(/Keep the money in hand/u)
@@ -2016,12 +2166,126 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
       apiFetch.mockResolvedValueOnce(
         answer(409, { error: { code: 'CONFLICT', message: 'x', reason: 'GROUP_CHANGED' } }),
       )
-      await user.click(
-        screen.getByRole('button', { name: 'Retry: payment taken $80.00 — admit 3' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'Retry: payment taken $80.00, admit 3' }))
 
       expect(sent(2)).toEqual(sent(1))
       expect(sent(2).paymentCents).toBe(8000)
     })
+  })
+})
+
+describe('DoorWorkspace: the verdict, as a band', () => {
+  /**
+   * The band an answer's heading sits in.
+   *
+   * @param {string} name The heading's exact name.
+   * @returns {Promise<HTMLElement>} The band.
+   */
+  async function bandOf(name) {
+    const heading = await screen.findByRole('heading', { name, level: 2 })
+
+    return heading.closest('[data-slot="door-verdict"]')
+  }
+
+  it('draws a ticket still to check as the gold-edged plate, with the name in large type', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValueOnce(answer(200, ADMISSIBLE))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+
+    const band = await bandOf('Check the ticket, then admit')
+
+    expect(band.getAttribute('data-verdict')).toBe('check')
+    expect(band.className).toContain('door-verdict')
+    expect(band.className).toContain('outline-accent')
+    expect(within(band).getByText('Asha Door').className).toContain('text-h1')
+    // The actions are under the band, on the door's own ground, not in it.
+    expect(within(band).queryByRole('button')).toBeNull()
+  })
+
+  it('draws an admission as the green band with a tick', async () => {
+    const user = userEvent.setup()
+
+    apiFetch
+      .mockResolvedValueOnce(answer(200, ADMISSIBLE))
+      .mockResolvedValueOnce(answer(200, ADMITTED))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+    await user.click(await screen.findByRole('button', { name: 'Admit', exact: true }))
+
+    const band = await bandOf('Admitted')
+
+    expect(band.getAttribute('data-verdict')).toBe('admit')
+    expect(band.className).toContain('bg-door-admit text-door-admit-ink')
+    expect(band.querySelector('[data-icon="check-circle"]')).not.toBeNull()
+  })
+
+  it('draws a ticket already in as the orange band, with the time it got in', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValueOnce(
+      answer(200, {
+        data: {
+          ...ADMISSIBLE.data,
+          outcome: 'ALREADY_CHECKED_IN',
+          previewReference: null,
+          checkedInAt: '2026-10-01T13:10:00.000Z',
+        },
+      }),
+    )
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+
+    const band = await bandOf('Already admitted: do not admit again')
+
+    expect(band.getAttribute('data-verdict')).toBe('warn')
+    expect(band.className).toContain('bg-door-warn text-door-warn-ink')
+    expect(band.querySelector('[data-icon="alert-triangle"]')).not.toBeNull()
+    expect(within(band).getByText(/^In at /u)).toBeTruthy()
+  })
+
+  it('draws a refusal, and a ticket nobody could find, as the red band with a cross', async () => {
+    const user = userEvent.setup()
+
+    apiFetch
+      .mockResolvedValueOnce(
+        answer(200, {
+          data: {
+            ...ADMISSIBLE.data,
+            outcome: 'REFUSED',
+            refusal: 'REFUNDED',
+            previewReference: null,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(answer(404, { error: { code: 'NOT_FOUND', message: 'x' } }))
+    render(<DoorWorkspace events={[ENTRY]} />)
+    await lookUp(user)
+
+    const refused = await bandOf('Do not admit')
+
+    expect(refused.getAttribute('data-verdict')).toBe('refuse')
+    expect(refused.className).toContain('bg-door-refuse text-door-refuse-ink')
+    expect(refused.querySelector('[data-icon="x-circle"]')).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Next ticket' }))
+    await lookUp(user)
+
+    expect((await bandOf('Not found')).getAttribute('data-verdict')).toBe('refuse')
+  })
+
+  it('says it is waiting for a ticket until there is an answer, then gives the column to it', async () => {
+    const user = userEvent.setup()
+
+    apiFetch.mockResolvedValueOnce(answer(200, ADMISSIBLE))
+    render(<DoorWorkspace events={[ENTRY]} />)
+
+    expect(screen.getByText('Waiting for a ticket')).toBeTruthy()
+
+    await lookUp(user)
+    await bandOf('Check the ticket, then admit')
+
+    expect(screen.queryByText('Waiting for a ticket')).toBeNull()
   })
 })

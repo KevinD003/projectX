@@ -77,7 +77,7 @@ const NUM = `${TD} text-right tabular-nums`
  */
 const STATES = Object.freeze({
   REQUESTED: 'Asked for. Nothing has been sent and no money has moved.',
-  APPROVED: 'Agreed. Still nothing sent — sending is a separate command.',
+  APPROVED: 'Agreed. Still nothing sent: sending is a separate command.',
   SUBMITTED: 'Sent to the provider. Waiting to hear what happened.',
   // Both modes this build can run in — the mock and the provider's sandbox —
   // move no real money, and the deployment refuses to start in any other.
@@ -86,7 +86,7 @@ const STATES = Object.freeze({
   DECLINED: 'The provider refused it. It can be approved again once the cause is fixed.',
   FAILED: 'It did not go. It can be approved again once the cause is fixed.',
   TIMEOUT:
-    'The provider did not answer. That is not a failure — it may or may not have gone, and somebody is establishing which.',
+    'The provider did not answer. That is not a failure: it may or may not have gone, and somebody is establishing which.',
   RECONCILIATION_REQUIRED:
     'The provider did not say what happened, and an operations item is open to establish it.',
   CANCELLED: 'Ended without being sent.',
@@ -265,7 +265,7 @@ export default async function RefundDetailPage({ params }) {
               <tbody>
                 {refund.items.map((item) => (
                   <tr key={item.orderItemId}>
-                    <th scope="row" className={`${TD} font-mono font-normal`}>
+                    <th scope="row" className={`${TD} text-left font-mono font-normal`}>
                       {item.orderItemId}
                     </th>
                     <td className={NUM}>{item.quantity}</td>
@@ -289,13 +289,13 @@ export default async function RefundDetailPage({ params }) {
             <dt className="text-ink-muted">Reason</dt>
             <dd className="text-ink">
               {refund.reason.replace(/_/gu, ' ').toLowerCase()}
-              {refund.reasonNote ? ` — ${refund.reasonNote}` : ''}
+              {refund.reasonNote ? `: ${refund.reasonNote}` : ''}
             </dd>
           </div>
           <div className="flex flex-wrap gap-2">
             <dt className="text-ink-muted">Provider reference</dt>
             <dd className="font-mono text-ink">
-              {refund.providerRefundId ?? 'None — nothing has been sent'}
+              {refund.providerRefundId ?? 'None: nothing has been sent'}
             </dd>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -331,7 +331,7 @@ export default async function RefundDetailPage({ params }) {
         {refund.failureCode ? (
           <p className="mt-3 rounded-card border border-status-danger/25 bg-status-danger-soft p-4 text-sm text-status-danger">
             The provider gave the code <span className="font-mono">{refund.failureCode}</span>.
-            Whatever caused it has to be fixed before this is approved again — approving a refund
+            Whatever caused it has to be fixed before this is approved again: approving a refund
             that will fail the same way is a second failure, not a retry.
           </p>
         ) : null}
@@ -353,7 +353,7 @@ export default async function RefundDetailPage({ params }) {
       <p className="mt-8 text-sm">
         <Link
           href="/operations"
-          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+          className="rounded-sm underline underline-offset-4 hover:text-accent-strong focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
         >
           Back to operations
         </Link>

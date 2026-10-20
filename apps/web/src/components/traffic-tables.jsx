@@ -19,6 +19,7 @@ import {
   TRAFFIC_SOURCE_DESCRIPTIONS,
   TRAFFIC_SOURCE_LABELS,
 } from '@desi-event/schemas/traffic-vocabulary'
+import { Icon } from '@desi-event/ui/icons'
 import Link from 'next/link'
 
 import { TABLE_SUMMARY } from '../lib/traffic-chart.js'
@@ -140,6 +141,34 @@ export function CardPlacements({ placements }) {
 }
 
 /**
+ * The classes of a disclosure whose summary is a {@link DisclosureSummary}:
+ * the group the chevron turns with.
+ */
+export const DISCLOSURE = 'group/disclosure'
+
+/**
+ * A disclosure's summary, with a chevron that says it opens and turns once
+ * it is open. The summary is a flex row, which drops the browser's own
+ * triangle, so the chevron puts the affordance back; it is decoration, and
+ * the details element tells assistive technology whether it is open.
+ *
+ * @param {{children: ReactNode}} props Component props.
+ * @returns {JSX.Element} The summary.
+ */
+export function DisclosureSummary({ children }) {
+  return (
+    <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-sm text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
+      {children}
+      <Icon
+        name="chevron-down"
+        data-slot="disclosure-chevron"
+        className="h-4 w-4 shrink-0 text-ink-muted transition-transform duration-(--duration-fast) ease-out group-open/disclosure:rotate-180"
+      />
+    </summary>
+  )
+}
+
+/**
  * @typedef {object} TrafficByDayProps
  * @property {Array<object>} days The API's `byDay`, oldest first.
  * @property {boolean} open Whether the table starts open.
@@ -162,10 +191,8 @@ export function TrafficByDay({ days, open }) {
   const nameDay = dayNamer(days)
 
   return (
-    <details open={open} className="mt-4">
-      <summary className="inline-flex min-h-11 cursor-pointer items-center rounded-sm text-sm font-semibold text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none">
-        {TABLE_SUMMARY}
-      </summary>
+    <details open={open} className={`mt-4 ${DISCLOSURE}`}>
+      <DisclosureSummary>{TABLE_SUMMARY}</DisclosureSummary>
       <ScrollableTable label={caption}>
         <table className={TABLE}>
           <caption className={CAPTION}>{caption}</caption>

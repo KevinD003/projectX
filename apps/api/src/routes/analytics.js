@@ -237,7 +237,7 @@ function exportRows(view) {
       quantity: type.quantityRemaining,
       amountCents: type.priceCents,
       currency: type.currency,
-      note: `${type.quantitySold} of ${type.quantityTotal} sold${type.oversold ? ' — OVERSOLD' : ''}`,
+      note: `${type.quantitySold} of ${type.quantityTotal} sold${type.oversold ? ': OVERSOLD' : ''}`,
     })
   }
 
@@ -439,8 +439,8 @@ export function registerAnalyticsRoutes(app, { prisma, providers }) {
       to: to ? new Date(to) : null,
       mode: mock ? 'MOCK' : 'STRIPE_TEST',
       modeNotice: mock
-        ? 'DEMO — no money moved. These figures describe a demonstration and are not an accounting record.'
-        : "SANDBOX — settled in Stripe's test mode. No real money moved.",
+        ? 'No money moved. These figures describe a demonstration and are not an accounting record.'
+        : "Settled in Stripe's test mode. No real money moved.",
       moneyVisible,
       moneyWithheld,
       // The breakdowns are the quiet way money escapes a permission check: the

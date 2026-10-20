@@ -174,11 +174,11 @@ describe('the structured data an event publishes', () => {
     expect(data.subEvent).toHaveLength(2)
     expect(data.subEvent[0]).toMatchObject({
       '@type': 'Event',
-      name: `${event.title} — Night 1 · Sun, Oct 11 · 7:00 PM`,
+      name: `${event.title} (Night 1 · Sun, Oct 11 · 7:00 PM)`,
       startDate: '2026-10-11T13:30:00.000Z',
       doorTime: '2026-10-11T13:00:00.000Z',
     })
-    expect(data.subEvent[1].name).toBe(`${event.title} — Mon, Oct 12 · 7:00 PM`)
+    expect(data.subEvent[1].name).toBe(`${event.title} (Mon, Oct 12 · 7:00 PM)`)
     expect(data.subEvent[1].eventStatus).toBe('https://schema.org/EventCancelled')
     expect(data.subEvent[1]).not.toHaveProperty('doorTime')
 

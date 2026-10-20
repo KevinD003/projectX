@@ -31,8 +31,10 @@
 import Link from 'next/link'
 
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
-import { Badge, EmptyState } from '../../../components/ui.jsx'
-import { PANEL, TABLE_FRAME, TEXT_LINK } from '../../../components/workspace-kit.jsx'
+import { StatusWord } from '../../../components/admin-kit.jsx'
+import { EmailAddress } from '../../../components/email-address.jsx'
+import { EmptyState } from '../../../components/ui.jsx'
+import { PANEL, PageHeader, TABLE_FRAME, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
 import { readSession } from '../../../lib/session.js'
 import {
@@ -107,10 +109,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
   if (!sessionCan(session, 'organizer:invite')) {
     return (
       <div>
-        <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-          Workspace · Platform administration
-        </p>
-        <h1 className="mt-2 text-h2 font-semibold text-ink">Organiser invitations</h1>
+        <PageHeader title="Organiser invitations" />
         <RefusalNotice tone="neutral" title="Not for this account" detail={NOT_FOR_THIS_ACCOUNT} />
       </div>
     )
@@ -145,23 +144,16 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
 
   return (
     <div>
-      <p className="text-micro font-semibold tracking-eyebrow text-accent-strong uppercase">
-        Workspace · Platform administration
-      </p>
-      <h1 className="mt-2 text-h2 font-semibold text-ink">Organiser invitations</h1>
-      <p className="mt-2 max-w-3xl text-ink-muted">
-        Organisers join The Desi Events only through an invitation from the team at The Desi Events.
-        Each invitation carries a code that works once, for the email address it names, for{' '}
-        {LIFETIME_DAYS} days. Accepting it creates the organisation, verified, with that person as
-        its owner. Every event they create is still reviewed by the team at The Desi Events before
-        it can be published.
-      </p>
+      <PageHeader
+        title="Organiser invitations"
+        description={`Organisers join The Desi Events only through an invitation from the team at The Desi Events. Each invitation carries a code that works once, for the email address it names, for ${LIFETIME_DAYS} days. Accepting it creates the organisation, verified, with that person as its owner. Every event they create is still reviewed by the team at The Desi Events before it can be published.`}
+      />
       {mode ? (
         <p className="mt-2 max-w-3xl text-sm text-ink-muted">{DELIVERY_LINES[mode]}</p>
       ) : null}
 
       <section aria-labelledby="invite-heading" className={`mt-6 p-4 sm:p-6 ${PANEL}`}>
-        <h2 id="invite-heading" className="text-lg font-semibold text-ink">
+        <h2 id="invite-heading" className="text-h3 font-semibold text-ink">
           Invite an organiser
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-muted">
@@ -173,7 +165,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
       </section>
 
       <section aria-labelledby="list-heading" className="mt-10">
-        <h2 id="list-heading" className="text-lg font-semibold text-ink">
+        <h2 id="list-heading" className="text-h3 font-semibold text-ink">
           Invitations sent
         </h2>
 
@@ -187,7 +179,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
                   <Link
                     href={filterHref(each.value)}
                     aria-current={current ? 'page' : undefined}
-                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${
+                    className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-(--duration-fast) focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus ${
                       current
                         ? 'bg-action-primary font-semibold text-action-primary-ink shadow-control'
                         : 'border border-line bg-surface-raised font-medium text-ink-muted hover:bg-surface-subtle hover:text-ink'
@@ -220,7 +212,7 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
               minLength={2}
               maxLength={120}
               autoComplete="off"
-              className="min-h-11 w-72 max-w-full rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
+              className="min-h-11 w-72 max-w-full rounded-control border border-line-strong bg-surface-raised px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
             />
           </div>
           <button type="submit" className={PAGER_LINK_CLASSES}>
@@ -303,7 +295,9 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
 
                     return (
                       <tr key={invitation.id} className="border-b border-line align-top">
-                        <td className="pr-4 break-all text-ink">{invitation.email}</td>
+                        <td className="pr-4 text-ink">
+                          <EmailAddress address={invitation.email} />
+                        </td>
                         <td className="pr-4 text-ink">
                           {invitation.status === 'ACCEPTED' && invitation.organization ? (
                             <>
@@ -319,18 +313,18 @@ export default async function OrganizerInvitationsPage({ searchParams }) {
                             invitationDescription(invitation)
                           )}
                           {invitation.organizationWebsiteUrl ? (
-                            <p className="mt-1 text-xs break-all text-ink-muted">
+                            <p className="mt-1 text-xs wrap-anywhere text-ink-muted">
                               Website: {invitation.organizationWebsiteUrl}
                             </p>
                           ) : null}
                         </td>
                         <td className="pr-4">
-                          <Badge
-                            variant={STATUS_TONES[invitation.status] ?? 'neutral'}
+                          <StatusWord
+                            tone={STATUS_TONES[invitation.status] ?? 'neutral'}
                             srLabel="Status:"
                           >
                             {STATUS_LABELS[invitation.status] ?? invitation.status}
-                          </Badge>
+                          </StatusWord>
                           <p className="mt-1 text-xs text-ink-muted">
                             {statusSentence(invitation, formatInstant)}
                           </p>

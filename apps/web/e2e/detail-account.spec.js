@@ -295,7 +295,7 @@ test.describe('the account rail', () => {
     expect(Object.fromEntries(await pairsOf(region(owner, 'Signed in as').locator('dl')))).toEqual({
       Name: 'Alpha Collective Owner',
       'Email address': ids().alphaOwnerEmail,
-      'Two-step sign-in': 'On — signing in asks for a code as well as your password.',
+      'Two-step sign-in': 'On: signing in asks for a code as well as your password.',
     })
     // An owner runs an organisation, so the workspace is one of the places to go.
     await expect(
@@ -354,7 +354,7 @@ test.describe('orders', () => {
 
     await expect(card).toHaveCount(1)
     await expect(card.getByRole('heading', { level: 2 })).toHaveText(eventTitle())
-    await expect(card).toContainText('Paid — simulated')
+    await expect(card).toContainText('Paid (simulated)')
     // A paid order never "succeeded": the only status word is the simulated one.
     await expect(card).not.toContainText(/succeeded/iu)
 
@@ -391,7 +391,7 @@ test.describe('orders', () => {
 
     expect(Object.fromEntries(await pairsOf(region(owner, 'The order').locator('dl')))).toEqual({
       Reference: reference,
-      Status: 'Paid — simulated',
+      Status: 'Paid (simulated)',
       Placed: expect.stringMatching(/\d/u),
       Paid: expect.stringMatching(/\d/u),
     })
@@ -419,7 +419,7 @@ test.describe('orders', () => {
       ['Booking fee', '₹0.00'],
       ['Total', '₹2,000.00'],
     ])
-    await expect(money).toContainText('Simulated payment — no card was charged and no money moved.')
+    await expect(money).toContainText('Simulated payment: no card was charged and no money moved.')
 
     const tickets = region(owner, 'Tickets on this order')
     const links = tickets.getByRole('link', { name: /^Ticket \d of 2$/u })
@@ -469,7 +469,7 @@ test.describe('orders', () => {
     const card = holder.locator('main li').filter({ hasText: reference })
 
     await expect(card).toHaveCount(1)
-    await expect(card).toContainText('Paid — simulated')
+    await expect(card).toContainText('Paid (simulated)')
     expect(Object.fromEntries(await pairsOf(card.locator('dl')))).toMatchObject({
       Reference: reference,
       Tickets: '6',
@@ -665,7 +665,7 @@ test.describe('transfers', () => {
 
       await expect(card).toHaveCount(1)
       await expect(card.getByRole('heading', { level: 3 })).toHaveText(eventTitle())
-      await expect(card).toContainText('Offered — still yours until they accept')
+      await expect(card).toContainText('Offered, still yours until they accept')
 
       expect(Object.fromEntries(await pairsOf(card.locator('dl')))).toEqual({
         When: expect.stringMatching(/\d/u),
@@ -826,10 +826,10 @@ test.describe('what this build cannot do', () => {
     await expect(
       region(owner, 'What cannot be done from here').locator('li > p:first-child'),
     ).toHaveText([
-      'Download a copy of your data — not available in this build.',
-      'Delete your account — not available in this build.',
-      'Email from this site — not available in this build.',
-      'Automatic deletion after a set time — not available in this build.',
+      'Download a copy of your data: not available in this build.',
+      'Delete your account: not available in this build.',
+      'Email from this site: not available in this build.',
+      'Automatic deletion after a set time: not available in this build.',
     ])
 
     // The controls that do exist are linked, not described.
@@ -848,11 +848,13 @@ test.describe('what this build cannot do', () => {
     await owner.goto('/account/privacy')
     await expect(pageHeading(owner, 'Privacy')).toBeVisible()
 
-    // Reached from the footer every page carries: "The full list", under the
-    // footer's heading "What this site does not do".
+    // Reached from the footer every page carries. An account page ends with
+    // the compact footer, whose link says it in full: "What this site does
+    // not do".
+    await expect(owner.getByRole('contentinfo')).toHaveAttribute('data-footer', 'compact')
     await owner
       .getByRole('contentinfo')
-      .getByRole('link', { name: 'The full list', exact: true })
+      .getByRole('link', { name: 'What this site does not do', exact: true })
       .click()
 
     await expect(owner).toHaveURL((url) => url.pathname === '/limitations')

@@ -17,14 +17,15 @@
  * @module app/events/slug/seats/sessionId/page
  */
 
+import { Icon } from '@desi-event/ui/icons'
+
 import { loadEventBySlug, loadSeatMap } from '../../../../../lib/api.js'
-import { formatEventLocation, formatTimeZoneLabel } from '../../../../../lib/format.js'
+import { formatEventLocation, formatTimeZoneLabel, zoneWords } from '../../../../../lib/format.js'
 import { signInHref } from '../../../../../lib/next-path.js'
 import { readSession } from '../../../../../lib/session.js'
 import { loadTeamSeatMap, mayBookTeamTiers } from '../../../../../lib/team-booking.js'
 import { formatNightTime, sessionDisplayLabel } from '../../../../../lib/sessions.js'
-import { ScallopHem, Toran } from '../../../../../components/festive-decor.jsx'
-import { CalendarIcon, ClockIcon, PinIcon } from '../../../../../components/icons.jsx'
+import { CheckoutRoute, CheckoutStepProvider } from '../../../../../components/checkout-route.jsx'
 import { FadeIn } from '../../../../../components/motion.jsx'
 import { NotFoundView } from '../../../../../components/not-found-view.jsx'
 import { Breadcrumbs } from '../../../../../components/page-state.jsx'
@@ -87,6 +88,7 @@ export default async function SeatPage({ params }) {
     timezone: map.timezone,
   }
   const zone = formatTimeZoneLabel({ startsAt: map.startsAt, timezone: map.timezone })
+  const zoneName = zoneWords(map.timezone, map.startsAt)
   const locality = event.venue
     ? [event.venue.name, [event.venue.city, event.venue.region].filter(Boolean).join(', ')]
         .filter(Boolean)
@@ -94,13 +96,9 @@ export default async function SeatPage({ params }) {
     : formatEventLocation(event)
 
   return (
-    <div>
-      <section
-        aria-labelledby="seats-heading"
-        className="relative isolate overflow-hidden bg-surface-inverse text-ink-inverse"
-      >
-        <Toran />
-        <div className="relative mx-auto max-w-content px-4 pt-16 pb-14 sm:px-6 md:pt-20">
+    <CheckoutStepProvider>
+      <section aria-labelledby="seats-heading" className="bg-surface-inverse text-ink-inverse">
+        <div className="mx-auto max-w-content px-4 pt-10 pb-8 sm:px-6 md:pt-14">
           <Breadcrumbs
             tone="inverse"
             trail={[
@@ -110,54 +108,54 @@ export default async function SeatPage({ params }) {
             ]}
           />
           <FadeIn>
-            <h1 id="seats-heading" className="mt-2 text-h1 font-semibold text-ink-inverse">
-              Choose seats for <span className="text-accent-inverse">{event.title}</span>
+            <h1
+              id="seats-heading"
+              className="mt-3 max-w-4xl text-h1 font-bold text-balance text-ink-inverse"
+            >
+              Choose seats for {event.title}
             </h1>
           </FadeIn>
-          <FadeIn delay={0.08}>
-            <ul className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-2 text-[0.9375rem] text-ink-inverse-muted">
+          <ul className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-2 text-label text-ink-inverse-muted">
+            <li className="flex items-center gap-2">
+              <Icon name="calendar" className="size-4.5 text-accent-inverse" />
+              <span>
+                {sessionDisplayLabel(night)}
+                {zone ? ` ${zone}` : ''}
+              </span>
+            </li>
+            {map.doorsOpenAt ? (
               <li className="flex items-center gap-2">
-                <CalendarIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                <span>
-                  {sessionDisplayLabel(night)}
-                  {zone ? ` ${zone}` : ''}
-                </span>
+                <Icon name="door" className="size-4.5 text-accent-inverse" />
+                <span>Doors {formatNightTime(map.doorsOpenAt, map.timezone)}</span>
               </li>
-              {map.doorsOpenAt ? (
-                <li className="flex items-center gap-2">
-                  <ClockIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                  <span>Doors {formatNightTime(map.doorsOpenAt, map.timezone)}</span>
-                </li>
-              ) : null}
-              <li className="flex items-center gap-2">
-                <ClockIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                <span>Ends {formatNightTime(map.endsAt, map.timezone)}</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <PinIcon className="h-4.5 w-4.5 text-accent-inverse" />
-                <span>{locality}</span>
-              </li>
-            </ul>
-            <p className="mt-3 text-sm text-ink-inverse-muted">
-              All times are the local time at the venue ({map.timezone}).
-            </p>
-          </FadeIn>
+            ) : null}
+            <li className="flex items-center gap-2">
+              <Icon name="clock" className="size-4.5 text-accent-inverse" />
+              <span>Ends {formatNightTime(map.endsAt, map.timezone)}</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <Icon name="pin" className="size-4.5 text-accent-inverse" />
+              <span>{locality}</span>
+            </li>
+          </ul>
+          <p className="mt-3 text-caption text-ink-inverse-muted">
+            {zoneName
+              ? `All times are ${zoneName}, the local time at the venue.`
+              : 'All times are the local time at the venue.'}
+          </p>
+          <CheckoutRoute eventHref={`/events/${event.slug}`} choose="Seats" />
         </div>
-        <ScallopHem />
       </section>
 
-      <div className="mx-auto max-w-content px-4 pt-10 sm:px-6">
-        <PaymentModeNotice />
-
-        <div className="mt-8">
-          <SeatCheckout
-            event={event}
-            initialMap={map}
-            buyer={buyer}
-            signInHref={signInHref(`/events/${event.slug}/seats/${sessionId}`)}
-          />
-        </div>
+      <div className="mx-auto max-w-content px-4 pt-10 sm:px-6 md:pt-14">
+        <SeatCheckout
+          event={event}
+          initialMap={map}
+          buyer={buyer}
+          signInHref={signInHref(`/events/${event.slug}/seats/${sessionId}`)}
+          notice={<PaymentModeNotice />}
+        />
       </div>
-    </div>
+    </CheckoutStepProvider>
   )
 }

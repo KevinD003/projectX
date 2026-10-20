@@ -274,7 +274,7 @@ describe('a withdrawn ticket', () => {
     const section = screen.getByRole('region', { name: 'Where it stands' })
 
     expect(section).toHaveTextContent(
-      'Does not admit. Withdrawn — this ticket no longer works at the door.',
+      'Does not admit. Withdrawn: this ticket no longer works at the door.',
     )
     expect(section).not.toHaveTextContent('Cancelled. It admits nobody.')
   })
@@ -346,7 +346,7 @@ describe('a ticket booked to pay at the door (SPEC3-XI §12.7)', () => {
 
     await renderPage()
 
-    expect(within(whereItStands()).getByText('Cancelled — not paid')).toBeInTheDocument()
+    expect(within(whereItStands()).getByText('Cancelled, not paid')).toBeInTheDocument()
     expect(
       within(whereItStands()).getByText(
         'The organiser cancelled this ticket on Thu, Oct 8, 2026 because it had not been paid for. You no longer owe $40.00 for it.',
@@ -405,5 +405,73 @@ describe('a ticket booked to pay at the door (SPEC3-XI §12.7)', () => {
     await renderPage()
 
     expect(screen.queryByText(/at the door/u)).toBeNull()
+  })
+})
+
+describe('the ticket as a ticket', () => {
+  it('writes every time a person reads in the event’s zone, never as a raw timestamp', async () => {
+    getTicket.mockResolvedValue(
+      detail({
+        ticket: {
+          ...detail().ticket,
+          status: 'CHECKED_IN',
+          checkedInAt: '2026-10-04T23:41:00.000Z',
+        },
+        onlineJoinUrl: null,
+        transfers: [
+          {
+            id: 'xfer0000000000000000001',
+            status: 'PENDING',
+            toEmailMasked: '••••@example.com',
+            createdAt: '2026-10-01T14:05:00.000Z',
+            expiresAt: '2026-10-08T14:05:00.000Z',
+            resultTicketId: null,
+          },
+        ],
+      }),
+    )
+
+    const { container } = await renderPage()
+
+    expect(screen.getByText('Admitted', { selector: 'dt' }).nextElementSibling).toHaveTextContent(
+      'Oct 4, 2026, 7:41 PM EDT',
+    )
+    expect(container.textContent).toContain(
+      'Offered to ••••@example.com on Oct 1, 2026, 10:05 AM EDT. Expires Oct 8, 2026, 10:05 AM EDT.',
+    )
+    // The machine-readable instant stays on the element, and nowhere as text.
+    expect(container.querySelector('time[datetime="2026-10-01T14:05:00.000Z"]')).not.toBeNull()
+    expect(container.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:/u)
+  })
+
+  it('draws the event and the holder on the face, and the pass on the stub, for the holder', async () => {
+    getTicket.mockResolvedValue(detail({ onlineJoinUrl: null }))
+
+    const { container } = await renderPage()
+
+    const face = container.querySelector('.ticket-face')
+    const stub = container.querySelector('.ticket-stub')
+
+    expect(face.querySelector('h1')).toHaveTextContent('Nine Nights, Online')
+    expect(face).toHaveTextContent('Name on itAsha Patel')
+    expect(within(stub).getByRole('heading', { name: 'Your entry pass' })).toHaveAttribute(
+      'id',
+      'entry-pass',
+    )
+    expect(within(stub).getByRole('button', { name: 'Show my entry pass' })).toBeInTheDocument()
+  })
+
+  it('offers no pass on the stub of a ticket that does not admit, and says why in words', async () => {
+    getTicket.mockResolvedValue(
+      detail({ ticket: { ...detail().ticket, status: 'REFUNDED' }, onlineJoinUrl: null }),
+    )
+
+    const { container } = await renderPage()
+
+    const stub = container.querySelector('.ticket-stub')
+
+    expect(within(stub).queryByRole('button')).toBeNull()
+    expect(stub).toHaveTextContent('This ticket does not admit anybody now')
+    expect(container.querySelector('.ticket-face')).toHaveTextContent('Does not admit')
   })
 })
