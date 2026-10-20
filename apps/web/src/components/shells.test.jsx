@@ -140,6 +140,10 @@ describe('the workspace shell’s chrome', () => {
     expect(within(banner).getByRole('button', { name: 'Find a page' })).toBeTruthy()
     // The bar stays put while a page transition crossfades the content.
     expect(banner.className).toContain('[view-transition-name:site-header]')
+    // Pinned from sm up only: on a phone it scrolls away, so it never covers
+    // a link scrolled beneath it.
+    expect(banner).toHaveClass('sm:sticky', 'sm:top-0')
+    expect(banner.className).not.toMatch(/(^|\s)sticky(\s|$)/u)
   })
 
   it('names the area in the bar, as words when it is the only one this account opens', () => {

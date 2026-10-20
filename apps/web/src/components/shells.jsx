@@ -134,7 +134,11 @@ function AuthorityLine({ authority }) {
  */
 function AppBar({ session, area, items, authority }) {
   return (
-    <header className="sticky top-0 z-40 bg-surface-inverse text-ink-inverse [view-transition-name:site-header]">
+    // Pinned from sm up. On a phone it scrolls away with the page: pinned there
+    // it takes a sixth of a 320px-wide screen, and a link scrolled beneath it
+    // is left too small to tap (WCAG 2.5.8), which the 320px sweep found on
+    // the delete and cancel dialogs' breadcrumb.
+    <header className="z-40 bg-surface-inverse text-ink-inverse [view-transition-name:site-header] sm:sticky sm:top-0">
       <div className="flex h-14 items-center gap-1 px-3 sm:gap-2 sm:px-4 lg:px-5">
         <RailToggle />
         {/* The D alone: on the bar's purple it is the brand, and its
