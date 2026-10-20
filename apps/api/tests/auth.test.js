@@ -241,6 +241,79 @@ describe('POST /v1/auth/register', () => {
   })
 })
 
+describe('registration rate limit, finding F5', () => {
+  // The 409/201 answer is an account-existence oracle. Fully removing it needs
+  // an email-verification flow (out of scope). These pin the mitigation: the
+  // oracle is bounded per address and per email, and a taken address is counted
+  // the same as a free one, so probing is not free.
+
+  /**
+   * Register one email through the route.
+   *
+   * @param {object} app The instance.
+   * @param {string} email The address to try.
+   * @returns {Promise<object>} The inject result.
+   */
+  const register = (app, email) =>
+    app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: { email, password: 'a-long-enough-password', displayName: 'Probe' },
+    })
+
+  it('bounds how many sign-ups one address may attempt, whatever the answer', async () => {
+    const { app } = await createTestApp({
+      rateLimit: {
+        global: { max: 10_000, timeWindow: '1 minute' },
+        register: { addressMax: 3, emailMax: 10, timeWindow: '1 hour' },
+      },
+    })
+
+    expect((await register(app, 'probe-1@example.com')).statusCode).toBe(201)
+    expect((await register(app, 'probe-2@example.com')).statusCode).toBe(201)
+    expect((await register(app, 'probe-3@example.com')).statusCode).toBe(201)
+
+    const refused = await register(app, 'probe-4@example.com')
+
+    expect(refused.statusCode).toBe(429)
+    expect(refused.json().error.code).toBe('RATE_LIMITED')
+
+    await app.close()
+  })
+
+  it('counts a taken address the same as a free one, so the oracle is not free to read', async () => {
+    const { app } = await createTestApp({
+      rateLimit: {
+        global: { max: 10_000, timeWindow: '1 minute' },
+        register: { addressMax: 2, emailMax: 10, timeWindow: '1 hour' },
+      },
+    })
+
+    // A 409 for an existing address spends the budget exactly as a 201 does, so
+    // an attacker cannot read the oracle for free by only probing taken ones.
+    expect((await register(app, 'priya@example.com')).statusCode).toBe(409)
+    expect((await register(app, 'fresh-a@example.com')).statusCode).toBe(201)
+    expect((await register(app, 'fresh-b@example.com')).statusCode).toBe(429)
+
+    await app.close()
+  })
+
+  it('bounds repeated probes of one address (per email)', async () => {
+    const { app } = await createTestApp({
+      rateLimit: {
+        global: { max: 10_000, timeWindow: '1 minute' },
+        register: { addressMax: 100, emailMax: 2, timeWindow: '1 hour' },
+      },
+    })
+
+    expect((await register(app, 'priya@example.com')).statusCode).toBe(409)
+    expect((await register(app, 'priya@example.com')).statusCode).toBe(409)
+    expect((await register(app, 'priya@example.com')).statusCode).toBe(429)
+
+    await app.close()
+  })
+})
+
 describe('POST /v1/auth/login', () => {
   it('returns a session for the right password, as a cookie and a token', async () => {
     const { app } = await createTestApp()
@@ -392,6 +465,51 @@ describe('POST /v1/auth/login', () => {
     expect(prisma._store.device).toHaveLength(1)
     expect(prisma._store.session.filter((session) => session.revokedAt === null)).toHaveLength(2)
     expect(prisma._store.device[0].fingerprintHash).toMatch(/^[0-9a-f]{64}$/)
+
+    await app.close()
+  })
+
+  it('does not let spraying one account throttle the whole audience behind the proxy (finding F2)', async () => {
+    // Every browser request reaches the API through the web app's same-origin
+    // proxy, so `request.ip` is the proxy for all of them. The auth limiter and
+    // the login throttle used to key on it, so ten wrong guesses at one victim
+    // spent a bucket shared by everybody and denied the entire site's sign-in.
+    // The limiter now keys on the address the trusted proxy forwards, so one
+    // target's failures stay in that client's own bucket.
+    const { app } = await createTestApp()
+    const FORWARDED = 'x-desi-client-address'
+    // The socket peer is the proxy (a trusted forwarder in the test env); the
+    // real client addresses arrive in the forwarded header.
+    const attacker = { origin: ORIGIN, [FORWARDED]: '203.0.113.50' }
+    const innocent = { origin: ORIGIN, [FORWARDED]: '203.0.113.99' }
+
+    let victimStatus
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        headers: attacker,
+        payload: { email: 'priya@example.com', password: `wrong-${attempt}` },
+      })
+      victimStatus = response.statusCode
+    }
+
+    // The victim's own sign-in is locked (per-account, by the submitted email).
+    expect(victimStatus).toBe(429)
+
+    // An innocent account with the correct password, from its own client
+    // address, still gets in — under the old socket-IP keying this was 429,
+    // because the attacker had spent the one shared bucket.
+    const code = mfaCodeFor(app, 'arun@rangoli.example')
+    const innocentLogin = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      headers: innocent,
+      payload: { email: 'arun@rangoli.example', password: PASSWORD, ...(code ? { code } : {}) },
+    })
+
+    expect(innocentLogin.statusCode).toBe(200)
+    expect(innocentLogin.json().token).toBeTruthy()
 
     await app.close()
   })
@@ -1788,6 +1906,76 @@ describe('step-up authentication', () => {
 
     expect(response.statusCode).toBe(401)
     expect(prisma._store.mfaFactor.find((row) => row.id === factor.id).disabledAt).toBeNull()
+
+    await app.close()
+  })
+
+  it('locks step-up for an account after enough wrong attempts, and records each (finding F10)', async () => {
+    // Before this, step-up recorded no attempt and consulted no throttle, so
+    // guessing at the step-up gate was bounded only by the shared IP auth limit
+    // and never by the account. A wrong step-up now accrues a per-account
+    // lockout, as a wrong sign-in does. The auth limiter is relaxed here so the
+    // per-account throttle — not the per-client budget — is what is under test.
+    const { app, prisma } = await createTestApp({
+      rateLimit: {
+        global: { max: 10_000, timeWindow: '1 minute' },
+        auth: { max: 1_000, timeWindow: '1 minute' },
+      },
+    })
+    const signedIn = await signInAsBrowser(app, 'priya@example.com')
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const wrong = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/step-up',
+        headers: signedIn.headers,
+        payload: { password: `wrong-${attempt}` },
+      })
+      expect(wrong.statusCode).toBe(401)
+    }
+
+    // Each wrong step-up was recorded as a per-account failure (the same row a
+    // wrong sign-in writes), carrying no credential and a pseudonymised address.
+    const failures = prisma._store.loginAttempt.filter(
+      (attempt) => attempt.outcome === 'mfa_failed',
+    )
+    expect(failures).toHaveLength(5)
+    for (const attempt of failures) {
+      expect(attempt.emailHash).toMatch(/^[0-9a-f]{64}$/)
+      expect(attempt.succeeded).toBe(false)
+    }
+    expect(JSON.stringify(failures)).not.toContain('priya@example.com')
+
+    // The sixth is refused before the password is even checked, with a sentence
+    // that names neither the account nor the count.
+    const throttled = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/step-up',
+      headers: signedIn.headers,
+      payload: { password: PASSWORD },
+    })
+    expect(throttled.statusCode).toBe(429)
+    expect(throttled.json().error.message).not.toMatch(/\d/)
+
+    // The lockout is per account, independent of the socket IP: a different
+    // account from the very same client can still step up.
+    const fresh = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        email: 'fresh-stepup@example.com',
+        password: 'a-long-enough-password',
+        displayName: 'Fresh',
+      },
+    })
+    const freshStepUp = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/step-up',
+      headers: bearer(fresh.json().token),
+      payload: { password: 'a-long-enough-password' },
+    })
+
+    expect(freshStepUp.statusCode).toBe(200)
 
     await app.close()
   })

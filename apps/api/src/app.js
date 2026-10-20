@@ -153,6 +153,7 @@ export async function buildApp(options) {
     version,
     payments,
     authLimit: rateLimit.auth,
+    registerLimit: rateLimit.register,
     organizerInviteLimit: rateLimit.organizerInvite,
     transferMailLimit: rateLimit.transferMail,
     passLimit: rateLimit.pass,
