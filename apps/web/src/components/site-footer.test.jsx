@@ -89,6 +89,17 @@ describe('SiteFooter', () => {
       '/events?city=Jersey+City',
     )
     expect(cities.textContent).not.toMatch(/Mumbai|Ahmedabad|Toronto|Mississauga|London/)
+    // Spaced by the list's gap, with no separator glyph that a wrapped line
+    // could start with: each item holds its link and nothing else.
+    const list = within(cities).getByRole('list')
+
+    expect(list).toHaveClass('flex', 'flex-wrap', 'gap-x-4')
+    expect(cities.textContent).not.toContain('·')
+    for (const item of within(list).getAllByRole('listitem')) {
+      expect(item.children).toHaveLength(1)
+      expect(item.firstElementChild.tagName).toBe('A')
+      expect(item.textContent).toBe(item.firstElementChild.textContent)
+    }
   })
 
   it('offers categories from across the year by their labels, not one festival’s', () => {
