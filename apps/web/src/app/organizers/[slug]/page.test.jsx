@@ -217,6 +217,33 @@ describe('the organiser page', () => {
     expect(link.getAttribute('rel')).toMatch(/noopener/)
   })
 
+  it('renders no website link when the address is not a safe https one (F7)', async () => {
+    // The write path only ever stores a public https address, so this guards
+    // against a future row (an import, a schema relaxation) landing a
+    // `javascript:` or `http:` string that would otherwise be an href.
+    for (const websiteUrl of [
+      'javascript:alert(document.cookie)',
+      'http://swarsadhana.example',
+      'data:text/html,<script>alert(1)</script>',
+      '//swarsadhana.example',
+    ]) {
+      loadOrganizerBySlug.mockResolvedValue({
+        organizer: organizer({ websiteUrl }),
+        usedFallback: false,
+      })
+
+      const { container, unmount } = render(await OrganizerPage(route))
+
+      // No anchor in the masthead carries the unsafe address.
+      expect(container.querySelector(`a[href="${websiteUrl}"]`)).toBeNull()
+      // And in particular nothing that could run as script.
+      expect(container.querySelector('a[href^="javascript:"]')).toBeNull()
+      expect(container.querySelector('a[href^="data:"]')).toBeNull()
+
+      unmount()
+    }
+  })
+
   it('needs no JavaScript to be a usable page', async () => {
     // Everything that matters is a link or text in the server-rendered markup:
     // no button that only works once hydrated, and no empty container waiting

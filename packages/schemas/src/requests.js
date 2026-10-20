@@ -71,7 +71,7 @@ import {
 } from './event-content.js'
 import { revisionQueryParamSchema } from './media.js'
 import { venueAccessibilitySchema } from './venues.js'
-import { WEBSITE_LIMITS, websiteUrlSchema } from './website.js'
+import { PRIVATE_HOST_SUFFIXES, WEBSITE_LIMITS, websiteUrlSchema } from './website.js'
 
 /** Sort orders accepted by the event listing endpoint. */
 export const EVENT_SORT_OPTIONS = Object.freeze([
@@ -109,6 +109,82 @@ export const loginRequestSchema = z.object({
 export const WEBSITE_SWITCH_REFUSAL =
   'Only the team at The Desi Events turns the website link on or off, from its own screens. Leave this out.'
 
+/** What the join-link gate says when an address is refused. */
+export const ONLINE_URL_PROBLEMS = Object.freeze({
+  protocol: 'A joining link must use https. Other kinds of link are not accepted.',
+  privateNetwork:
+    'A joining link must point at a public address, not a private network or a loopback host.',
+})
+
+/**
+ * Loopback and private IPv4 address space a public joining link may not name:
+ * `0.0.0.0/8`, `10/8`, `100.64/10` (carrier-grade NAT), `127/8` (loopback),
+ * `169.254/16` (link-local), `172.16/12` and `192.168/16`.
+ *
+ * @type {RegExp}
+ */
+const PRIVATE_IPV4_HOST =
+  /^(?:0|10|127|169\.254|192\.168|172\.(?:1[6-9]|2\d|3[01])|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7]))\./u
+
+/**
+ * Whether a host is a loopback or private-network name an online event's
+ * joining link must not point at. Public meeting services (Zoom, Meet, Teams)
+ * all live on ordinary public names, so this refuses nothing a real event
+ * would use while closing the `http://127.0.0.1`/`http://x.local` gap.
+ *
+ * @param {string} hostname A URL's `hostname`.
+ * @returns {boolean} True when the host is loopback or private.
+ */
+function isPrivateOrLoopbackHost(hostname) {
+  const host = hostname.toLowerCase().replace(/\.$/u, '')
+
+  if (host === 'localhost' || host === '0.0.0.0') return true
+  if (PRIVATE_HOST_SUFFIXES.includes(host.split('.').at(-1))) return true
+  if (PRIVATE_IPV4_HOST.test(host)) return true
+
+  if (host.startsWith('[') && host.endsWith(']')) {
+    const inner = host.slice(1, -1)
+
+    // IPv6 loopback/unspecified, unique-local (fc00::/7) and link-local (fe80::/10).
+    if (inner === '::1' || inner === '::') return true
+    if (/^f[cd][0-9a-f]{2}:/u.test(inner)) return true
+    if (/^fe[89ab][0-9a-f]:/u.test(inner)) return true
+  }
+
+  return false
+}
+
+/**
+ * An online event's joining link: an absolute `https` URL on a public host.
+ *
+ * The documented https-only + public-host invariant (the one
+ * {@link import('./code-letters.js').assertJoinUrl} keeps for code-letter
+ * links) applied to the organiser-supplied address, so a ticket holder is
+ * never handed a plain-`http://` (mixed-content) or private-network link.
+ * Query strings and fragments are left alone — real meeting links carry a
+ * passcode in them.
+ */
+const onlineUrlSchema = urlSchema.superRefine((value, ctx) => {
+  let url
+
+  try {
+    url = new URL(value)
+  } catch {
+    // Unparseable addresses are already refused by `urlSchema`.
+    return
+  }
+
+  if (url.protocol !== 'https:') {
+    ctx.addIssue({ code: 'custom', message: ONLINE_URL_PROBLEMS.protocol })
+
+    return
+  }
+
+  if (isPrivateOrLoopbackHost(url.hostname)) {
+    ctx.addIssue({ code: 'custom', message: ONLINE_URL_PROBLEMS.privateNetwork })
+  }
+})
+
 /**
  * Fields an organiser may supply when creating or updating an event.
  *
@@ -129,7 +205,7 @@ const eventWritableFields = {
   endsAt: timestampSchema,
   timezone: timezoneSchema,
   isOnline: z.boolean(),
-  onlineUrl: urlSchema.nullish(),
+  onlineUrl: onlineUrlSchema.nullish(),
   languages: z.array(nonEmptyStringSchema).max(12),
   /** Named performers, in billing order. Free text: this is a listing, not a licensed artist database. */
   artists: z.array(nonEmptyStringSchema).max(64),
