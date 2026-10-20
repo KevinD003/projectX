@@ -131,14 +131,24 @@ platform-only capabilities, listed explicitly in
 > them again, they are right and it is wrong.
 
 The thirty-seventh is `privacy:redact`, added in Phase 3 and granted to the
-organisation `OWNER` and to nobody else — the narrowest grant the table can
-express, because OWNER inherits ADMIN and so granting anywhere lower would hand
-it to a superset by inheritance. It is organisation-scoped rather than
-platform-only, so every route asserting it names an organisation, and a
-standing test in `packages/permissions/src/capabilities.test.js` asserts that
-exactly one organisation role holds it. Why it is not folded into
-`organization:manage` or `platform:admin`, and why a step-up window alone is not
-sufficient authority for it, are in `docs/PRIVACY_AND_RETENTION.md`.
+organisation `OWNER` through its membership and to no other organisation role —
+the narrowest grant the table can express, because OWNER inherits ADMIN and so
+granting anywhere lower would hand it to a superset by inheritance. It is
+organisation-scoped rather than platform-only, so every route asserting it names
+an organisation, and a standing test in
+`packages/permissions/src/capabilities.test.js` asserts that exactly one
+organisation role holds it. Across tenants it is a **super administrator's
+alone**: `privacy:redact` is one of the three `SUPER_ADMIN_ONLY_CAPABILITIES`, so
+a platform `ADMIN` does **not** hold it and cannot redact an organiser's buyer in
+a tenant it is not a member of — only a `SUPER_ADMIN` reaches it that way, and a
+standing test asserts no platform role but `SUPER_ADMIN` holds it (ADR 0022, the
+scope tightening of 2026-10-20, amending ADR 0018 decision 2). `promo:manage`
+was tightened the same way and for the same reason: it stays an organiser's
+through a membership (EVENT_MANAGER and up) and a super administrator's across
+tenants, never a platform administrator's. Why `privacy:redact` is not folded
+into `organization:manage`, why a platform administrator is not the right holder
+for an irreversible decision, and why a step-up window alone is not sufficient
+authority for it, are in `docs/PRIVACY_AND_RETENTION.md`.
 
 The thirty-eighth is `retention:view`, and it went the other way: it is in
 `PLATFORM_ONLY_CAPABILITIES` rather than in any organisation role, because the
@@ -246,16 +256,21 @@ own authority on the event's audit trail; every other platform role is refused
 at the door and audited (ADR 0007, `docs/CHECK_IN.md`).
 
 _Corrected 2026-10-16._ Seven platform roles: the platform administrator,
-`ADMIN`, sits below `SUPER_ADMIN` and holds every capability except
-`platform:role_manage` (ADR 0018). Changing a platform role needs that
-capability, which only `SUPER_ADMIN` holds, and the handler still re-reads the
-caller inside its transaction and refuses anybody who is not an unsuspended
-`SUPER_ADMIN`. The account search, the organisation search, the direct grant
-and the venue merge are `platform:admin`, which `ADMIN` holds too; a direct
-grant on a super administrator's account needs a super administrator, because
-it ends every session that account holds. `ADMIN` admits at any door on
-`PLATFORM_ROLE` authority, recorded as `ADMIN`. `platform:role_manage` is
-forbidden in browser artefacts beside `platform:admin`.
+`ADMIN`, sits below `SUPER_ADMIN` and holds every capability except the three
+`SUPER_ADMIN_ONLY_CAPABILITIES` — `platform:role_manage` (ADR 0018), and, since
+the scope tightening of 2026-10-20, `privacy:redact` and `promo:manage` across
+tenants (ADR 0022). Changing a platform role needs `platform:role_manage`, which
+only `SUPER_ADMIN` holds, and the handler still re-reads the caller inside its
+transaction and refuses anybody who is not an unsuspended `SUPER_ADMIN`. The
+account search, the organisation search, the direct grant and the venue merge
+are `platform:admin`, which `ADMIN` holds too; a direct grant on a super
+administrator's account needs a super administrator, because it ends every
+session that account holds. `ADMIN` admits at any door on `PLATFORM_ROLE`
+authority, recorded as `ADMIN`. Redacting an organiser's buyer and managing an
+organiser's promo codes in a tenant `ADMIN` is not a member of are a
+`SUPER_ADMIN`'s alone; `ADMIN` still exercises either in an organisation its own
+membership grants it. `platform:role_manage` is forbidden in browser artefacts
+beside `platform:admin`.
 
 ### An organisation anybody can create
 

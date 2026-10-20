@@ -226,8 +226,10 @@ const PLATFORM_RAIL = Object.freeze([
  * What a platform administrator's rail offers (ADR 0018): everything a super
  * administrator's does — the workspace's platform doors, Check-in and the
  * imported events' door team among them, the money, review, the pages for the
- * team at The Desi Events and People and roles — though not the platform-role
- * change on that page, which is drawn for super administrators alone.
+ * team at The Desi Events and People and roles — except Privacy, which is a
+ * super administrator's alone across tenants now (ADR 0022: `privacy:redact` is
+ * super-admin-only), and except the platform-role change on People and roles,
+ * which is drawn for super administrators alone.
  *
  * @type {ReadonlyArray<string>}
  */
@@ -254,7 +256,8 @@ const ADMIN_RAIL = Object.freeze([
   'Operations',
   'Notifications',
   'Moderation',
-  'Privacy',
+  // No Privacy: a platform administrator no longer reaches the privacy surface
+  // across tenants (ADR 0022). A super administrator's rail keeps it — PLATFORM_RAIL.
   'Retention',
   'Organisation checks',
   'Pictures waiting',

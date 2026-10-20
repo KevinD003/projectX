@@ -539,3 +539,84 @@ describe('pausing, resuming and deleting', () => {
     await app.close()
   })
 })
+
+describe('cross-tenant scope: a platform administrator is not a member (ADR 0022)', () => {
+  /** The platform administrator (ADMIN), never a member of the fixture organisation. */
+  const PLATFORM_ADMIN = 'anil@desi-event.example'
+
+  /** The platform super administrator (SUPER_ADMIN), also not a member. */
+  const SUPER_ADMIN = 'ops@desi-event.example'
+
+  it('refuses a platform administrator minting a code in a tenant it is not a member of (403), where it used to accept (201)', async () => {
+    const world = await promoWorld()
+    const { app, prisma, ids } = await createTestApp(world)
+    // Stepped up, so the refusal is the capability and not a missing factor.
+    const headers = await steppedUp(app, PLATFORM_ADMIN)
+    const before = prisma._store.promoCode.length
+
+    const response = await app.inject({
+      method: 'POST',
+      url: codes(ids.organization.id),
+      headers,
+      payload: { code: 'PWNED100', type: 'PERCENTAGE', value: 10_000, maxRedemptions: 5 },
+    })
+
+    // Before ADR 0022 the platform administrator held `promo:manage`
+    // platform-wide and this answered 201 (a live 100%-off code against an
+    // organiser's revenue); now it holds neither it nor a membership here.
+    expect(response.statusCode).toBe(403)
+    expect(response.json().error.code).toBe('FORBIDDEN')
+    expect(prisma._store.promoCode).toHaveLength(before)
+
+    await app.close()
+  })
+
+  it('still lets a platform super administrator mint a code across tenants (201)', async () => {
+    const world = await promoWorld()
+    const { app, ids } = await createTestApp(world)
+    const headers = await steppedUp(app, SUPER_ADMIN)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: codes(ids.organization.id),
+      headers,
+      payload: { code: 'SUPERONLY', type: 'PERCENTAGE', value: 1000 },
+    })
+
+    // The chosen policy: a super administrator keeps cross-tenant reach.
+    expect(response.statusCode).toBe(201)
+    expect(response.json().data.code).toBe('SUPERONLY')
+
+    await app.close()
+  })
+
+  it('still lets an organisation event manager manage its own promo codes (201)', async () => {
+    const world = await promoWorld()
+    const { app, ids } = await createTestApp(world)
+    const headers = await steppedUp(app, 'events@rangoli.example')
+
+    const response = await app.inject({
+      method: 'POST',
+      url: codes(ids.organization.id),
+      headers,
+      payload: { code: 'OWNTENANT', type: 'PERCENTAGE', value: 500 },
+    })
+
+    expect(response.statusCode).toBe(201)
+
+    await app.close()
+  })
+
+  it('refuses the platform administrator the list of this tenant’s codes too (403)', async () => {
+    const world = await promoWorld()
+    const { app, ids } = await createTestApp(world)
+    const headers = bearer(await signIn(app, PLATFORM_ADMIN))
+
+    const response = await app.inject({ method: 'GET', url: codes(ids.organization.id), headers })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json().error.code).toBe('FORBIDDEN')
+
+    await app.close()
+  })
+})

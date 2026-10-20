@@ -195,7 +195,11 @@ const EXPECTED_PLATFORM_MATRIX = {
     'support:view_order',
   ],
   // Exactly PLATFORM_ADMINISTRATOR_CAPABILITIES, written out by hand: every
-  // capability but platform:role_manage, which is SUPER_ADMIN's alone (ADR 0018).
+  // capability but the three super-admin-only ones — platform:role_manage
+  // (ADR 0018), and privacy:redact and promo:manage, which a platform
+  // administrator no longer reaches across tenants (ADR 0022). privacy:redact
+  // and promo:manage stay organisation capabilities a membership grants, so
+  // they appear in EXPECTED_ORG_MATRIX, not here.
   ADMIN: [
     'analytics:view_all',
     'attendee:export',
@@ -229,8 +233,6 @@ const EXPECTED_PLATFORM_MATRIX = {
     'payout:manage',
     'platform:admin',
     'platform_fee:refund',
-    'privacy:redact',
-    'promo:manage',
     'reconciliation:manage',
     'referral_code:manage',
     'report:view',
@@ -367,14 +369,34 @@ describe('can — platform admin override', () => {
     expect(can(platformAdmin, 'event:hijack', { organizationId: ORG_A })).toBe(false)
   })
 
-  it('grants the platform administrator (ADMIN) everything but platform:role_manage', () => {
+  it('grants the platform administrator (ADMIN) everything but the three super-admin-only capabilities (ADR 0018, 0022)', () => {
     const admin = { id: 'usr_platform_admin', role: 'ADMIN', memberships: [] }
+    // platform:role_manage (ADR 0018), and privacy:redact and promo:manage,
+    // which a non-member platform administrator no longer reaches across tenants
+    // (ADR 0022) — they need an organisation membership, which this admin has none of.
+    const superAdminOnly = ['platform:role_manage', 'privacy:redact', 'promo:manage']
 
     for (const capability of ALL_CAPABILITIES) {
-      const expected = capability !== 'platform:role_manage'
+      const expected = !superAdminOnly.includes(capability)
       expect(can(admin, capability, { organizationId: ORG_B }), capability).toBe(expected)
       expect(can(admin, capability), capability).toBe(expected)
     }
+  })
+
+  it('grants a platform administrator who IS a member privacy:redact and promo:manage in that org alone (ADR 0022)', () => {
+    // The tightening removes the cross-tenant reach, not the membership one: a
+    // platform administrator who is an OWNER of ORG_A redacts there through that
+    // membership, and still cannot in ORG_B where it is not a member.
+    const admin = {
+      id: 'usr_member_admin',
+      role: 'ADMIN',
+      memberships: [{ organizationId: ORG_A, role: 'OWNER' }],
+    }
+
+    expect(can(admin, 'privacy:redact', { organizationId: ORG_A })).toBe(true)
+    expect(can(admin, 'promo:manage', { organizationId: ORG_A })).toBe(true)
+    expect(can(admin, 'privacy:redact', { organizationId: ORG_B })).toBe(false)
+    expect(can(admin, 'promo:manage', { organizationId: ORG_B })).toBe(false)
   })
 })
 

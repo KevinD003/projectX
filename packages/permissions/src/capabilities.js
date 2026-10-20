@@ -214,13 +214,19 @@ export const CAPABILITIES = deepFreeze({
    * `organization:manage` would have handed this authority to every existing
    * holder with no review and no migration.
    *
-   * Equally not `platform:admin`, which is the key to everything: granting
-   * redaction through it would make the decision unauditable as a distinct
-   * one, and ungrantable narrowly.
+   * Equally not the platform administrator's (`ADMIN`), which otherwise holds
+   * the key to everything: it is listed in {@link SUPER_ADMIN_ONLY_CAPABILITIES}
+   * (ADR 0022), so a platform administrator does not hold it and cannot redact
+   * an organiser's buyer across tenants. Granting redaction through a platform
+   * administrator would make an irreversible decision unauditable as a distinct
+   * one, and ungrantable narrowly. A super administrator does reach it across
+   * tenants, through {@link ALL_CAPABILITIES}, as the one platform role above a
+   * platform administrator.
    *
-   * Organisation-scoped rather than platform-only, so every route asserting it
-   * must name the organisation in the request — see `capabilityScope`. One
-   * request never spans two organisations.
+   * Organisation-scoped rather than platform-only, so it stays an organiser's
+   * through a membership (OWNER holds it) and every route asserting it must name
+   * the organisation in the request — see `capabilityScope`. One request never
+   * spans two organisations.
    */
   PRIVACY_REDACT: 'privacy:redact',
 
@@ -405,7 +411,9 @@ export const ORG_ROLE_ORDER = deepFreeze([
  * that support, moderation, finance and platform administration work does not
  * require the key to everything. Today's `ADMIN` is the platform administrator
  * (see {@link PLATFORM_ADMINISTRATOR_CAPABILITIES}): everything SUPER_ADMIN
- * holds except changing platform roles (ADR 0018).
+ * holds except the {@link SUPER_ADMIN_ONLY_CAPABILITIES} — changing platform
+ * roles (ADR 0018), and redacting an organiser's buyer or managing an
+ * organiser's promo codes across tenants (ADR 0022).
  *
  * @type {ReadonlyArray<string>}
  */
@@ -648,20 +656,39 @@ function resolveAll(grants, inherits) {
 export const ORG_ROLE_CAPABILITIES = deepFreeze(resolveAll(ORG_ROLE_GRANTS, ORG_ROLE_INHERITS))
 
 /**
- * The capabilities only SUPER_ADMIN holds: the platform administrator (`ADMIN`)
- * holds every capability except these (ADR 0018, the owner's decision of
- * 2026-10-16: "Admin should be able to do all super admin has access. Only
- * difference is that Super Admin can create, revoke the admin and all other").
+ * The capabilities the platform administrator (`ADMIN`) does not hold through
+ * its platform role: {@link assertPlatformAdministratorBounds} holds ADMIN to
+ * exactly {@link ALL_CAPABILITIES} minus this list, and SUPER_ADMIN holds every
+ * one of these through {@link ALL_CAPABILITIES}.
  *
- * Today that is changing platform roles (`platform:role_manage`) and nothing
- * else. A capability added later that should also stay with SUPER_ADMIN must
- * be listed here on purpose: {@link assertPlatformAdministratorBounds} holds
- * ADMIN to exactly "everything but this list", so a new capability reaches
- * ADMIN unless somebody decides otherwise here.
+ * Three capabilities (ADR 0018 as amended by ADR 0022, the owner's scope
+ * tightening of 2026-10-20):
+ *
+ *  - `platform:role_manage` — changing platform roles. Platform-only (in
+ *    {@link PLATFORM_ONLY_CAPABILITIES}), so no organisation role carries it
+ *    either; SUPER_ADMIN's alone (ADR 0018).
+ *  - `privacy:redact` and `promo:manage` — deliberately *not* in
+ *    {@link PLATFORM_ONLY_CAPABILITIES}. They remain organisation capabilities
+ *    an organiser holds through a membership (OWNER redacts; EVENT_MANAGER and
+ *    up manage promo), and a SUPER_ADMIN reaches across tenants through
+ *    {@link ALL_CAPABILITIES}. Dropping them here only removes the platform
+ *    administrator's *cross-tenant* reach over an organiser's buyer PII and
+ *    over an organiser's discount codes (ADR 0022): a redaction is irreversible
+ *    and minting a 100%-off code spends an organiser's revenue, and both are a
+ *    super administrator's decision, not a platform administrator's.
+ *
+ * A capability added later that should also stay with SUPER_ADMIN must be
+ * listed here on purpose, so it reaches ADMIN unless somebody decides otherwise.
  *
  * @type {ReadonlyArray<string>}
  */
-export const SUPER_ADMIN_ONLY_CAPABILITIES = deepFreeze([CAPABILITIES.PLATFORM_ROLE_MANAGE].sort())
+export const SUPER_ADMIN_ONLY_CAPABILITIES = deepFreeze(
+  [
+    CAPABILITIES.PLATFORM_ROLE_MANAGE,
+    CAPABILITIES.PRIVACY_REDACT,
+    CAPABILITIES.PROMO_MANAGE,
+  ].sort(),
+)
 
 const SUPER_ADMIN_ONLY_LOOKUP = new Set(SUPER_ADMIN_ONLY_CAPABILITIES)
 
@@ -671,20 +698,28 @@ const SUPER_ADMIN_ONLY_LOOKUP = new Set(SUPER_ADMIN_ONLY_CAPABILITIES)
  *
  * Under the owner's hierarchy (super admin > admin > organizer > organizer
  * manager > organizer staff > user, ADR 0018) the platform administrator does
- * everything a super administrator does except make, change or revoke anybody's
- * platform role. So ADMIN holds `platform:admin`, the bypass of organisation
- * membership: it may publish, cancel, refund and edit any organisation's event,
- * move an organiser's money, read every report with its money, admit people at
- * any door on platform authority (ADR 0007, amended by ADR 0018), grant
- * organisation memberships and merge venues.
+ * almost everything a super administrator does. So ADMIN holds `platform:admin`,
+ * the bypass of organisation membership: it may publish, cancel, refund and
+ * edit any organisation's event, move an organiser's money, read every report
+ * with its money, admit people at any door on platform authority (ADR 0007,
+ * amended by ADR 0018), grant organisation memberships and merge venues.
+ *
+ * What it does not hold is the {@link SUPER_ADMIN_ONLY_CAPABILITIES}: it cannot
+ * make, change or revoke anybody's platform role (`platform:role_manage`), and
+ * — ADR 0022, the scope tightening of 2026-10-20 — it cannot redact an
+ * organiser's buyer PII (`privacy:redact`) or manage an organiser's promo codes
+ * (`promo:manage`) across tenants. Those two stay an organiser's through a
+ * membership and a super administrator's across tenants; a platform
+ * administrator who is a member of the organisation still exercises them there
+ * through that membership.
  *
  * This supersedes in part ADR 0007 (SUPER_ADMIN was the only platform door
  * role) and ADR 0010 (ADMIN reviewed events and could post none of its own).
  * The review gate still holds for organisers; a platform administrator acting
  * on platform authority is the team at The Desi Events, as SUPER_ADMIN always
- * was. What keeps ADMIN below SUPER_ADMIN is `platform:role_manage`, the
- * in-transaction database re-check on `platform.setUserRole`, and the
- * last-super-admin guard.
+ * was. What keeps ADMIN below SUPER_ADMIN is the three super-admin-only
+ * capabilities, the in-transaction database re-check on `platform.setUserRole`,
+ * and the last-super-admin guard.
  *
  * @type {ReadonlyArray<string>}
  */
@@ -704,8 +739,10 @@ export const PLATFORM_ADMINISTRATOR_CAPABILITIES = deepFreeze(
  * The narrow staff roles exist so that the common platform jobs do not need
  * `SUPER_ADMIN`. A moderator cannot refund; a finance administrator cannot
  * approve an event; support can read an order and change nothing; a platform
- * administrator does everything SUPER_ADMIN does except change anybody's
- * platform role (ADR 0018). MODERATOR, SUPPORT and FINANCE_ADMIN hold none of
+ * administrator does everything SUPER_ADMIN does except the three
+ * super-admin-only capabilities — changing platform roles (ADR 0018), and
+ * redacting a buyer or managing promo codes across tenants (ADR 0022).
+ * MODERATOR, SUPPORT and FINANCE_ADMIN hold none of
  * the three platform event capabilities (`event:platform_edit`,
  * `event:platform_delete`, `event:import`), and none of `payment_terms:manage`,
  * `referral_code:manage` or `venue_booking:cancel`; FINANCE_ADMIN refunds one
@@ -745,10 +782,11 @@ export const PLATFORM_ROLE_CAPABILITIES = deepFreeze({
  *
  * An equality rather than a check for a few forbidden names, so a capability
  * that should stay with SUPER_ADMIN has to be listed in
- * SUPER_ADMIN_ONLY_CAPABILITIES on purpose, and a table that hands ADMIN
- * `platform:role_manage` fails the process that loads it. It also requires
- * SUPER_ADMIN to hold every super-admin-only capability, so the role that can
- * change platform roles never disappears from the table.
+ * SUPER_ADMIN_ONLY_CAPABILITIES on purpose, and a table that hands ADMIN any of
+ * them (`platform:role_manage`, `privacy:redact`, `promo:manage`) fails the
+ * process that loads it. It also requires SUPER_ADMIN to hold every
+ * super-admin-only capability, so no super-admin-only authority disappears from
+ * the table.
  *
  * @param {Record<string, ReadonlyArray<string>>} table A platform role table.
  * @returns {Record<string, ReadonlyArray<string>>} The same table, when it holds.

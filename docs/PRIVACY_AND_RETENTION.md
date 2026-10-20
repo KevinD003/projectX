@@ -192,11 +192,20 @@ safely; they are not that work.
 
 ## 3. Who may redact, and why not somebody else
 
-`privacy:redact`, granted to the organisation `OWNER` and to nobody else. OWNER
-inherits ADMIN, so granting anywhere lower in the role graph would hand the
-authority to a superset by inheritance — this is the narrowest grant the table
-can express. A standing test asserts that exactly one organisation role holds
-it, so a future edit that widens it fails rather than ships.
+`privacy:redact`, granted to the organisation `OWNER` through its membership and
+to no other organisation role. OWNER inherits ADMIN, so granting anywhere lower
+in the role graph would hand the authority to a superset by inheritance — this
+is the narrowest grant the table can express. A standing test asserts that
+exactly one organisation role holds it, so a future edit that widens it fails
+rather than ships.
+
+Across tenants it is a **super administrator's alone**. `privacy:redact` is one
+of the three `SUPER_ADMIN_ONLY_CAPABILITIES`, so a platform `ADMIN` does not hold
+it and cannot redact an organiser's buyer in a tenant it is not a member of; only
+a `SUPER_ADMIN` reaches it that way, through `ALL_CAPABILITIES`, and a standing
+test asserts no platform role but `SUPER_ADMIN` holds it (ADR 0022, amending ADR
+0018 decision 2). A platform administrator who is a member of the organisation
+still redacts there, through that membership, like any other owner.
 
 It is **organisation-scoped**, not platform-only. Every route asserting it names
 an organisation, and one request never spans two.
@@ -209,8 +218,13 @@ rename the company without also being able to destroy somebody's personal data
 irreversibly. Widening it would have granted this authority to every existing
 holder with no review and no migration.
 
-**`platform:admin`** is the key to everything. Granting redaction through it
-would make the decision unauditable as a distinct one and ungrantable narrowly.
+**`platform:admin`** is the key to everything, which is exactly why redaction is
+**not** reachable through it. A platform administrator holds `platform:admin` but
+not `privacy:redact` (ADR 0022): granting redaction through the platform
+administrator's bypass would make an irreversible decision unauditable as a
+distinct one and ungrantable narrowly. A super administrator — the one platform
+role above a platform administrator — does reach it across tenants, as the
+chosen holder of a decision that revokes an account in all but name.
 
 **`attendee:export`** is a bulk _read_. Reading and destroying are not the same
 decision and the vocabulary should not pretend they are.
@@ -244,14 +258,17 @@ not a confirmation.
 
 ### Cross-organisation redaction is refused at two layers
 
-The capability check confines an organiser to the organisation in the path. It
-does **not** confine a platform `SUPER_ADMIN`, which holds every capability
-platform-wide and is granted it before an organisation id is consulted at all.
-`assertSubjectBelongsToOrganization` is the second layer, and it applies to
-everybody rather than special-casing a role: a subject counts only when the
-organisation holds a membership, an order, a ticket or a waitlist entry for
-them. A subject out of scope and a subject who does not exist get the same 404
-with the same sentence.
+The capability check confines an organiser to the organisation in the path, and
+a platform `ADMIN` with it: a platform administrator does not hold
+`privacy:redact` across tenants (ADR 0022), so a non-member platform
+administrator is refused at the capability layer with 403 before the subject is
+ever looked up. It does **not** confine a platform `SUPER_ADMIN`, which holds
+every capability platform-wide and is granted it before an organisation id is
+consulted at all. `assertSubjectBelongsToOrganization` is the second layer, and
+it applies to everybody rather than special-casing a role: a subject counts only
+when the organisation holds a membership, an order, a ticket or a waitlist entry
+for them. A subject out of scope and a subject who does not exist get the same
+404 with the same sentence.
 
 ---
 
