@@ -29,6 +29,12 @@ const {
   revealCurrent,
 } = await import('./workspace-nav.jsx')
 
+// The page finder, area menu and rail tooltips are loaded only when first
+// opened, to keep them out of every page's first load. Load them once here,
+// so these checks wait for what opening does and not for the import: on a
+// busy CI runner the import alone can outlast findByRole's second.
+await import('./workspace-floating.jsx')
+
 /** Two groups, as `workspaceGroups` hands them over. */
 const GROUPS = [
   {
