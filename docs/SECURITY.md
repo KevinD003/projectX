@@ -590,19 +590,35 @@ the bundled Swagger UI at `/docs` is built that way. The API otherwise answers
 JSON, which no browser runs. Written here so nobody reads "CSP is configured"
 as "CSP is strict".
 
-**The web app's pages are served with no Content-Security-Policy at all.**
-Helmet's policy is on the API's responses, not on the pages Next.js renders,
-and a nonce-based policy for them is not built. So nothing the organiser types
-may reach a page as markup. React escapes text; the one place the web app
-writes raw markup is the JSON-LD block on the event and venue pages, which goes
-through `serializeJsonLd` (`apps/web/src/lib/json-ld.js`). `JSON.stringify`
-leaves `<` alone, so a title, a performer's name, a night's label or a venue's
-name holding `</script><script>…` used to close the block and run as every
-visitor, with their CSRF cookie in reach. `serializeJsonLd` writes `<`, `>`,
-`&`, U+2028 and U+2029 as `\uXXXX` escapes, which leave the JSON a search
-engine reads unchanged. `json-ld.test.js` fails the build when any other source
-file writes raw markup or opens a script element, and both pages have a test
-that renders a hostile payload to HTML and parses it back.
+**The web app's pages carry a per-request nonce Content-Security-Policy and
+the fixed security headers.** The request proxy (`apps/web/src/proxy.js`) mints
+a fresh nonce for every page request, puts it in `script-src 'self'
+'nonce-…' 'strict-dynamic'`, and sets the policy on both the request (so Next.js
+stamps that nonce onto its own scripts) and the response. So an injected
+`<script>`, or a `javascript:` href that slipped a render guard, has no nonce
+and cannot run. `style-src` keeps `'unsafe-inline'`: React, the view-transition
+styles and Framer Motion set inline `style` attributes a nonce cannot cover;
+`img-src` allows the `data:`/`blob:` the QR code and posters use; everything
+else is same-origin, which covers the API through the same-origin proxy.
+`object-src 'none'`, `base-uri 'self'`, `form-action 'self'` and `frame-ancestors
+'none'` close the remaining holes; `X-Frame-Options: DENY` repeats the
+clickjacking guard for older browsers, and every page also carries
+`X-Content-Type-Options: nosniff` and `Referrer-Policy:
+strict-origin-when-cross-origin`. Development adds `'unsafe-eval'` to
+`script-src`, and only there, because React's dev build evaluates code; a
+production build needs it never. The proxy matcher skips the API proxy, the
+built assets and the image optimiser, so a static asset carries no page policy.
+
+The CSP is a second line, not the first. React still escapes text, and the one
+place the web app writes raw markup is the JSON-LD block on the event and venue
+pages, which goes through `serializeJsonLd` (`apps/web/src/lib/json-ld.js`).
+`JSON.stringify` leaves `<` alone, so a title, a performer's name, a night's
+label or a venue's name holding `</script><script>…` used to close the block
+and run as every visitor, with their CSRF cookie in reach. `serializeJsonLd`
+writes `<`, `>`, `&`, U+2028 and U+2029 as `\uXXXX` escapes, which leave the
+JSON a search engine reads unchanged. `json-ld.test.js` fails the build when any
+other source file writes raw markup or opens a script element, and both pages
+have a test that renders a hostile payload to HTML and parses it back.
 
 CORS is an explicit origin list with `credentials: false`.
 
