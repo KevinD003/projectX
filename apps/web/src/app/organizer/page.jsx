@@ -42,6 +42,7 @@ import { formatEventDate, formatEventTime } from '../../lib/format.js'
 import { listOrganizerEvents } from '../../lib/organizer-api.js'
 import { platformEditorRedirect } from '../../lib/platform-editor.js'
 import { readSession, sessionCan } from '../../lib/session.js'
+import { roleLabel } from './team/team-vocabulary.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -264,7 +265,8 @@ export default async function OrganizerHomePage() {
                       {membership.organizationName ?? 'An organisation'}
                     </p>
                     <p className="text-sm text-ink-muted">
-                      Your role: <span className="font-semibold text-ink">{membership.role}</span>
+                      Your role:{' '}
+                      <span className="font-semibold text-ink">{roleLabel(membership.role)}</span>
                     </p>
                   </div>
 

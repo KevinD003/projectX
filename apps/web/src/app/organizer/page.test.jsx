@@ -58,7 +58,10 @@ describe('the workspace front page', () => {
     const held = within(section).getByRole('list', { name: 'What this role lets you do' })
 
     expect(within(section).getByText('Alpha Garba')).toBeInTheDocument()
-    expect(within(section).getByText('OWNER')).toBeInTheDocument()
+    // The role in words, as the Team page says it, never the API's code.
+    expect(within(section).getByText('Owner')).toBeInTheDocument()
+    expect(within(section).getByText('Owner').closest('p')).toHaveTextContent(/^Your role: Owner$/u)
+    expect(section.textContent).not.toContain('OWNER')
     expect(
       within(held)
         .getAllByRole('listitem')
