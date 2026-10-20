@@ -496,12 +496,23 @@ function budgetSpent(message, retryInSeconds) {
  * When no address can be believed (a trusted web server forwarded none) every
  * such request shares one bucket of three hundred, which is never skipped.
  *
- * @type {Readonly<{actorMax: number, addressMax: number, sharedMax: number, timeWindow: string}>}
+ * `globalMax` is a ceiling every wrong guess draws on, whatever account or
+ * address it came from (finding F8). The per-actor and per-address buckets
+ * alone were multiplied by a pool of accounts or addresses — N accounts gave
+ * N×10 guesses — so a distributed dictionary attack on short codes was bounded
+ * only by how many accounts the attacker held. The global bucket bounds the
+ * aggregate. It is sized well above any honest rate of mistyped codes across
+ * the whole site in ten minutes (a valid code is never counted), so a person
+ * applying a real code is unaffected even when it is full; only further wrong
+ * guesses are refused.
+ *
+ * @type {Readonly<{actorMax: number, addressMax: number, sharedMax: number, globalMax: number, timeWindow: string}>}
  */
 export const DEFAULT_REFERRAL_ATTEMPT_LIMIT = Object.freeze({
   actorMax: 10,
   addressMax: 30,
   sharedMax: 300,
+  globalMax: 1000,
   timeWindow: '10 minutes',
 })
 
@@ -519,10 +530,11 @@ const REFERRAL_ADDRESS_KEY = randomBytes(32)
 
 /**
  * The buckets one request draws on: its account's, and its address's (an HMAC
- * of the address alone, never the browser) or, with no address, the shared one.
+ * of the address alone, never the browser) or, with no address, the shared one;
+ * and always the global ceiling, which no account or address can step around.
  *
  * @param {object} request A Fastify request.
- * @param {{actorMax: number, addressMax: number, sharedMax: number}} limit The limits.
+ * @param {{actorMax: number, addressMax: number, sharedMax: number, globalMax: number}} limit The limits.
  * @returns {Array<{key: string, max: number}>} The buckets.
  */
 export function referralAttemptBuckets(request, limit = DEFAULT_REFERRAL_ATTEMPT_LIMIT) {
@@ -541,6 +553,10 @@ export function referralAttemptBuckets(request, limit = DEFAULT_REFERRAL_ATTEMPT
   } else {
     buckets.push({ key: 'referral:shared', max: limit.sharedMax })
   }
+
+  // Counted on every wrong guess, so a pool of accounts or addresses cannot
+  // multiply the budget past this aggregate ceiling (finding F8).
+  buckets.push({ key: 'referral:global', max: limit.globalMax })
 
   return buckets
 }
@@ -774,13 +790,135 @@ export function transferMailRateLimit(overrides = {}, { deliveryMode = 'MANUAL' 
 }
 
 /**
+ * Registration budget, per address and per email (finding F5).
+ *
+ * `POST /v1/auth/register` answers 409 for an address that already has an
+ * account and 201 for one that does not, which is an existence oracle. Removing
+ * it entirely needs an email-verification flow (out of scope, and it would
+ * change the "register returns a session" behaviour). This budget is the
+ * mitigation ADR-less residual asks for: it bounds how fast the oracle can be
+ * read in bulk. Every attempt counts, whichever answer it would get, so the
+ * budget itself is not an oracle; the handler also pays the password-hash cost
+ * on both paths so the timing is not one either.
+ *
+ * Per address stops one source checking a long list; per email stops hammering
+ * one address. Both windows are an hour, generous enough for honest sign-ups
+ * (a person registers once) and for an end-to-end run, far below bulk
+ * enumeration.
+ *
+ * @type {Readonly<{addressMax: number, emailMax: number, timeWindow: string}>}
+ */
+export const DEFAULT_REGISTER_LIMIT = Object.freeze({
+  addressMax: 30,
+  emailMax: 5,
+  timeWindow: '1 hour',
+})
+
+/** The sentence a would-be registrant reads once the budget is spent. */
+export const REGISTER_ATTEMPTS_SENTENCE =
+  'Too many sign-up attempts from here. Wait a while, then try again.'
+
+/**
+ * Made when the process starts and never persisted: keys the registration
+ * budget's buckets, so neither the address nor the email is itself a key.
+ */
+const REGISTER_KEY = randomBytes(32)
+
+/**
+ * The registration budget's buckets for one request: its address's and, once
+ * the body has validated, the submitted email's. Both are HMAC digests, never
+ * the value itself.
+ *
+ * @param {object} request A Fastify request, after body validation.
+ * @param {{addressMax: number, emailMax: number}} limit The limits.
+ * @returns {Array<{key: string, max: number}>} The buckets.
+ */
+function registerBuckets(request, limit) {
+  /** @type {Array<{key: string, max: number}>} */
+  const buckets = []
+  const address = clientAddressOf(request) ?? (typeof request.ip === 'string' ? request.ip : '')
+
+  if (address) {
+    const digest = createHmac('sha256', REGISTER_KEY).update(`addr:${address}`).digest('hex')
+
+    buckets.push({ key: `register:addr:${digest.slice(0, 32)}`, max: limit.addressMax })
+  }
+
+  const email =
+    typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : ''
+
+  if (email) {
+    const digest = createHmac('sha256', REGISTER_KEY).update(`email:${email}`).digest('hex')
+
+    buckets.push({ key: `register:email:${digest.slice(0, 32)}`, max: limit.emailMax })
+  }
+
+  return buckets
+}
+
+/**
+ * Build the registration budget: one `preHandler` for `auth.register`, keyed by
+ * address and by email. Run after the body has validated (so the email is
+ * normalised and present) and counting every request, so the exists and
+ * not-exists paths are rationed identically.
+ *
+ * @param {{addressMax?: number, emailMax?: number, timeWindow?: string|number}} [overrides] Limit overrides, for tests.
+ * @returns {function(object): Promise<void>} The hook. Throws a 429 past either budget.
+ */
+export function registrationRateLimit(overrides = {}) {
+  const limit = { ...DEFAULT_REGISTER_LIMIT, ...overrides }
+  const span = windowMs(limit.timeWindow)
+  /** @type {Map<string, {count: number, startedAt: number}>} */
+  const buckets = new Map()
+
+  return async function registrationBudget(request) {
+    const now = Date.now()
+
+    for (const [key, bucket] of buckets) {
+      if (bucket.startedAt + span <= now) buckets.delete(key)
+    }
+
+    const active = registerBuckets(request, limit)
+
+    for (const { key, max } of active) {
+      const bucket = buckets.get(key)
+
+      if (bucket && bucket.count >= max) {
+        throw budgetSpent(REGISTER_ATTEMPTS_SENTENCE, (bucket.startedAt + span - now) / 1000)
+      }
+    }
+
+    for (const { key } of active) {
+      const bucket = buckets.get(key) ?? { count: 0, startedAt: now }
+
+      bucket.count += 1
+      buckets.set(key, bucket)
+    }
+  }
+}
+
+/**
  * Build the per-route `config.rateLimit` object for the auth endpoints.
  *
+ * Keyed on the client's own address, not the socket peer (finding F2). With
+ * `trustProxy:false`, `request.ip` is the web app's same-origin proxy for every
+ * browser user, so a key of `request.ip` gave the whole audience one ten-a-minute
+ * auth bucket: spraying wrong passwords at one account spent everybody's budget
+ * and denied the entire site's sign-in. `clientAddressOf` returns the address the
+ * trusted web tier forwards in `x-desi-client-address` (believed only from
+ * `TRAFFIC_TRUSTED_FORWARDERS`), so each real browser gets its own budget; a
+ * caller the API talks to directly keys on its own socket address. Callers that
+ * add their own `keyGenerator` on top (the team routes) override this.
+ *
  * @param {{max?: number, timeWindow?: string|number}} [overrides] Limit overrides, normally only supplied by tests.
- * @returns {{max: number, timeWindow: string|number}} The effective auth limit.
+ * @returns {{max: number, timeWindow: string|number, keyGenerator: function(object): string}} The effective auth limit.
  */
 export function authRateLimit(overrides = {}) {
-  return { ...DEFAULT_AUTH_LIMIT, ...overrides }
+  return {
+    ...DEFAULT_AUTH_LIMIT,
+    ...overrides,
+    keyGenerator: (request) => `auth:${clientAddressOf(request) ?? request.ip}`,
+  }
 }
 
 /**
