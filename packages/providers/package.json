@@ -28,7 +28,7 @@
     "@desi-event/config": "workspace:*",
     "@vitest/coverage-v8": "^5.0.0",
     "smtp-server": "^3.19.16",
-    "vite": "^8.3.0",
+    "vite": "^8.3.4",
     "vitest": "^5.0.0"
   }
 }
