@@ -13,8 +13,8 @@
  * puts it back (ADR 0014 §6). A published event comes back published at the
  * same web address; what any other comes back as is said on its row.
  *
- * Each row also says the event's booking fee (the platform fee) — the site
- * default, none, or its own terms — and whether it can be paid for at the
+ * Each row also says the event's booking fee (the platform fee): the site
+ * default, none, or its own terms; and whether it can be paid for at the
  * venue, with its limit (SPEC3 §7.3). Both are set on the event's own page.
  *
  * The filters are links and a GET form, so they work without JavaScript and
@@ -28,13 +28,14 @@
 import Link from 'next/link'
 import { PUBLICLY_VISIBLE_STATUSES } from '@desi-event/schemas/lifecycle'
 
-import { FilterLinks, Instant, StatusWord } from '../../../components/admin-kit.jsx'
+import { FilterLinks, Instant, StatusWord, formatTimeIn } from '../../../components/admin-kit.jsx'
 import { ReadRefusal, RefusalNotice } from '../../../components/read-refusal.jsx'
 import { EmptyState } from '../../../components/ui.jsx'
 import { PageHeader, TEXT_LINK } from '../../../components/workspace-kit.jsx'
 import { sessionCan } from '../../../lib/capabilities.js'
 import { eventRowSummary, feeListText, venueListText } from '../../../lib/event-control.js'
 import { statusReading } from '../../../lib/event-status.js'
+import { formatDateIn } from '../../../lib/format.js'
 import { listPlatformEvents } from '../../../lib/organizer-api.js'
 import { readSession } from '../../../lib/session.js'
 import {
@@ -173,12 +174,16 @@ export const EVENT_TABLE = Object.freeze({
   thead: 'sr-only xl:not-sr-only xl:table-header-group',
   th: 'border-b border-line-strong bg-surface-subtle px-3 py-3 align-bottom text-xs font-semibold text-ink-muted first:pl-4 last:pr-4',
   tbody: 'block divide-y divide-line xl:table-row-group xl:divide-y-0',
-  row: 'grid grid-cols-2 gap-x-6 gap-y-3 p-4 sm:grid-cols-3 xl:table-row xl:p-0',
-  // Below md, a cell that the one-line summary already says.
+  row: 'grid grid-cols-2 gap-x-6 gap-y-1 p-3 sm:grid-cols-3 md:gap-y-3 md:p-4 xl:table-row xl:p-0',
+  // Below md, a cell that the row's heading cell already says.
   wide: 'max-md:hidden',
-  summary: 'mt-1 block text-xs text-ink-muted md:hidden',
+  // Below md, the state and the start on one line under the title.
+  stateStart: 'mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-ink md:hidden',
+  summary: 'mt-0.5 block text-xs leading-4 text-ink-muted md:hidden',
   cell: 'min-w-0 xl:table-cell xl:border-b xl:border-line xl:px-3 xl:py-3 xl:align-top xl:first:pl-4 xl:last:pr-4',
   label: 'mb-0.5 block text-xs font-medium text-ink-muted xl:hidden',
+  // A label shown from md to xl only: below md the value needs none.
+  midLabel: 'mb-0.5 hidden text-xs font-medium text-ink-muted md:block xl:hidden',
   inlineLabel: 'text-xs font-medium text-ink-muted xl:hidden',
 })
 
@@ -207,19 +212,34 @@ export const EVENT_COLUMNS = Object.freeze([
  * @param {string} props.label The column's heading.
  * @param {boolean} [props.numeric] Right-aligned in the table.
  * @param {boolean} [props.inline] Below `xl`, the label and a short value share one line.
- * @param {boolean} [props.wide] Left out below `md`, where the row's summary line says it.
+ * @param {boolean} [props.wide] Left out below `md`, where the row's heading cell says it.
+ * @param {boolean} [props.unlabelledNarrow] Below `md`, the value shows without its label.
  * @param {string} [props.className] Extra classes.
  * @param {ReactNode} props.children The value.
  * @returns {JSX.Element} The cell.
  */
-function Cell({ label, numeric = false, inline = false, wide = false, className = '', children }) {
+function Cell({
+  label,
+  numeric = false,
+  inline = false,
+  wide = false,
+  unlabelledNarrow = false,
+  className = '',
+  children,
+}) {
+  const labelClasses = inline
+    ? EVENT_TABLE.inlineLabel
+    : unlabelledNarrow
+      ? EVENT_TABLE.midLabel
+      : EVENT_TABLE.label
+
   return (
     <td
       className={`${EVENT_TABLE.cell} ${numeric ? 'tabular-nums xl:text-right' : ''} ${
         inline ? 'flex items-baseline justify-between gap-2' : ''
       } ${wide ? EVENT_TABLE.wide : ''} ${className}`}
     >
-      <span aria-hidden="true" className={inline ? EVENT_TABLE.inlineLabel : EVENT_TABLE.label}>
+      <span aria-hidden="true" className={labelClasses}>
         {label}
       </span>
       {children}
@@ -239,6 +259,8 @@ function EventRow({ row, filters }) {
   const reading = statusReading(row.status)
   const deleted = row.status === 'DELETED'
   const href = `${PATH}/${encodeURIComponent(row.id)}`
+  const startDay = formatDateIn(row.startsAt, 'UTC')
+  const startTime = formatTimeIn(row.startsAt, 'UTC')
 
   return (
     <tr className={EVENT_TABLE.row}>
@@ -247,7 +269,7 @@ function EventRow({ row, filters }) {
         className={`${EVENT_TABLE.cell} col-span-full text-left font-normal text-ink`}
       >
         <span className="block font-semibold break-words">{row.title}</span>
-        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:mt-1">
           <Link
             href={listHref(
               PATH,
@@ -269,14 +291,36 @@ function EventRow({ row, filters }) {
             </span>
           ) : null}
         </span>
-        {/* Below md: the four smaller columns in one line, inside the row's
-            own heading cell so the table's columns stay as they are. An
-            event is then its title, its state and start, and its actions. */}
+        {/* Below md: the state and the start on one line, then the four
+            smaller columns on another, inside the row's own heading cell so
+            the table's columns stay as they are. An event is then its title,
+            those two lines, and its actions. */}
+        <span className={EVENT_TABLE.stateStart} data-slot="row-state-start">
+          <StatusWord tone={reading.tone} srLabel="State:">
+            {reading.label}
+          </StatusWord>
+          {startDay && startTime ? (
+            <>
+              <span aria-hidden="true" className="text-ink-muted">
+                ·
+              </span>
+              <time dateTime={row.startsAt} className="tabular-nums">
+                <span className="sr-only">Starts </span>
+                {startDay}, {startTime}
+              </time>
+            </>
+          ) : null}
+          {deleted && row.deletion ? (
+            <span className="basis-full text-ink-muted">
+              Restores as {statusReading(row.deletion.restoreTo).label.toLowerCase()}
+            </span>
+          ) : null}
+        </span>
         <span className={EVENT_TABLE.summary} data-slot="row-summary">
           {eventRowSummary(row)}
         </span>
       </th>
-      <Cell label="State">
+      <Cell label="State" wide>
         <StatusWord tone={reading.tone} srLabel="State:">
           {reading.label}
         </StatusWord>
@@ -286,7 +330,7 @@ function EventRow({ row, filters }) {
           </span>
         ) : null}
       </Cell>
-      <Cell label="Starts (UTC)">
+      <Cell label="Starts (UTC)" wide>
         <Instant value={row.startsAt} />
       </Cell>
       <Cell label="Paid orders" numeric inline wide>
@@ -308,8 +352,8 @@ function EventRow({ row, filters }) {
       <Cell label="Last changed" wide className="text-ink-muted">
         <Instant value={row.updatedAt} />
       </Cell>
-      <Cell label="Actions" className="col-span-full sm:col-span-1">
-        <ul className="flex flex-row flex-wrap gap-x-6 gap-y-1 sm:flex-col sm:gap-1">
+      <Cell label="Actions" unlabelledNarrow className="col-span-full md:col-span-1">
+        <ul className="flex flex-row flex-wrap gap-x-6 gap-y-1 md:flex-col md:gap-1">
           <li>
             <Link href={href} className={`${TEXT_LINK} inline-flex min-h-6 items-center`}>
               {deleted ? 'Open its record' : 'Open in the editor'}

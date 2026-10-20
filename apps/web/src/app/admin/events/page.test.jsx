@@ -75,7 +75,12 @@ describe('All events', () => {
     const [, first] = within(table).getAllByRole('row')
 
     expect(within(first).getByRole('rowheader')).toHaveTextContent('Diwali Mela')
-    expect(within(first).getByText('On sale')).toBeInTheDocument()
+    // The state is said twice: in its own column, and below md in the row's
+    // heading cell, where its column is left out.
+    expect(within(within(first).getAllByRole('cell')[0]).getByText('On sale')).toBeInTheDocument()
+    expect(
+      within(first.querySelector('[data-slot="row-state-start"]')).getByText('On sale'),
+    ).toBeInTheDocument()
     expect(within(first).getByText('12')).toBeInTheDocument()
     expect(within(first).getByRole('link', { name: /Public page/ })).toHaveAttribute(
       'href',
@@ -124,7 +129,18 @@ describe('All events', () => {
       'page',
     )
     expect(screen.getByText(RESTORE_NOTE)).toBeInTheDocument()
-    expect(screen.getByText('Restores as sales paused')).toBeInTheDocument()
+    // In the State column, and below md in the row's heading cell.
+    const [, deletedRow] = within(screen.getByRole('table')).getAllByRole('row')
+
+    expect(
+      within(within(deletedRow).getAllByRole('cell')[0]).getByText('Restores as sales paused'),
+    ).toBeInTheDocument()
+    expect(
+      within(deletedRow.querySelector('[data-slot="row-state-start"]')).getByText(
+        'Restores as sales paused',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('Restores as sales paused')).toHaveLength(2)
     expect(screen.getByRole('link', { name: /Open its record/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Restore…/ })).toHaveAttribute(
       'href',
@@ -255,7 +271,14 @@ describe('All events', () => {
       '/admin/events?imported=only',
     )
     expect(screen.getByText('Imported')).toBeInTheDocument()
-    expect(screen.getByText('Restores as published')).toBeInTheDocument()
+    expect(screen.getAllByText('Restores as published')).toHaveLength(2)
+    expect(
+      within(
+        within(screen.getByRole('table'))
+          .getAllByRole('row')[1]
+          .querySelector('[data-slot="row-state-start"]'),
+      ).getByText('Restores as published'),
+    ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Restore…/ })).toHaveAttribute(
       'href',
       '/admin/events/cevent0000000000000000001#restore-event',
@@ -370,13 +393,25 @@ describe('the booking fee and paying at the venue in the list (SPEC3 §7.3)', ()
     expect(summary.textContent).toMatch(
       /^\d[\d,]* paid orders? · \d+ pictures? waiting · .+ · Pay at the venue (on|off)/u,
     )
-    // The cells it stands for are left out below md, the state, the start
-    // and the actions are not, and every row keeps one cell per column.
+    // Above it, on one line below md: the state chip and the start, in UTC.
+    const stateStart = header.querySelector('[data-slot="row-state-start"]')
+
+    expect(stateStart).toHaveClass('md:hidden', 'flex', 'flex-wrap')
+    expect(stateStart.querySelector('[data-slot="status-word"]')).toHaveTextContent(
+      'State: On sale',
+    )
+    expect(stateStart.textContent).toBe('State: On sale·Starts Oct 17, 2026, 11:30 PM UTC')
+    expect(stateStart.querySelector('time')).toHaveAttribute('datetime', '2026-10-17T23:30:00.000Z')
+    expect(stateStart.compareDocumentPosition(summary)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    // The cells those two lines stand for are left out below md, the actions
+    // are not, and every row keeps one cell per column.
     const cells = within(first).getAllByRole('cell')
 
     expect(cells).toHaveLength(EVENT_COLUMNS.length - 1)
     for (const [index, column] of EVENT_COLUMNS.slice(1).entries()) {
       const narrow = [
+        'State',
+        'Starts (UTC)',
         'Paid orders',
         'Pictures waiting',
         'Booking fee',
@@ -388,14 +423,29 @@ describe('the booking fee and paying at the venue in the list (SPEC3 §7.3)', ()
         expect(cells[index], column.heading).toHaveClass('max-md:hidden')
       else expect(cells[index], column.heading).not.toHaveClass('max-md:hidden')
     }
+
+    // Below md the actions sit under the summary with no label of their own,
+    // on one line, in a row padded p-3 with gap-y-1.
+    const actions = cells.at(-1)
+    const actionsLabel = actions.querySelector('span[aria-hidden="true"]')
+
+    expect(actionsLabel).toHaveTextContent('Actions')
+    expect(actionsLabel).toHaveClass('hidden', 'md:block', 'xl:hidden')
+    expect(actions).toHaveClass('col-span-full', 'md:col-span-1')
+    expect(actions.querySelector('ul')).toHaveClass('flex-row', 'md:flex-col')
+    expect(first).toHaveClass('p-3', 'gap-y-1', 'md:p-4', 'md:gap-y-3')
+    // Every other cell keeps its label below xl.
+    expect(cells[0].querySelector('span[aria-hidden="true"]')).toHaveClass('block', 'xl:hidden')
   })
 
   it('says the state as a word with its glyph, and the start as a day over a time', async () => {
     await renderPage()
 
     const [, first] = within(screen.getByRole('table')).getAllByRole('row')
-    const state = first.querySelector('[data-slot="status-word"]')
-    const starts = first.querySelector('time[datetime="2026-10-17T23:30:00.000Z"]')
+    // In the State and Starts (UTC) columns, from md.
+    const [stateCell, startsCell] = within(first).getAllByRole('cell')
+    const state = stateCell.querySelector('[data-slot="status-word"]')
+    const starts = startsCell.querySelector('time[datetime="2026-10-17T23:30:00.000Z"]')
 
     expect(state).toHaveTextContent('State: On sale')
     expect(state.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
