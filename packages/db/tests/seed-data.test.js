@@ -900,10 +900,10 @@ describe('seeded nights and seats', () => {
     const [session] = data.eventSessions.filter((candidate) => candidate.eventId === concert.id)
 
     expect(reserved).toHaveLength(1)
-    // apps/web/src/lib/sample-data.js: 'Balcony — Reserved Seating', $65.00.
+    // apps/web/src/lib/sample-data.js: 'Balcony: Reserved Seating', $65.00.
     expect(reserved[0]).toMatchObject({
       eventId: concert.id,
-      name: 'Balcony — Reserved Seating',
+      name: 'Balcony: Reserved Seating',
       priceCents: 6500,
       eventSessionId: session.id,
       priceZoneId: plan.zone.id,

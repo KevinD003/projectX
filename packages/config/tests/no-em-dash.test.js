@@ -9,6 +9,8 @@
  * app's and the API's sources, and the API contract (whose route and tag
  * descriptions become the Swagger page), is read through the parser ESLint
  * uses, so comments, which are developer documentation, are never strings.
+ * The development seed is read too: its events, tiers and descriptions are
+ * what every demonstration of the site shows.
  *
  * @module @desi-event/config/tests/no-em-dash
  */
@@ -26,6 +28,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.
 /** The sources whose strings people read. */
 const ROOTS = ['apps/web/src', 'apps/api/src', 'packages/api-contract/src']
 
+/** Single files whose strings people read: the development seed's events. */
+const FILES = ['packages/db/scripts/seed.mjs']
+
 /** The em dash. */
 const EM_DASH = '—'
 
@@ -36,12 +41,14 @@ const EM_DASH = '—'
  */
 function stringsWithAnEmDash() {
   const places = []
+  const files = [
+    ...ROOTS.flatMap((root) => sourceFilesUnder(path.join(ROOT, root))),
+    ...FILES.map((file) => path.join(ROOT, file)),
+  ]
 
-  for (const root of ROOTS) {
-    for (const file of sourceFilesUnder(path.join(ROOT, root))) {
-      for (const { text, line } of stringsOf(readFileSync(file, 'utf8'))) {
-        if (text.includes(EM_DASH)) places.push(`${path.relative(ROOT, file)}:${line}: ${text}`)
-      }
+  for (const file of files) {
+    for (const { text, line } of stringsOf(readFileSync(file, 'utf8'))) {
+      if (text.includes(EM_DASH)) places.push(`${path.relative(ROOT, file)}:${line}: ${text}`)
     }
   }
 
@@ -70,7 +77,7 @@ describe('no em dash in visible copy', () => {
     }
   })
 
-  it('finds none in apps/web/src, apps/api/src or packages/api-contract/src', () => {
+  it('finds none in apps/web/src, apps/api/src, packages/api-contract/src or the seed', () => {
     expect(stringsWithAnEmDash()).toEqual([])
   })
 })
