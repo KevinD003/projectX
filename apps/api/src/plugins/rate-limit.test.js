@@ -52,11 +52,12 @@ afterEach(() => {
 })
 
 describe('the wrong referral codes budget', () => {
-  it('has the limits SPEC3 §4.4 names', () => {
+  it('has the limits SPEC3 §4.4 names, plus the global ceiling (finding F8)', () => {
     expect(DEFAULT_REFERRAL_ATTEMPT_LIMIT).toEqual({
       actorMax: 10,
       addressMax: 30,
       sharedMax: 300,
+      globalMax: 1000,
       timeWindow: '10 minutes',
     })
   })
@@ -146,6 +147,7 @@ describe('the wrong referral codes budget', () => {
     expect(buckets.map((bucket) => bucket.key)).toEqual([
       'referral:actor:acct-1',
       expect.stringMatching(/^referral:addr:[0-9a-f]{32}$/u),
+      'referral:global',
     ])
     expect(JSON.stringify(buckets)).not.toContain('203.0.113.9')
     expect(sameAddressOtherBrowser[1].key).toBe(buckets[1].key)
@@ -159,12 +161,41 @@ describe('the wrong referral codes budget', () => {
     expect(referralAttemptBuckets(unaddressed('acct-x')).map((bucket) => bucket.key)).toEqual([
       'referral:actor:acct-x',
       'referral:shared',
+      'referral:global',
     ])
 
     budget.recordRefusal(unaddressed('acct-x'))
     budget.recordRefusal(unaddressed('acct-y'))
 
     await expect(budget.hook(unaddressed('acct-z'))).rejects.toMatchObject({ statusCode: 429 })
+  })
+
+  it('bounds a pool of accounts and addresses by the global ceiling (finding F8)', async () => {
+    // Each account and each address has its own generous budget, so before the
+    // global ceiling one attacker could multiply guesses by spreading them. A
+    // fresh account from a fresh address for every guess keeps the per-actor and
+    // per-address buckets empty; the global one still fills and refuses.
+    const budget = referralAttemptBudget({ actorMax: 1_000, addressMax: 1_000, globalMax: 5 })
+    const fresh = (n) =>
+      request({
+        actorId: `acct-${n}`,
+        ip: '127.0.0.1',
+        headers: { [FORWARDED]: `203.0.113.${n}` },
+        body: NAMED,
+      })
+
+    for (let guess = 0; guess < 5; guess += 1) {
+      await budget.hook(fresh(guess))
+      budget.recordRefusal(fresh(guess))
+    }
+
+    // A brand-new account from a brand-new address — its own buckets empty — is
+    // still refused, because the shared ceiling is spent.
+    await expect(budget.hook(fresh(99))).rejects.toMatchObject({
+      statusCode: 429,
+      code: 'RATE_LIMITED',
+      message: REFERRAL_ATTEMPTS_SENTENCE,
+    })
   })
 
   it('forgets a window once it has passed', async () => {

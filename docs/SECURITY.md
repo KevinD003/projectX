@@ -42,6 +42,50 @@ The keys are per account where a session exists, because every browser request
 reaches the API through one same-origin proxy address. The table is in
 `docs/api.md` ("Rate limits").
 
+_Updated 2026-10-20 (findings F2, F5, F8, F10)._ The credential surfaces that
+were still keyed on the socket peer are keyed on the client instead:
+
+- **The auth limiter and the login throttle (F2).** With `trustProxy:false`,
+  `request.ip` is the same-origin web proxy for every browser user, so the
+  ten-a-minute auth bucket and the per-IP half of the login throttle were one
+  bucket for the whole audience: spraying wrong passwords at one account denied
+  the entire site's sign-in. They now key on the address the trusted web tier
+  forwards in `x-desi-client-address` (believed only from
+  `TRAFFIC_TRUSTED_FORWARDERS`, as visit counting already does), falling back to
+  the socket peer for a direct caller. The per-account half of the login
+  throttle always keyed on the submitted email, so it was never the collapsing
+  one. The code path and timing are unchanged whether or not the account exists.
+- **Step-up lockout (F10).** A wrong step-up (TOTP or password) now records a
+  per-account `LoginAttempt` and is bounded by the same throttle as a wrong
+  sign-in, keyed on the account's email and independent of the socket IP. Before
+  this, step-up recorded no attempt and consulted no throttle, so guessing at
+  the step-up gate was bounded only by the shared IP auth limit.
+- **Referral-code guessing (F8).** A global ceiling on wrong referral-code
+  attempts sits beside the per-account and per-address budgets, so a pool of
+  accounts or addresses can no longer multiply the budget; and the minimum
+  length of a custom referral code rose from six to ten, so vanity codes are no
+  longer dictionary-guessable. Only wrong (`NOT_ACCEPTED`) attempts are counted,
+  so applying a valid code is never refused by the ceiling.
+
+### Registration is a bounded existence oracle (F5)
+
+`POST /v1/auth/register` answers `409` for an address that already has an account
+and `201` for one that does not, which tells a caller whether an address is
+registered. Removing the oracle entirely requires an **email-verification flow**
+— register would stop returning a session and would answer out of band — which
+is **out of scope** here. What is implemented is a **mitigation, not a removal**:
+
+- a per-address and per-email budget on register (default 30 an hour an address,
+  5 an hour an email), so the oracle cannot be read in bulk;
+- the password hash runs on both the taken-address and the free-address path, so
+  the response time does not answer the question the `409`/`201` body refuses to;
+- every attempt is counted whichever answer it would get, so a `409` probe is
+  not cheaper than a real sign-up.
+
+The `409` is kept for the sign-up form's own usability. The residual — a single
+address can still be checked a few times an hour — is accepted until the
+verification flow exists.
+
 ---
 
 ## Multi-factor authentication
@@ -1020,6 +1064,19 @@ same queries. The control is a budget of wrong guesses only: 10 per 10 minutes
 per account, 30 per 10 minutes per address (an HMAC of the address with a
 process key), and, when no address is known, one shared bucket of 300 per 10
 minutes that is never skipped.
+
+_Updated 2026-10-20 (finding F8)._ Two gaps the budget above did not close:
+
+- A pool of accounts or addresses multiplied the per-account and per-address
+  budgets, so a distributed guesser was bounded only by how many it held. A
+  **global ceiling** (1,000 wrong guesses per 10 minutes, every attempt counted
+  whatever account or address it came from) now bounds the aggregate. A valid
+  code is never counted, so a real code still applies even when the ceiling is
+  full.
+- A custom code could be as short as six characters, which is
+  dictionary-guessable. The minimum length of a **custom** referral code rose to
+  ten (`REFERRAL_CODE_PATTERN`); generated codes (`XXXXX-XXXXX`, eleven
+  characters, ~49 bits) are unchanged and still valid.
 
 - **Timing.** A guesser could still tell that a code exists, and applies to
   them, from a lock wait at the charge. The budget is what bounds it.
