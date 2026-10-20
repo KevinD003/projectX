@@ -653,6 +653,34 @@ async function settled(page) {
   // Fonts change metrics rather than colour, but a scan that begins mid-swap
   // measures a layout that nothing will ever look like.
   await page.evaluate(() => document.fonts.ready)
+
+  // Last, every finite transition and animation finished. A control that has
+  // just left a busy state fades back over --duration-fast: CI caught the
+  // checkout's Pay button 120ms into that fade at 320 wide, magenta blended to
+  // #d36798 under white text, 3.4:1. At rest it is the full magenta. Infinite
+  // animations (none should run under this sweep's checks, and the door's scan
+  // line stops on a read) are left alone, so this cannot hang on one; a
+  // finite one still running after ten seconds fails the case instead.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document
+              .getAnimations()
+              .filter(
+                (animation) =>
+                  animation.playState === 'running' &&
+                  Number.isFinite(animation.effect?.getComputedTiming().endTime),
+              ).length,
+        ),
+      {
+        message: 'a transition or animation never finished before the scan',
+        intervals: [50, 100, 250],
+        timeout: 10_000,
+      },
+    )
+    .toBe(0)
 }
 
 /**
