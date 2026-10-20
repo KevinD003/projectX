@@ -106,6 +106,7 @@ import {
   takePaymentSentence,
   tonightOf,
 } from '../lib/door.js'
+import { zoneWords } from '../lib/format.js'
 import { formatAmount } from '../lib/pricing.js'
 import { looksLikeGroupCode } from '../lib/pass-shape.js'
 import { EVERY_NIGHT, sessionDisplayLabel } from '../lib/sessions.js'
@@ -676,7 +677,7 @@ export function DoorWorkspace({ events, platform = false, venuePaymentsFor = [] 
                 ) : null}
                 <p className="mt-1 text-ink-muted">
                   {doorTime(events[0].event.startsAt, events[0].event.timezone)} ·{' '}
-                  {events[0].event.timezone}
+                  {zoneWords(events[0].event.timezone, events[0].event.startsAt)}
                 </p>
                 <p className="mt-1 text-ink-muted">{authorityLabel(events[0])}</p>
               </div>
@@ -1067,7 +1068,7 @@ function PreviewCard({
     (preview.outcome === 'ADMISSIBLE'
       ? 'Check the ticket, then admit'
       : preview.outcome === 'ALREADY_CHECKED_IN'
-        ? 'Already admitted — do not admit again'
+        ? 'Already admitted: do not admit again'
         : 'Do not admit')
 
   // A ticket still to be checked is a gold-edged plate; one already in is
@@ -1104,7 +1105,8 @@ function PreviewCard({
         <div>
           <dt className="text-ink-muted">Starts</dt>
           <dd className="text-ink">
-            {doorTime(preview.event.startsAt, preview.event.timezone)} · {preview.event.timezone}
+            {doorTime(preview.event.startsAt, preview.event.timezone)} ·{' '}
+            {zoneWords(preview.event.timezone, preview.event.startsAt)}
           </dd>
         </div>
         {preview.tier ? (
@@ -1483,7 +1485,7 @@ function GroupPreviewCard({
           <ul className="mt-1 space-y-1 text-sm text-ink">
             {alreadyIn.map((ticket) => (
               <li key={ticket.ticketId} className="break-words">
-                {groupTicketWords(ticket, night)} —{' '}
+                {groupTicketWords(ticket, night)}:{' '}
                 {ticket.checkedInAt
                   ? `already in at ${doorTime(ticket.checkedInAt, preview.event.timezone)}`
                   : 'already in'}
@@ -1499,7 +1501,7 @@ function GroupPreviewCard({
           <ul className="mt-1 space-y-1 text-sm text-ink">
             {refused.map((ticket) => (
               <li key={ticket.ticketId} className="break-words">
-                {groupTicketWords(ticket, night)} — {refusalSentence(ticket.refusal)}
+                {groupTicketWords(ticket, night)}: {refusalSentence(ticket.refusal)}
               </li>
             ))}
           </ul>
@@ -1595,7 +1597,7 @@ function GroupResultCard({ result, currency, night, headingId, headingRef, onCle
         <ul className="mt-3 space-y-1 text-sm text-ink">
           {admittedNow.map((ticket) => (
             <li key={ticket.ticketId} className="break-words">
-              {groupTicketWords(ticket, night)} — admitted at{' '}
+              {groupTicketWords(ticket, night)}: admitted at{' '}
               {doorTime(ticket.checkedInAt, result.event.timezone)}
             </li>
           ))}
@@ -1608,7 +1610,7 @@ function GroupResultCard({ result, currency, night, headingId, headingRef, onCle
           <ul className="mt-1 space-y-1 text-sm text-ink">
             {alreadyIn.map((ticket) => (
               <li key={ticket.ticketId} className="break-words">
-                {groupTicketWords(ticket, night)} —{' '}
+                {groupTicketWords(ticket, night)}:{' '}
                 {ticket.checkedInByYou ? 'admitted by you at ' : 'admitted at '}
                 {doorTime(ticket.checkedInAt, result.event.timezone)}
               </li>
