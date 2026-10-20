@@ -462,19 +462,21 @@ describe('privacy:redact', () => {
     expect(holders).toEqual(['OWNER'])
   })
 
-  it('is not granted by any platform role except SUPER_ADMIN and ADMIN', () => {
+  it('is granted by no platform role but SUPER_ADMIN (ADR 0022: not the platform administrator)', () => {
     const holders = Object.entries(PLATFORM_ROLE_CAPABILITIES)
       .filter(([, capabilities]) => capabilities.includes(CAPABILITIES.PRIVACY_REDACT))
       .map(([role]) => role)
       .sort()
 
     // SUPER_ADMIN holds every capability by construction (it is
-    // `[...ALL_CAPABILITIES]`), and ADMIN every one but platform:role_manage
-    // (ADR 0018), so neither is an exception this table can make. What matters
-    // is that no narrow staff role — SUPPORT, MODERATOR, FINANCE_ADMIN — picks
-    // it up, and that organisation scope is still enforced below the
-    // capability check for the roles that do.
-    expect(holders).toEqual(['ADMIN', 'SUPER_ADMIN'])
+    // `[...ALL_CAPABILITIES]`). The platform administrator (ADMIN) deliberately
+    // does not: `privacy:redact` is a super-admin-only capability (ADR 0022), so
+    // ADMIN cannot redact an organiser's buyer across tenants. No narrow staff
+    // role — SUPPORT, MODERATOR, FINANCE_ADMIN — picks it up either. An
+    // organisation OWNER still holds it through their membership (above).
+    expect(holders).toEqual(['SUPER_ADMIN'])
+    expect(SUPER_ADMIN_ONLY_CAPABILITIES).toContain(CAPABILITIES.PRIVACY_REDACT)
+    expect(PLATFORM_ROLE_CAPABILITIES.ADMIN).not.toContain(CAPABILITIES.PRIVACY_REDACT)
   })
 
   it('is organisation-scoped, so every route asserting it must name one', () => {
@@ -496,12 +498,17 @@ describe('privacy:redact', () => {
 })
 
 describe('the platform administrator (ADMIN)', () => {
-  it('holds every capability except the super-admin-only ones (ADR 0018)', () => {
-    expect([...SUPER_ADMIN_ONLY_CAPABILITIES]).toEqual(['platform:role_manage'])
+  it('holds every capability except the super-admin-only ones (ADR 0018, 0022)', () => {
+    // Three now, sorted: changing platform roles (ADR 0018), and — ADR 0022 —
+    // redacting an organiser's buyer and managing an organiser's promo codes
+    // across tenants.
+    const SUPER_ONLY = ['platform:role_manage', 'privacy:redact', 'promo:manage']
+
+    expect([...SUPER_ADMIN_ONLY_CAPABILITIES]).toEqual(SUPER_ONLY)
     expect([...PLATFORM_ADMINISTRATOR_CAPABILITIES]).toEqual(
-      ALL_CAPABILITIES.filter((capability) => capability !== 'platform:role_manage'),
+      ALL_CAPABILITIES.filter((capability) => !SUPER_ONLY.includes(capability)),
     )
-    expect(PLATFORM_ADMINISTRATOR_CAPABILITIES).toHaveLength(ALL_CAPABILITIES.length - 1)
+    expect(PLATFORM_ADMINISTRATOR_CAPABILITIES).toHaveLength(ALL_CAPABILITIES.length - 3)
     expect([...PLATFORM_ROLE_CAPABILITIES.ADMIN]).toEqual([...PLATFORM_ADMINISTRATOR_CAPABILITIES])
   })
 
@@ -541,10 +548,8 @@ describe('the platform administrator (ADMIN)', () => {
       'connect:manage',
       'ledger:manage',
       'reconciliation:manage',
-      'privacy:redact',
       'retention:view',
       'attendee:export',
-      'promo:manage',
       'team:invite',
       'event:delete',
       'event:delete_unsold',
@@ -556,6 +561,37 @@ describe('the platform administrator (ADMIN)', () => {
       expect(PLATFORM_ROLE_CAPABILITIES.SUPER_ADMIN, capability).toContain(capability)
     }
   })
+
+  it('does not redact a buyer or manage promo codes across tenants; only SUPER_ADMIN does (ADR 0022)', () => {
+    // The scope tightening of 2026-10-20: both are super-admin-only now, so a
+    // platform administrator holds neither through its platform role. They stay
+    // organisation capabilities a membership grants (OWNER redacts; EVENT_MANAGER
+    // and up manage promo), which is why they are NOT platform-only.
+    for (const capability of ['privacy:redact', 'promo:manage']) {
+      expect(SUPER_ADMIN_ONLY_CAPABILITIES, capability).toContain(capability)
+      expect(PLATFORM_ONLY_CAPABILITIES, capability).not.toContain(capability)
+      expect(PLATFORM_ROLE_CAPABILITIES.ADMIN, capability).not.toContain(capability)
+      expect(PLATFORM_ROLE_CAPABILITIES.SUPER_ADMIN, capability).toContain(capability)
+    }
+
+    // The organisation grants are untouched by the tightening.
+    expect(ORG_ROLE_CAPABILITIES.OWNER).toContain('privacy:redact')
+    expect(ORG_ROLE_CAPABILITIES.EVENT_MANAGER).toContain('promo:manage')
+  })
+
+  it.each(['privacy:redact', 'promo:manage'])(
+    'refuses a doctored table that hands ADMIN the super-admin-only %s',
+    (capability) => {
+      const doctored = {
+        ...PLATFORM_ROLE_CAPABILITIES,
+        ADMIN: [...PLATFORM_ROLE_CAPABILITIES.ADMIN, capability],
+      }
+
+      expect(() => assertPlatformAdministratorBounds(doctored)).toThrow(
+        /never hold a super-admin-only capability/,
+      )
+    },
+  )
 
   it('passes the load-time bound on the shipped table', () => {
     expect(assertPlatformAdministratorBounds(PLATFORM_ROLE_CAPABILITIES)).toBe(
