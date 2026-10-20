@@ -319,7 +319,7 @@ function readCards(page) {
  *
  * The number of pages is read from the listing's own "Page 1 of N" rather
  * than worked out from a page size this file would have to copy. Every page
- * is reached by pressing **Next →**, and each arrival is waited for by its
+ * is reached by pressing **Next**, and each arrival is waited for by its
  * page number, so no page is read twice or half-rendered.
  *
  * @param {object} page The Playwright page, on page 1 of a listing.
@@ -342,7 +342,7 @@ async function walkListing(page, visit) {
   for (let number = 1; ; number += 1) {
     if (visit(cards, number) === true || number >= pages) return { total, pages }
 
-    await nav.getByRole('link', { name: 'Next →', exact: true }).click()
+    await nav.getByRole('link', { name: 'Next', exact: true }).click()
     await expect(page).toHaveURL((url) => url.searchParams.get('page') === String(number + 1))
     await expect(nav.getByText(`Page ${number + 1} of ${pages}`, { exact: true })).toBeVisible()
 
@@ -354,7 +354,7 @@ async function walkListing(page, visit) {
  * Every venue name the anonymous directory shows, across all of its pages.
  *
  * The venue directory states no total — its filter runs after the page is
- * read, so the API's total would be a lie — so the walk follows **Next →**
+ * read, so the API's total would be a lie — so the walk follows **Next**
  * for as long as the page offers one.
  *
  * @param {object} page The Playwright page, on page 1 of `/venues`.
@@ -376,7 +376,7 @@ async function everyDirectoryVenue(page) {
 
     // The summary and the pagination arrive in one server render, so once the
     // summary is on screen the link's presence is settled.
-    const next = nav.getByRole('link', { name: 'Next →', exact: true })
+    const next = nav.getByRole('link', { name: 'Next', exact: true })
 
     if ((await next.count()) === 0) return names.map((name) => name.trim())
 
