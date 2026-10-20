@@ -157,6 +157,29 @@ describe('DoorWorkspace: looking up, then admitting', () => {
     expect(screen.getByText('Assigned to this event (scanner)')).toBeTruthy()
   })
 
+  it('names the event’s zone in words, never as the database spells it', async () => {
+    const user = userEvent.setup()
+    const chicago = {
+      ...EVENT,
+      startsAt: '2026-10-24T00:30:00.000Z',
+      timezone: 'America/Chicago',
+    }
+
+    apiFetch.mockResolvedValueOnce(answer(200, { data: { ...ADMISSIBLE.data, event: chicago } }))
+    render(<DoorWorkspace events={[{ ...ENTRY, event: chicago }]} />)
+
+    // On the event's plate, before any lookup.
+    expect(screen.getByText(/· Central Time \(CDT\)$/u)).toBeTruthy()
+
+    await lookUp(user)
+    await screen.findByRole('heading', { name: /check the ticket, then admit/iu })
+
+    const starts = screen.getByText('Starts', { selector: 'dt' }).nextElementSibling
+
+    expect(starts.textContent).toBe('Oct 23, 2026, 7:30 PM · Central Time (CDT)')
+    expect(document.body.textContent).not.toContain('America/Chicago')
+  })
+
   it('looks a ticket up without admitting it, and names who it is', async () => {
     const user = userEvent.setup()
 
@@ -1258,8 +1281,8 @@ describe('DoorWorkspace: a group pass', () => {
     const group = await screen.findByRole('group', { name: 'Who is at the door now' })
 
     expect(within(group).getAllByRole('checkbox')).toHaveLength(1)
-    expect(screen.getByText(/Guest 2 · General Admission — already in at/u)).toBeTruthy()
-    expect(screen.getByText(/Guest 3 · General Admission — This ticket was refunded/u)).toBeTruthy()
+    expect(screen.getByText(/Guest 2 · General Admission: already in at/u)).toBeTruthy()
+    expect(screen.getByText(/Guest 3 · General Admission: This ticket was refunded/u)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Admit 1' })).toBeTruthy()
   })
 
@@ -1355,8 +1378,8 @@ describe('DoorWorkspace: a platform administrator', () => {
       .getAllByRole('option')
       .map((option) => option.textContent)
 
-    expect(options[1]).toMatch(/^Navratri Garba Night — Rangoli — /u)
-    expect(options[2]).toMatch(/^Dhol Night — Dhol Nation — /u)
+    expect(options[1]).toMatch(/^Navratri Garba Night · Rangoli · /u)
+    expect(options[2]).toMatch(/^Dhol Night · Dhol Nation · /u)
 
     await user.selectOptions(
       screen.getByLabelText(/event you are admitting to/iu),
@@ -1656,7 +1679,7 @@ describe('DoorWorkspace: an event of more than one night', () => {
     expect(screen.getByLabelText('Guest 1 · Season · Every night')).toBeTruthy()
     expect(
       screen.getByText(
-        'Guest 2 · Night 1 only · Night 1 · Thu, Oct 1 · 7:00 PM — This ticket is for a different night. Do not admit.',
+        'Guest 2 · Night 1 only · Night 1 · Thu, Oct 1 · 7:00 PM: This ticket is for a different night. Do not admit.',
       ),
     ).toBeTruthy()
   })
@@ -1721,7 +1744,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     expect(politeRegion(container).textContent).toBe('Found: Asha Door. Payment to take: $40.00.')
 
     apiFetch.mockResolvedValueOnce(answer(200, PAID_ADMISSION))
-    await user.click(within(card).getByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(within(card).getByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect(apiFetch).toHaveBeenCalledTimes(2)
     expect(apiFetch.mock.calls[1][0]).toBe('/v1/tickets/check-in')
@@ -1840,7 +1863,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
     await lookUp(user)
 
     apiFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
-    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'No answer from the server. The payment may or may not have been recorded, and the ticket may or may not be in. Keep the money in hand and press Retry: it cannot record the payment twice.',
@@ -1856,7 +1879,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
         },
       }),
     )
-    await user.click(screen.getByRole('button', { name: 'Retry: payment taken $40.00 — admit' }))
+    await user.click(screen.getByRole('button', { name: 'Retry: payment taken $40.00, admit' }))
 
     // The identical request: the same pass, reference and amount.
     expect(sent(2)).toEqual(sent(1))
@@ -1892,7 +1915,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
         },
       }),
     )
-    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect(
       await screen.findByRole('heading', { name: 'Already admitted by another steward' }),
@@ -1925,7 +1948,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
       await lookUp(user)
 
       apiFetch.mockResolvedValueOnce(answer(status, { error: { code, message } }))
-      await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+      await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
       expect((await screen.findByRole('alert')).textContent).toBe(message)
       expect(screen.queryByRole('heading', { name: 'Admitted' })).toBeNull()
@@ -1978,7 +2001,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
         },
       }),
     )
-    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00 — admit' }))
+    await user.click(await screen.findByRole('button', { name: 'Payment taken: $40.00, admit' }))
 
     expect(await screen.findByRole('heading', { name: 'Cancelled, not paid' })).toBeTruthy()
     expect(screen.getByRole('alert').textContent).toMatch(
@@ -2084,9 +2107,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
           },
         }),
       )
-      await user.click(
-        within(card).getByRole('button', { name: 'Payment taken: $40.00 — admit 2' }),
-      )
+      await user.click(within(card).getByRole('button', { name: 'Payment taken: $40.00, admit 2' }))
 
       expect(sent(1)).toEqual({
         code: 'DEG-ABCDEFGH2345',
@@ -2137,7 +2158,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
 
       apiFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
       await user.click(
-        await screen.findByRole('button', { name: 'Payment taken: $80.00 — admit 3' }),
+        await screen.findByRole('button', { name: 'Payment taken: $80.00, admit 3' }),
       )
 
       expect((await screen.findByRole('alert')).textContent).toMatch(/Keep the money in hand/u)
@@ -2145,9 +2166,7 @@ describe('DoorWorkspace: taking a payment at the door (SPEC3 §12.8, SPEC3-XI §
       apiFetch.mockResolvedValueOnce(
         answer(409, { error: { code: 'CONFLICT', message: 'x', reason: 'GROUP_CHANGED' } }),
       )
-      await user.click(
-        screen.getByRole('button', { name: 'Retry: payment taken $80.00 — admit 3' }),
-      )
+      await user.click(screen.getByRole('button', { name: 'Retry: payment taken $80.00, admit 3' }))
 
       expect(sent(2)).toEqual(sent(1))
       expect(sent(2).paymentCents).toBe(8000)
@@ -2218,7 +2237,7 @@ describe('DoorWorkspace: the verdict, as a band', () => {
     render(<DoorWorkspace events={[ENTRY]} />)
     await lookUp(user)
 
-    const band = await bandOf('Already admitted — do not admit again')
+    const band = await bandOf('Already admitted: do not admit again')
 
     expect(band.getAttribute('data-verdict')).toBe('warn')
     expect(band.className).toContain('bg-door-warn text-door-warn-ink')
