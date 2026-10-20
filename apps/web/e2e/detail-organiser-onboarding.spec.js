@@ -122,10 +122,11 @@ const names = () => onboardingNames(ids().tag)
  * What a platform administrator's rail offers, in order (ADR 0018): the
  * Platform group first, then everything a super administrator's does — the
  * workspace's platform doors, Check-in and
- * the imported events' door team among them, the money, privacy and retention,
+ * the imported events' door team among them, the money, retention,
  * review, inviting organisers, every organisation's events, imports and People
- * and roles — though not the platform-role change on that page, which is drawn
- * for super administrators alone.
+ * and roles — except Privacy, which is a super administrator's alone across
+ * tenants now (ADR 0022: `privacy:redact` is super-admin-only), and except the
+ * platform-role change on People and roles, drawn for super administrators alone.
  *
  * Written out rather than imported: a test that read the navigation's own
  * table would agree with whatever the table said.
@@ -156,7 +157,8 @@ const ADMIN_RAIL = Object.freeze([
   'Operations',
   'Notifications',
   'Moderation',
-  'Privacy',
+  // No Privacy: a platform administrator no longer reaches the privacy surface
+  // across tenants (ADR 0022).
   'Retention',
   'Organisation checks',
   'Pictures waiting',

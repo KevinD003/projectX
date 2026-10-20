@@ -702,3 +702,88 @@ describe('guests’ names still waiting to be printed', () => {
     await app.close()
   })
 })
+
+describe('cross-tenant scope: who may redact a tenant they are not a member of (ADR 0022)', () => {
+  /** The platform administrator (ADMIN), never a member of the fixture organisation. */
+  const PLATFORM_ADMIN = 'anil@desi-event.example'
+
+  /** The platform super administrator (SUPER_ADMIN), also not a member. */
+  const SUPER_ADMIN = 'ops@desi-event.example'
+
+  it('refuses a platform administrator who is not a member (403), where it used to accept (201)', async () => {
+    const { app, prisma, ids } = await createTestApp()
+    // Stepped up, so the only gate left is the capability: proving it is the
+    // scope tightening that refuses, not a missing second factor.
+    const headers = await authorised(app, PLATFORM_ADMIN)
+    const subject = subjectInOrganisation(prisma, ids)
+    const before = prisma._store.privacyRequest.length
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/v1/organizations/${ids.organization.id}/privacy/requests`,
+      headers,
+      payload: { subjectId: subject.id, reason: 'ORGANIZER_REQUEST' },
+    })
+
+    // Before ADR 0022 the platform administrator held `privacy:redact`
+    // platform-wide and this answered 201; now it holds neither it nor a
+    // membership here, so the capability guard refuses.
+    expect(response.statusCode).toBe(403)
+    expect(response.json().error.code).toBe('FORBIDDEN')
+    expect(prisma._store.privacyRequest).toHaveLength(before)
+
+    await app.close()
+  })
+
+  it('still lets a platform super administrator redact across tenants (201)', async () => {
+    const { app, prisma, ids } = await createTestApp()
+    const headers = await authorised(app, SUPER_ADMIN)
+    const subject = subjectInOrganisation(prisma, ids)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/v1/organizations/${ids.organization.id}/privacy/requests`,
+      headers,
+      payload: { subjectId: subject.id, reason: 'ORGANIZER_REQUEST' },
+    })
+
+    // The chosen policy: a super administrator keeps cross-tenant reach.
+    expect(response.statusCode).toBe(201)
+    expect(response.json().data.state).toBe('REQUESTED')
+
+    await app.close()
+  })
+
+  it('still lets the organisation owner redact its own tenant (201)', async () => {
+    const { app, prisma, ids } = await createTestApp()
+    const headers = await authorised(app, OWNER)
+    const subject = subjectInOrganisation(prisma, ids)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/v1/organizations/${ids.organization.id}/privacy/requests`,
+      headers,
+      payload: { subjectId: subject.id, reason: 'ORGANIZER_REQUEST' },
+    })
+
+    expect(response.statusCode).toBe(201)
+
+    await app.close()
+  })
+
+  it('refuses the platform administrator the list of this tenant’s requests too (403)', async () => {
+    const { app, ids } = await createTestApp()
+    const headers = bearer(await signIn(app, PLATFORM_ADMIN))
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/v1/organizations/${ids.organization.id}/privacy/requests`,
+      headers,
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json().error.code).toBe('FORBIDDEN')
+
+    await app.close()
+  })
+})

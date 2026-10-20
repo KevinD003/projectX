@@ -15,14 +15,26 @@
  */
 
 /**
- * The capabilities only a super administrator holds, mirroring
+ * The capabilities a platform administrator (`ADMIN`) does not reach through
+ * its platform role — `platform:admin` never stands in for one — mirroring
  * `SUPER_ADMIN_ONLY_CAPABILITIES` in `@desi-event/permissions` (a test holds
  * the two equal). Written out rather than imported so this module stays free
  * of imports for the client components that ask it.
  *
+ * `platform:role_manage` is platform-only, so no membership grants it either
+ * (ADR 0018). `privacy:redact` and `promo:manage` are organisation
+ * capabilities a membership still grants (ADR 0022): a platform administrator
+ * loses only the cross-tenant shortcut, not a membership it holds — which is
+ * why the guard below sits in front of the `platform:admin` stand-in and not in
+ * front of the membership check.
+ *
  * @type {ReadonlyArray<string>}
  */
-export const SUPER_ADMIN_ONLY_CAPABILITIES = Object.freeze(['platform:role_manage'])
+export const SUPER_ADMIN_ONLY_CAPABILITIES = Object.freeze([
+  'platform:role_manage',
+  'privacy:redact',
+  'promo:manage',
+])
 
 /**
  * Whether this session holds a capability, optionally in one organisation.
@@ -49,14 +61,19 @@ export function sessionCan(session, capability, organizationId) {
   if ((session.capabilities ?? []).includes(capability)) return true
   if (!organizationId) return false
 
-  // Held through the platform role or not at all: `platform:admin` does not
-  // stand in for it. So a platform administrator (ADMIN) never appears to hold
-  // `platform:role_manage`, which only a super administrator holds (ADR 0018).
-  if (SUPER_ADMIN_ONLY_CAPABILITIES.includes(capability)) return false
-
-  // `platform:admin` is the power to grant oneself any membership, so it still
-  // answers for every organisation, as it always did here.
-  if ((session.capabilities ?? []).includes('platform:admin')) return true
+  // `platform:admin` is the power to grant oneself any membership, so it stands
+  // in for an organisation capability in every organisation — except a
+  // super-admin-only one. A platform administrator (ADMIN) never appears to hold
+  // `platform:role_manage` (ADR 0018), and no longer reaches `privacy:redact` or
+  // `promo:manage` across tenants (ADR 0022): those three a platform
+  // administrator holds only where its own membership grants them, through the
+  // check below, matching `can()` in `@desi-event/permissions`.
+  if (
+    !SUPER_ADMIN_ONLY_CAPABILITIES.includes(capability) &&
+    (session.capabilities ?? []).includes('platform:admin')
+  ) {
+    return true
+  }
 
   const membership = (session.memberships ?? []).find(
     (candidate) => candidate.organizationId === organizationId,
@@ -99,9 +116,10 @@ export function membershipCan(session, capability, organizationId) {
  * The organisations this session may run privacy erasures in.
  *
  * Membership-scoped on purpose. `privacy:redact` is an organisation capability
- * held by OWNER alone, so asking the unscoped platform question would refuse
- * every owner and pass every platform administrator — backwards, in the one
- * area where being wrong erases somebody. The API authorises again, per
+ * held by OWNER through a membership, so asking the unscoped platform question
+ * would refuse every owner and pass a platform super administrator (never a
+ * platform administrator, which no longer holds it: ADR 0022) — backwards, in
+ * the one area where being wrong erases somebody. The API authorises again, per
  * organisation, with a step-up window on top; this only decides what the screens
  * offer.
  *
