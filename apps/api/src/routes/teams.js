@@ -106,7 +106,7 @@ import {
 } from '../lib/privilege-change.js'
 import { defineRoute } from '../lib/register.js'
 import { TRANSACTION_BUDGETS, budgetedTransaction } from '../lib/transaction-budget.js'
-import { authRateLimit } from '../plugins/rate-limit.js'
+import { DEFAULT_AUTH_LIMIT } from '../plugins/rate-limit.js'
 
 /**
  * The step-up policy that stands between a team manager and full addresses.
@@ -623,10 +623,14 @@ export function registerTeamRoutes(app, { prisma, authLimit, deliver, deliveryMo
   // request reaches the API through the web app's same-origin proxy — so keyed
   // by address, the whole site shared one budget of ten invitations, new codes
   // or acceptances a minute, and one busy team could lock everybody else out.
-  // Run at `preHandler`, after the session guard, so the account is known.
+  // Run at `preHandler`, after the session guard, so the account is known. The
+  // numeric credential `max` is taken straight from `DEFAULT_AUTH_LIMIT` rather
+  // than `authRateLimit`, whose per-key `max` function and address keying belong
+  // to the auth routes, not to this account-keyed budget (finding F2).
   const limit = {
     rateLimit: {
-      ...authRateLimit(authLimit),
+      ...DEFAULT_AUTH_LIMIT,
+      ...authLimit,
       hook: 'preHandler',
       keyGenerator: (request) =>
         request.actor?.id ? `team:actor:${request.actor.id}` : `team:ip:${request.ip}`,

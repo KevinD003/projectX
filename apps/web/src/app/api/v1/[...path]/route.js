@@ -40,12 +40,14 @@
  * is never forwarded on any path. `traffic/events`, the platform's list, is a
  * session route like any other.
  *
- * A checkout's quote and charge (`POST orders/quote`, `POST orders`) are
- * forwarded with their session as any other request, plus the visitor's
- * address as this server read it, so the API can ration wrong referral codes
- * per address (SPEC3 §4.4); nothing else a beacon carries is added. A
- * production server with no proxy setting forwards no address there
- * ({@link checkoutAddress}): the browser could name it.
+ * A checkout's quote and charge (`POST orders/quote`, `POST orders`) and the
+ * auth routes' credential submissions (`POST auth/*`) are forwarded with their
+ * session as any other request, plus the visitor's address as this server read
+ * it, so the API can ration wrong referral codes per address (SPEC3 §4.4) and
+ * sign-in attempts per client (finding F2); nothing else a beacon carries is
+ * added. A production server with no proxy setting forwards no address there
+ * ({@link checkoutAddress}): the browser could name it, so the API keeps those
+ * requests in a shared bucket rather than one a browser could pick.
  *
  * Some API routes are for this server alone and are never forwarded
  * (`SERVER_ONLY_API_PATHS`): counting a visit to an organiser's website is done
@@ -151,6 +153,26 @@ export function isCheckout(method, path) {
   if (method !== 'POST' || path[0] !== 'orders') return false
 
   return path.length === 1 || (path.length === 2 && path[1] === 'quote')
+}
+
+/**
+ * Whether a request is a credential submission to the auth routes: any
+ * `POST /v1/auth/*` (sign-in, account creation, the step-up gate, and the other
+ * credential endpoints).
+ *
+ * The API rations these per client address, not per socket peer (finding F2):
+ * behind this same-origin proxy every browser user shares the one socket, so a
+ * per-socket auth budget denied the whole audience's sign-in at ten wrong
+ * guesses. So, exactly as a checkout does, this server hands the API the
+ * address it read for an auth request — never one the browser claims — so a
+ * deployment behind trusted proxies rations each real client on its own.
+ *
+ * @param {string} method The HTTP method.
+ * @param {string[]} path The proxied path segments.
+ * @returns {boolean} True for a POST to an auth route.
+ */
+export function isAuth(method, path) {
+  return method === 'POST' && path[0] === 'auth'
 }
 
 /**
@@ -384,11 +406,12 @@ async function forward(request, context) {
     }
   }
 
-  // A checkout's quote or charge keeps its session and gains the visitor's
-  // address as this server read it — never one the browser claims, and
-  // nothing else of a beacon's (no privacy signals): the API rations wrong
-  // referral codes per address, without the user agent (SPEC3 §4.4).
-  if (isCheckout(request.method, path)) {
+  // A checkout's quote or charge, and a credential submission to the auth
+  // routes, keep their session and gain the visitor's address as this server
+  // read it — never one the browser claims, and nothing else of a beacon's (no
+  // privacy signals). The API rations wrong referral codes (SPEC3 §4.4) and
+  // sign-in attempts (finding F2) per client address, without the user agent.
+  if (isCheckout(request.method, path) || isAuth(request.method, path)) {
     const address = checkoutAddress(request.headers)
 
     if (address) headers.set(CLIENT_ADDRESS_HEADER, address)

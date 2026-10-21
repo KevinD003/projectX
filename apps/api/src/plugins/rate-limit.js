@@ -18,8 +18,22 @@ import { clientAddressOf, visitorRateKey } from '../lib/traffic.js'
 /** Global budget: enough for a busy browsing session, far below a scraper. */
 export const DEFAULT_GLOBAL_LIMIT = Object.freeze({ max: 300, timeWindow: '1 minute' })
 
-/** Credential-endpoint budget, sized for a human who mistypes a password. */
-export const DEFAULT_AUTH_LIMIT = Object.freeze({ max: 10, timeWindow: '1 minute' })
+/**
+ * Credential-endpoint budget.
+ *
+ * `max` is per client, sized for a human who mistypes a password. `sharedMax` is
+ * the ceiling for the one bucket every browser user shares when no per-client
+ * address can be believed — behind the same-origin proxy with no forwarded
+ * address (finding F2). A single per-client-sized bucket there was one
+ * ten-a-minute budget for the whole audience, so ten wrong guesses at any
+ * account denied everyone's sign-in. The shared bucket is widened to a coarse
+ * abuse ceiling instead; the per-account email throttle (`throttleLogin`) is the
+ * guard against guessing, and it never shared a bucket. A deployment that sets
+ * `TRAFFIC_TRUSTED_PROXY_HOPS` gives each real client its own `max` bucket.
+ *
+ * @type {Readonly<{max: number, sharedMax: number, timeWindow: string}>}
+ */
+export const DEFAULT_AUTH_LIMIT = Object.freeze({ max: 10, sharedMax: 600, timeWindow: '1 minute' })
 
 /**
  * Admission-pass budget.
@@ -501,10 +515,16 @@ function budgetSpent(message, retryInSeconds) {
  * alone were multiplied by a pool of accounts or addresses — N accounts gave
  * N×10 guesses — so a distributed dictionary attack on short codes was bounded
  * only by how many accounts the attacker held. The global bucket bounds the
- * aggregate. It is sized well above any honest rate of mistyped codes across
- * the whole site in ten minutes (a valid code is never counted), so a person
- * applying a real code is unaffected even when it is full; only further wrong
- * guesses are refused.
+ * aggregate. Only wrong (`NOT_ACCEPTED`) attempts are *counted* toward it, so
+ * applying a valid code never spends it. But the gate runs in `hook()` before
+ * the handler validates the code, and a full window refuses every request that
+ * names a referral code — valid or not — exactly as the per-actor and
+ * per-address buckets already do, because validity is not known that early.
+ * It is sized well above the honest aggregate rate of mistyped codes across the
+ * whole site in ten minutes, so the window fills only under a distributed
+ * guessing storm (brief and rare), and a referral code only waives a booking
+ * fee, which checkout never requires — so the short window in which a valid
+ * code is also refused is an availability nuance, not a checkout blocker.
  *
  * @type {Readonly<{actorMax: number, addressMax: number, sharedMax: number, globalMax: number, timeWindow: string}>}
  */
@@ -902,22 +922,39 @@ export function registrationRateLimit(overrides = {}) {
  *
  * Keyed on the client's own address, not the socket peer (finding F2). With
  * `trustProxy:false`, `request.ip` is the web app's same-origin proxy for every
- * browser user, so a key of `request.ip` gave the whole audience one ten-a-minute
- * auth bucket: spraying wrong passwords at one account spent everybody's budget
- * and denied the entire site's sign-in. `clientAddressOf` returns the address the
- * trusted web tier forwards in `x-desi-client-address` (believed only from
- * `TRAFFIC_TRUSTED_FORWARDERS`), so each real browser gets its own budget; a
- * caller the API talks to directly keys on its own socket address. Callers that
- * add their own `keyGenerator` on top (the team routes) override this.
+ * browser user, so a key of `request.ip` gave the whole audience one
+ * ten-a-minute auth bucket: spraying wrong passwords at one account spent
+ * everybody's budget and denied the entire site's sign-in. `clientAddressOf`
+ * returns the address the trusted web tier forwards in `x-desi-client-address`
+ * (believed only from `TRAFFIC_TRUSTED_FORWARDERS`, and forwarded on the auth
+ * routes the same way checkout forwards it), so each real browser gets its own
+ * `max` budget; a caller the API talks to directly keys on its own socket
+ * address.
  *
- * @param {{max?: number, timeWindow?: string|number}} [overrides] Limit overrides, normally only supplied by tests.
- * @returns {{max: number, timeWindow: string|number, keyGenerator: function(object): string}} The effective auth limit.
+ * When no per-client address can be believed — the same-origin proxy forwarded
+ * none, the real deployment default until `TRAFFIC_TRUSTED_PROXY_HOPS` is set —
+ * every such request falls into one `auth:shared:` bucket keyed on the proxy
+ * socket. That bucket cannot be both per-user and un-sprayable, so it is not
+ * sized per user: it gets the far higher `sharedMax` abuse ceiling, as the
+ * traffic limiters already do for their shared bucket, and the per-account email
+ * throttle (`throttleLogin`) carries the guard against guessing. `max` is a
+ * function of the key so one caller spraying the shared bucket can no longer
+ * exhaust the ten-a-minute budget the whole audience used to share.
+ *
+ * @param {{max?: number, sharedMax?: number, timeWindow?: string|number}} [overrides] Limit overrides, normally only supplied by tests.
+ * @returns {{timeWindow: string|number, keyGenerator: function(object): string, max: function(object, string): number}} The effective auth limit.
  */
 export function authRateLimit(overrides = {}) {
+  const limit = { ...DEFAULT_AUTH_LIMIT, ...overrides }
+
   return {
-    ...DEFAULT_AUTH_LIMIT,
-    ...overrides,
-    keyGenerator: (request) => `auth:${clientAddressOf(request) ?? request.ip}`,
+    timeWindow: limit.timeWindow,
+    keyGenerator: (request) => {
+      const client = clientAddressOf(request)
+
+      return client ? `auth:client:${client}` : `auth:shared:${request.ip}`
+    },
+    max: (_request, key) => (key.startsWith('auth:client:') ? limit.max : limit.sharedMax),
   }
 }
 

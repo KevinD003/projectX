@@ -49,12 +49,21 @@ were still keyed on the socket peer are keyed on the client instead:
   `request.ip` is the same-origin web proxy for every browser user, so the
   ten-a-minute auth bucket and the per-IP half of the login throttle were one
   bucket for the whole audience: spraying wrong passwords at one account denied
-  the entire site's sign-in. They now key on the address the trusted web tier
-  forwards in `x-desi-client-address` (believed only from
-  `TRAFFIC_TRUSTED_FORWARDERS`, as visit counting already does), falling back to
-  the socket peer for a direct caller. The per-account half of the login
-  throttle always keyed on the submitted email, so it was never the collapsing
-  one. The code path and timing are unchanged whether or not the account exists.
+  the entire site's sign-in. Three things close this together. (1) The web
+  proxy now forwards the client's address in `x-desi-client-address` on the auth
+  routes, exactly as it does for checkout, so behind a configured trusted hop
+  count (`TRAFFIC_TRUSTED_PROXY_HOPS`) each real browser keys on its own address
+  (believed only from `TRAFFIC_TRUSTED_FORWARDERS`); a direct caller keys on its
+  own socket. (2) When no per-client address can be believed — the real default
+  until trusted hops are set, where the proxy's own socket is the only address —
+  the auth limiter puts every such request in one shared bucket with a far
+  higher ceiling (a coarse abuse ceiling, not a per-user one), and the per-IP
+  half of the login throttle is not enforced at all, so one sprayer behind the
+  proxy can no longer exhaust a budget keyed on the shared socket. (3) The
+  per-account half of the login throttle always keyed on the submitted email, so
+  it never shared a bucket and is the primary guard against guessing — it locks
+  only the sprayed account, which is the intended per-account behaviour. The
+  code path and timing are unchanged whether or not the account exists.
 - **Step-up lockout (F10).** A wrong step-up (TOTP or password) now records a
   per-account `LoginAttempt` and is bounded by the same throttle as a wrong
   sign-in, keyed on the account's email and independent of the socket IP. Before
@@ -64,8 +73,15 @@ were still keyed on the socket peer are keyed on the client instead:
   attempts sits beside the per-account and per-address budgets, so a pool of
   accounts or addresses can no longer multiply the budget; and the minimum
   length of a custom referral code rose from six to ten, so vanity codes are no
-  longer dictionary-guessable. Only wrong (`NOT_ACCEPTED`) attempts are counted,
-  so applying a valid code is never refused by the ceiling.
+  longer dictionary-guessable. Only wrong (`NOT_ACCEPTED`) attempts are counted
+  toward the ceiling, so applying a valid code never spends it. The gate runs
+  before the code is validated, though, so while the global window is full every
+  request that names a referral code is refused — valid or not — exactly as the
+  per-account and per-address budgets already refuse before validation. The
+  ceiling is sized well above the honest aggregate rate of mistyped codes, so it
+  fills only under a distributed guessing storm, and a referral code only waives
+  a booking fee that checkout never requires: the brief window in which a valid
+  code is also refused is an availability nuance, not a checkout blocker.
 
 ### Registration is a bounded existence oracle (F5)
 
@@ -1087,8 +1103,14 @@ _Updated 2026-10-20 (finding F8)._ Two gaps the budget above did not close:
   budgets, so a distributed guesser was bounded only by how many it held. A
   **global ceiling** (1,000 wrong guesses per 10 minutes, every attempt counted
   whatever account or address it came from) now bounds the aggregate. A valid
-  code is never counted, so a real code still applies even when the ceiling is
-  full.
+  code is never counted toward it, so applying one never spends it; but the gate
+  runs before the code is validated, so while the window is full every request
+  that names a code is refused — valid or not — exactly as the per-account and
+  per-address budgets already refuse before validation. The ceiling is well
+  above the honest aggregate rate of mistyped codes, so it fills only under a
+  distributed guessing storm, and a code only waives a booking fee checkout
+  never requires: the brief window in which a valid code is also refused is an
+  availability nuance, not a checkout blocker.
 - A custom code could be as short as six characters, which is
   dictionary-guessable. The minimum length of a **custom** referral code rose to
   ten (`REFERRAL_CODE_PATTERN`); generated codes (`XXXXX-XXXXX`, eleven
