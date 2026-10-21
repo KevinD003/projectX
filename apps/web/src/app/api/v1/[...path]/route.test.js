@@ -18,6 +18,7 @@ const {
   PROXY_BODY_LIMIT_BYTES,
   SERVER_ONLY_API_PATHS,
   checkoutAddress,
+  isAuth,
   isBeacon,
   isCheckout,
   isServerOnlyPath,
@@ -705,6 +706,80 @@ describe('checkouts through the proxy', () => {
     expect(isCheckout('POST', ['orders', 'ORD-1'])).toBe(false)
     expect(isCheckout('POST', ['orders', 'quote', 'x'])).toBe(false)
     expect(isCheckout('POST', ['holds'])).toBe(false)
+  })
+})
+
+describe('auth routes through the proxy (finding F2)', () => {
+  /** A signed-in browser's auth request headers. */
+  const AUTH = {
+    'content-type': 'application/json',
+    cookie: '__Host-desi_session=opaque-secret-value; desi_csrf=csrf-value',
+    'x-desi-csrf': 'csrf-value',
+    'user-agent': 'Mozilla/5.0 Chrome/130',
+    'x-forwarded-for': '198.51.100.7',
+  }
+
+  /**
+   * An auth request as the browser sends it.
+   *
+   * @param {string[]} path The proxied path.
+   * @param {object} [headers] Request headers.
+   * @returns {Request} The request.
+   */
+  function authRequest(path, headers = AUTH) {
+    return new Request(`http://web.test/api/v1/${path.join('/')}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email: 'a@b.test', password: 'x' }),
+    })
+  }
+
+  it.each([[['auth', 'login']], [['auth', 'register']], [['auth', 'step-up']]])(
+    'forwards %j with the visitor’s address as this server read it, so the API rations per client',
+    async (path) => {
+      fetchMock.mockResolvedValue(upstream({ data: {} }))
+
+      await POST(authRequest(path), context(path))
+
+      const [target, init] = fetchMock.mock.calls[0]
+
+      expect(target).toMatch(new RegExp(`/v1/${path.join('/')}$`, 'u'))
+      expect(init.headers.get('x-desi-client-address')).toBe('198.51.100.7')
+      // The session travels as on any request.
+      expect(init.headers.get('cookie')).toBe(AUTH.cookie)
+    },
+  )
+
+  it('replaces an address the browser claims for itself with the one this server read', async () => {
+    fetchMock.mockResolvedValue(upstream({ data: {} }))
+
+    await POST(
+      authRequest(['auth', 'login'], { ...AUTH, 'x-desi-client-address': '203.0.113.250' }),
+      context(['auth', 'login']),
+    )
+
+    expect(fetchMock.mock.calls[0][1].headers.get('x-desi-client-address')).toBe('198.51.100.7')
+  })
+
+  it('adds no address to a read on an auth route', async () => {
+    fetchMock.mockResolvedValue(upstream({ ok: true }))
+
+    await GET(
+      new Request('http://web.test/api/v1/auth/me', {
+        headers: { ...AUTH, 'x-desi-client-address': '203.0.113.250' },
+      }),
+      context(['auth', 'me']),
+    )
+
+    expect(fetchMock.mock.calls[0][1].headers.get('x-desi-client-address')).toBeNull()
+  })
+
+  it('knows a credential POST to the auth routes from every other request', () => {
+    expect(isAuth('POST', ['auth', 'login'])).toBe(true)
+    expect(isAuth('POST', ['auth', 'register'])).toBe(true)
+    expect(isAuth('POST', ['auth', 'step-up'])).toBe(true)
+    expect(isAuth('GET', ['auth', 'me'])).toBe(false)
+    expect(isAuth('POST', ['events'])).toBe(false)
   })
 })
 

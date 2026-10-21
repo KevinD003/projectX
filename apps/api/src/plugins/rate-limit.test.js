@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CLIENT_ADDRESS_HEADER } from '../lib/traffic.js'
 import {
+  DEFAULT_AUTH_LIMIT,
   DEFAULT_FEE_REFUND_LIMIT,
   DEFAULT_VENUE_CANCEL_LIMIT,
   DEFAULT_PAYMENT_TERMS_LIMIT,
@@ -15,6 +16,7 @@ import {
   DEFAULT_REFERRAL_ATTEMPT_LIMIT,
   REFERRAL_ATTEMPTS_SENTENCE,
   actorBudget,
+  authRateLimit,
   feeRefundRateLimit,
   venueCancelRateLimit,
   referralAttemptBuckets,
@@ -198,6 +200,45 @@ describe('the wrong referral codes budget', () => {
     })
   })
 
+  it('refuses a would-be valid code once the global window is full: the gate runs before validation (finding F8)', async () => {
+    // The gate (`hook`) cannot tell a valid code from a wrong one — the handler
+    // validates later, and only then records a refusal. So once the global
+    // window is full of wrong guesses, every request that names a referral code
+    // is refused, including one that would apply a perfectly valid code. The doc
+    // on DEFAULT_REFERRAL_ATTEMPT_LIMIT says exactly this; this pins it so the
+    // honest wording cannot drift back to "a real code is unaffected".
+    const budget = referralAttemptBudget({ actorMax: 1_000, addressMax: 1_000, globalMax: 3 })
+    const fresh = (n) =>
+      request({
+        actorId: `acct-${n}`,
+        ip: '127.0.0.1',
+        headers: { [FORWARDED]: `203.0.113.${n}` },
+        body: NAMED,
+      })
+
+    // Three wrong guesses, each from its own fresh account and address, fill the
+    // global ceiling without touching any per-actor or per-address bucket.
+    for (let guess = 0; guess < 3; guess += 1) {
+      await budget.hook(fresh(guess))
+      budget.recordRefusal(fresh(guess))
+    }
+
+    // A brand-new account from a brand-new address — its own buckets empty, and
+    // about to apply what may well be a valid code — is still refused at the
+    // gate, because only the global ceiling is spent and validity is unknown here.
+    const refused = await budget.hook(fresh(42)).catch((error) => error)
+
+    expect(refused).toMatchObject({
+      statusCode: 429,
+      code: 'RATE_LIMITED',
+      message: REFERRAL_ATTEMPTS_SENTENCE,
+    })
+
+    // And nothing it carries spends the ceiling further: a valid application is
+    // never recorded as a refusal, so the window drains to only the wrong guesses.
+    // (The handler calls recordRefusal only on NOT_ACCEPTED; the gate above never does.)
+  })
+
   it('forgets a window once it has passed', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-09T10:00:00Z'))
@@ -241,6 +282,50 @@ describe('a budget shared by several routes', () => {
     expect(() => actorBudget({ name: 'Payment Terms', max: 1, timeWindow: '1 hour' })).toThrow(
       TypeError,
     )
+  })
+})
+
+describe('the auth endpoint budget (finding F2)', () => {
+  it('has a tight per-client max and a far higher shared ceiling', () => {
+    expect(DEFAULT_AUTH_LIMIT).toEqual({ max: 10, sharedMax: 600, timeWindow: '1 minute' })
+    expect(DEFAULT_AUTH_LIMIT.sharedMax).toBeGreaterThan(DEFAULT_AUTH_LIMIT.max * 10)
+  })
+
+  it('keys a believable client on its own bucket, and the shared proxy socket on another', () => {
+    const limit = authRateLimit()
+
+    // Behind a trusted forwarder that forwarded the client address: the client's
+    // own bucket, at the per-client max.
+    const forwarded = request({
+      ip: '127.0.0.1',
+      headers: { [FORWARDED]: '203.0.113.9' },
+    })
+
+    expect(limit.keyGenerator(forwarded)).toBe('auth:client:203.0.113.9')
+    expect(limit.max(forwarded, 'auth:client:203.0.113.9')).toBe(10)
+
+    // A direct caller keys on its own socket too.
+    const direct = request({ ip: '198.51.100.7' })
+
+    expect(limit.keyGenerator(direct)).toBe('auth:client:198.51.100.7')
+
+    // The collapse case: a trusted forwarder that forwarded no address. Every
+    // such request shares one bucket keyed on the proxy socket, and that bucket
+    // gets the wide ceiling, not the ten-a-minute per-user one — so one sprayer
+    // can no longer exhaust the budget the whole audience shares.
+    const shared = request({ ip: '127.0.0.1', headers: {} })
+
+    expect(limit.keyGenerator(shared)).toBe('auth:shared:127.0.0.1')
+    expect(limit.max(shared, 'auth:shared:127.0.0.1')).toBe(600)
+  })
+
+  it('honours overrides for both the per-client and shared ceilings', () => {
+    const limit = authRateLimit({ max: 2, sharedMax: 5 })
+    const shared = request({ ip: '127.0.0.1', headers: {} })
+    const forwarded = request({ ip: '127.0.0.1', headers: { [FORWARDED]: '203.0.113.9' } })
+
+    expect(limit.max(forwarded, 'auth:client:203.0.113.9')).toBe(2)
+    expect(limit.max(shared, 'auth:shared:127.0.0.1')).toBe(5)
   })
 })
 

@@ -86,23 +86,28 @@ export function callerAddress(request) {
 }
 
 /**
- * The address the login and step-up throttles ration by.
+ * The address the login and step-up throttles ration by, or an empty string
+ * when none can be believed.
  *
  * Finding F2. `request.ip` is the web app's same-origin proxy for every browser
- * user when `trustProxy` is off, so the per-address half of the throttle — and
- * the shared auth rate limit — collapsed to one bucket for the whole audience:
- * one target's failures throttled everyone's sign-in. This prefers the address
- * the trusted web tier forwards (`clientAddressOf`, believed only from
- * `TRAFFIC_TRUSTED_FORWARDERS`), so each real client is counted on its own, and
- * falls back to the socket peer for a caller the API talks to directly. The
- * per-account half of the throttle keys on the submitted email regardless, so it
- * was never the collapsing one.
+ * user when `trustProxy` is off, so keying the per-address half of the throttle
+ * on it collapsed to one bucket for the whole audience: one target's failures
+ * throttled everyone's sign-in. This is `clientAddressOf` and nothing else: the
+ * address the trusted web tier forwards (believed only from
+ * `TRAFFIC_TRUSTED_FORWARDERS`), or the socket peer for a caller the API talks
+ * to directly. It deliberately does *not* fall back to the socket peer when the
+ * peer is a trusted forwarder that sent no address — that peer is the shared
+ * proxy, and keying on it is the collapse itself. In that case this returns ''
+ * and {@link throttleLogin} enforces no per-address limit, leaving the
+ * per-account (email) half — which keys on the submitted email regardless, and
+ * was never the collapsing one — as the guard against guessing. The shared auth
+ * rate limit is widened for the same shared bucket (see `authRateLimit`).
  *
  * @param {object} request The incoming request.
- * @returns {string} The address, or an empty string.
+ * @returns {string} The address, or an empty string when none can be believed.
  */
 export function loginRateAddress(request) {
-  return clientAddressOf(request) ?? callerAddress(request)
+  return clientAddressOf(request) ?? ''
 }
 
 /**
@@ -140,10 +145,18 @@ export async function recordLoginAttempt(prisma, { email, address, outcome, key 
  * it clears the count. Counting the window alone would keep somebody locked out
  * for fifteen minutes after they had already got in.
  *
+ * The per-address (spray) counter is enforced only when `address` names a
+ * believable per-client address. Behind the same-origin proxy with no forwarded
+ * client address (finding F2), every browser user shares the one proxy socket,
+ * so a shared-address counter would conflate the whole audience into one bucket
+ * and one sprayer would lock everyone out. In that case `loginRateAddress`
+ * passes '' and this skips the per-IP half entirely, leaving the per-account
+ * (email) counter — which never shared a bucket — as the guard.
+ *
  * @param {object} prisma A Prisma client.
  * @param {object} options Options.
  * @param {string} options.email The address being tried.
- * @param {string} options.address The caller's address.
+ * @param {string} options.address The caller's address, or '' when none can be believed.
  * @param {string} options.key The deployment's pseudonymisation key.
  * @param {Date} [options.now] The current time.
  * @param {object} [options.policy] Override the thresholds.
@@ -154,7 +167,8 @@ export async function throttleLogin(
   { email, address, key, now = new Date(), policy = THROTTLE },
 ) {
   const emailHash = pseudonymize(String(email ?? '').toLowerCase(), key)
-  const ipHash = pseudonymize(address, key)
+  const hasAddress = typeof address === 'string' && address !== ''
+  const ipHash = hasAddress ? pseudonymize(address, key) : null
 
   const [lastSuccess, ipFailures] = await Promise.all([
     prisma.loginAttempt.findFirst({
@@ -162,13 +176,15 @@ export async function throttleLogin(
       orderBy: { createdAt: 'desc' },
       select: { createdAt: true },
     }),
-    prisma.loginAttempt.count({
-      where: {
-        ipHash,
-        succeeded: false,
-        createdAt: { gte: windowStart(policy.perIp.windowMs, now) },
-      },
-    }),
+    hasAddress
+      ? prisma.loginAttempt.count({
+          where: {
+            ipHash,
+            succeeded: false,
+            createdAt: { gte: windowStart(policy.perIp.windowMs, now) },
+          },
+        })
+      : Promise.resolve(0),
   ])
 
   const since = [windowStart(policy.perEmail.windowMs, now), lastSuccess?.createdAt]

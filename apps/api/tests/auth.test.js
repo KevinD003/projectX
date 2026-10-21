@@ -469,42 +469,44 @@ describe('POST /v1/auth/login', () => {
     await app.close()
   })
 
-  it('does not let spraying one account throttle the whole audience behind the proxy (finding F2)', async () => {
+  it('does not let spraying one account deny the whole audience behind the proxy (finding F2)', async () => {
     // Every browser request reaches the API through the web app's same-origin
-    // proxy, so `request.ip` is the proxy for all of them. The auth limiter and
-    // the login throttle used to key on it, so ten wrong guesses at one victim
-    // spent a bucket shared by everybody and denied the entire site's sign-in.
-    // The limiter now keys on the address the trusted proxy forwards, so one
-    // target's failures stay in that client's own bucket.
+    // proxy. On the real deployment default the proxy forwards no client address
+    // on the auth routes (it does only behind a configured trusted hop count),
+    // so these requests arrive with NO `x-desi-client-address` and the proxy's
+    // own socket peer — the case the earlier fix left uncovered, which is why
+    // this test sends no forwarded header rather than injecting one the proxy
+    // never sets. The cross-account denial must still be closed: the per-account
+    // email throttle locks only the sprayed account; the shared auth bucket is a
+    // wide abuse ceiling, not a ten-a-minute per-user one; and the per-IP
+    // throttle is not enforced when no per-client address can be believed, so it
+    // cannot conflate the whole audience behind the one proxy address.
     const { app } = await createTestApp()
-    const FORWARDED = 'x-desi-client-address'
-    // The socket peer is the proxy (a trusted forwarder in the test env); the
-    // real client addresses arrive in the forwarded header.
-    const attacker = { origin: ORIGIN, [FORWARDED]: '203.0.113.50' }
-    const innocent = { origin: ORIGIN, [FORWARDED]: '203.0.113.99' }
+    const throughProxy = { origin: ORIGIN }
 
     let victimStatus
-    for (let attempt = 0; attempt < 10; attempt += 1) {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/auth/login',
-        headers: attacker,
+        headers: throughProxy,
         payload: { email: 'priya@example.com', password: `wrong-${attempt}` },
       })
       victimStatus = response.statusCode
     }
 
-    // The victim's own sign-in is locked (per-account, by the submitted email).
+    // The sprayed account is locked, per-account, by the submitted email.
     expect(victimStatus).toBe(429)
 
-    // An innocent account with the correct password, from its own client
-    // address, still gets in — under the old socket-IP keying this was 429,
-    // because the attacker had spent the one shared bucket.
+    // An innocent account with the correct password still gets in, from the same
+    // proxy socket and with no forwarded address — under the earlier fix this was
+    // 429, because the attacker had spent the one shared ten-a-minute auth bucket
+    // keyed on the proxy IP that every browser user shares.
     const code = mfaCodeFor(app, 'arun@rangoli.example')
     const innocentLogin = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
-      headers: innocent,
+      headers: throughProxy,
       payload: { email: 'arun@rangoli.example', password: PASSWORD, ...(code ? { code } : {}) },
     })
 
