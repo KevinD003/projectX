@@ -42,6 +42,66 @@ The keys are per account where a session exists, because every browser request
 reaches the API through one same-origin proxy address. The table is in
 `docs/api.md` ("Rate limits").
 
+_Updated 2026-10-20 (findings F2, F5, F8, F10)._ The credential surfaces that
+were still keyed on the socket peer are keyed on the client instead:
+
+- **The auth limiter and the login throttle (F2).** With `trustProxy:false`,
+  `request.ip` is the same-origin web proxy for every browser user, so the
+  ten-a-minute auth bucket and the per-IP half of the login throttle were one
+  bucket for the whole audience: spraying wrong passwords at one account denied
+  the entire site's sign-in. Three things close this together. (1) The web
+  proxy now forwards the client's address in `x-desi-client-address` on the auth
+  routes, exactly as it does for checkout, so behind a configured trusted hop
+  count (`TRAFFIC_TRUSTED_PROXY_HOPS`) each real browser keys on its own address
+  (believed only from `TRAFFIC_TRUSTED_FORWARDERS`); a direct caller keys on its
+  own socket. (2) When no per-client address can be believed — the real default
+  until trusted hops are set, where the proxy's own socket is the only address —
+  the auth limiter puts every such request in one shared bucket with a far
+  higher ceiling (a coarse abuse ceiling, not a per-user one), and the per-IP
+  half of the login throttle is not enforced at all, so one sprayer behind the
+  proxy can no longer exhaust a budget keyed on the shared socket. (3) The
+  per-account half of the login throttle always keyed on the submitted email, so
+  it never shared a bucket and is the primary guard against guessing — it locks
+  only the sprayed account, which is the intended per-account behaviour. The
+  code path and timing are unchanged whether or not the account exists.
+- **Step-up lockout (F10).** A wrong step-up (TOTP or password) now records a
+  per-account `LoginAttempt` and is bounded by the same throttle as a wrong
+  sign-in, keyed on the account's email and independent of the socket IP. Before
+  this, step-up recorded no attempt and consulted no throttle, so guessing at
+  the step-up gate was bounded only by the shared IP auth limit.
+- **Referral-code guessing (F8).** A global ceiling on wrong referral-code
+  attempts sits beside the per-account and per-address budgets, so a pool of
+  accounts or addresses can no longer multiply the budget; and the minimum
+  length of a custom referral code rose from six to ten, so vanity codes are no
+  longer dictionary-guessable. Only wrong (`NOT_ACCEPTED`) attempts are counted
+  toward the ceiling, so applying a valid code never spends it. The gate runs
+  before the code is validated, though, so while the global window is full every
+  request that names a referral code is refused — valid or not — exactly as the
+  per-account and per-address budgets already refuse before validation. The
+  ceiling is sized well above the honest aggregate rate of mistyped codes, so it
+  fills only under a distributed guessing storm, and a referral code only waives
+  a booking fee that checkout never requires: the brief window in which a valid
+  code is also refused is an availability nuance, not a checkout blocker.
+
+### Registration is a bounded existence oracle (F5)
+
+`POST /v1/auth/register` answers `409` for an address that already has an account
+and `201` for one that does not, which tells a caller whether an address is
+registered. Removing the oracle entirely requires an **email-verification flow**
+— register would stop returning a session and would answer out of band — which
+is **out of scope** here. What is implemented is a **mitigation, not a removal**:
+
+- a per-address and per-email budget on register (default 30 an hour an address,
+  5 an hour an email), so the oracle cannot be read in bulk;
+- the password hash runs on both the taken-address and the free-address path, so
+  the response time does not answer the question the `409`/`201` body refuses to;
+- every attempt is counted whichever answer it would get, so a `409` probe is
+  not cheaper than a real sign-up.
+
+The `409` is kept for the sign-up form's own usability. The residual — a single
+address can still be checked a few times an hour — is accepted until the
+verification flow exists.
+
 ---
 
 ## Multi-factor authentication
@@ -131,14 +191,24 @@ platform-only capabilities, listed explicitly in
 > them again, they are right and it is wrong.
 
 The thirty-seventh is `privacy:redact`, added in Phase 3 and granted to the
-organisation `OWNER` and to nobody else — the narrowest grant the table can
-express, because OWNER inherits ADMIN and so granting anywhere lower would hand
-it to a superset by inheritance. It is organisation-scoped rather than
-platform-only, so every route asserting it names an organisation, and a
-standing test in `packages/permissions/src/capabilities.test.js` asserts that
-exactly one organisation role holds it. Why it is not folded into
-`organization:manage` or `platform:admin`, and why a step-up window alone is not
-sufficient authority for it, are in `docs/PRIVACY_AND_RETENTION.md`.
+organisation `OWNER` through its membership and to no other organisation role —
+the narrowest grant the table can express, because OWNER inherits ADMIN and so
+granting anywhere lower would hand it to a superset by inheritance. It is
+organisation-scoped rather than platform-only, so every route asserting it names
+an organisation, and a standing test in
+`packages/permissions/src/capabilities.test.js` asserts that exactly one
+organisation role holds it. Across tenants it is a **super administrator's
+alone**: `privacy:redact` is one of the three `SUPER_ADMIN_ONLY_CAPABILITIES`, so
+a platform `ADMIN` does **not** hold it and cannot redact an organiser's buyer in
+a tenant it is not a member of — only a `SUPER_ADMIN` reaches it that way, and a
+standing test asserts no platform role but `SUPER_ADMIN` holds it (ADR 0022, the
+scope tightening of 2026-10-20, amending ADR 0018 decision 2). `promo:manage`
+was tightened the same way and for the same reason: it stays an organiser's
+through a membership (EVENT_MANAGER and up) and a super administrator's across
+tenants, never a platform administrator's. Why `privacy:redact` is not folded
+into `organization:manage`, why a platform administrator is not the right holder
+for an irreversible decision, and why a step-up window alone is not sufficient
+authority for it, are in `docs/PRIVACY_AND_RETENTION.md`.
 
 The thirty-eighth is `retention:view`, and it went the other way: it is in
 `PLATFORM_ONLY_CAPABILITIES` rather than in any organisation role, because the
@@ -246,16 +316,21 @@ own authority on the event's audit trail; every other platform role is refused
 at the door and audited (ADR 0007, `docs/CHECK_IN.md`).
 
 _Corrected 2026-10-16._ Seven platform roles: the platform administrator,
-`ADMIN`, sits below `SUPER_ADMIN` and holds every capability except
-`platform:role_manage` (ADR 0018). Changing a platform role needs that
-capability, which only `SUPER_ADMIN` holds, and the handler still re-reads the
-caller inside its transaction and refuses anybody who is not an unsuspended
-`SUPER_ADMIN`. The account search, the organisation search, the direct grant
-and the venue merge are `platform:admin`, which `ADMIN` holds too; a direct
-grant on a super administrator's account needs a super administrator, because
-it ends every session that account holds. `ADMIN` admits at any door on
-`PLATFORM_ROLE` authority, recorded as `ADMIN`. `platform:role_manage` is
-forbidden in browser artefacts beside `platform:admin`.
+`ADMIN`, sits below `SUPER_ADMIN` and holds every capability except the three
+`SUPER_ADMIN_ONLY_CAPABILITIES` — `platform:role_manage` (ADR 0018), and, since
+the scope tightening of 2026-10-20, `privacy:redact` and `promo:manage` across
+tenants (ADR 0022). Changing a platform role needs `platform:role_manage`, which
+only `SUPER_ADMIN` holds, and the handler still re-reads the caller inside its
+transaction and refuses anybody who is not an unsuspended `SUPER_ADMIN`. The
+account search, the organisation search, the direct grant and the venue merge
+are `platform:admin`, which `ADMIN` holds too; a direct grant on a super
+administrator's account needs a super administrator, because it ends every
+session that account holds. `ADMIN` admits at any door on `PLATFORM_ROLE`
+authority, recorded as `ADMIN`. Redacting an organiser's buyer and managing an
+organiser's promo codes in a tenant `ADMIN` is not a member of are a
+`SUPER_ADMIN`'s alone; `ADMIN` still exercises either in an organisation its own
+membership grants it. `platform:role_manage` is forbidden in browser artefacts
+beside `platform:admin`.
 
 ### An organisation anybody can create
 
@@ -590,19 +665,35 @@ the bundled Swagger UI at `/docs` is built that way. The API otherwise answers
 JSON, which no browser runs. Written here so nobody reads "CSP is configured"
 as "CSP is strict".
 
-**The web app's pages are served with no Content-Security-Policy at all.**
-Helmet's policy is on the API's responses, not on the pages Next.js renders,
-and a nonce-based policy for them is not built. So nothing the organiser types
-may reach a page as markup. React escapes text; the one place the web app
-writes raw markup is the JSON-LD block on the event and venue pages, which goes
-through `serializeJsonLd` (`apps/web/src/lib/json-ld.js`). `JSON.stringify`
-leaves `<` alone, so a title, a performer's name, a night's label or a venue's
-name holding `</script><script>…` used to close the block and run as every
-visitor, with their CSRF cookie in reach. `serializeJsonLd` writes `<`, `>`,
-`&`, U+2028 and U+2029 as `\uXXXX` escapes, which leave the JSON a search
-engine reads unchanged. `json-ld.test.js` fails the build when any other source
-file writes raw markup or opens a script element, and both pages have a test
-that renders a hostile payload to HTML and parses it back.
+**The web app's pages carry a per-request nonce Content-Security-Policy and
+the fixed security headers.** The request proxy (`apps/web/src/proxy.js`) mints
+a fresh nonce for every page request, puts it in `script-src 'self'
+'nonce-…' 'strict-dynamic'`, and sets the policy on both the request (so Next.js
+stamps that nonce onto its own scripts) and the response. So an injected
+`<script>`, or a `javascript:` href that slipped a render guard, has no nonce
+and cannot run. `style-src` keeps `'unsafe-inline'`: React, the view-transition
+styles and Framer Motion set inline `style` attributes a nonce cannot cover;
+`img-src` allows the `data:`/`blob:` the QR code and posters use; everything
+else is same-origin, which covers the API through the same-origin proxy.
+`object-src 'none'`, `base-uri 'self'`, `form-action 'self'` and `frame-ancestors
+'none'` close the remaining holes; `X-Frame-Options: DENY` repeats the
+clickjacking guard for older browsers, and every page also carries
+`X-Content-Type-Options: nosniff` and `Referrer-Policy:
+strict-origin-when-cross-origin`. Development adds `'unsafe-eval'` to
+`script-src`, and only there, because React's dev build evaluates code; a
+production build needs it never. The proxy matcher skips the API proxy, the
+built assets and the image optimiser, so a static asset carries no page policy.
+
+The CSP is a second line, not the first. React still escapes text, and the one
+place the web app writes raw markup is the JSON-LD block on the event and venue
+pages, which goes through `serializeJsonLd` (`apps/web/src/lib/json-ld.js`).
+`JSON.stringify` leaves `<` alone, so a title, a performer's name, a night's
+label or a venue's name holding `</script><script>…` used to close the block
+and run as every visitor, with their CSRF cookie in reach. `serializeJsonLd`
+writes `<`, `>`, `&`, U+2028 and U+2029 as `\uXXXX` escapes, which leave the
+JSON a search engine reads unchanged. `json-ld.test.js` fails the build when any
+other source file writes raw markup or opens a script element, and both pages
+have a test that renders a hostile payload to HTML and parses it back.
 
 CORS is an explicit origin list with `credentials: false`.
 
@@ -1005,6 +1096,25 @@ same queries. The control is a budget of wrong guesses only: 10 per 10 minutes
 per account, 30 per 10 minutes per address (an HMAC of the address with a
 process key), and, when no address is known, one shared bucket of 300 per 10
 minutes that is never skipped.
+
+_Updated 2026-10-20 (finding F8)._ Two gaps the budget above did not close:
+
+- A pool of accounts or addresses multiplied the per-account and per-address
+  budgets, so a distributed guesser was bounded only by how many it held. A
+  **global ceiling** (1,000 wrong guesses per 10 minutes, every attempt counted
+  whatever account or address it came from) now bounds the aggregate. A valid
+  code is never counted toward it, so applying one never spends it; but the gate
+  runs before the code is validated, so while the window is full every request
+  that names a code is refused — valid or not — exactly as the per-account and
+  per-address budgets already refuse before validation. The ceiling is well
+  above the honest aggregate rate of mistyped codes, so it fills only under a
+  distributed guessing storm, and a code only waives a booking fee checkout
+  never requires: the brief window in which a valid code is also refused is an
+  availability nuance, not a checkout blocker.
+- A custom code could be as short as six characters, which is
+  dictionary-guessable. The minimum length of a **custom** referral code rose to
+  ten (`REFERRAL_CODE_PATTERN`); generated codes (`XXXXX-XXXXX`, eleven
+  characters, ~49 bits) are unchanged and still valid.
 
 - **Timing.** A guesser could still tell that a code exists, and applies to
   them, from a lock wait at the charge. The budget is what bounds it.

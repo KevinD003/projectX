@@ -221,7 +221,7 @@ describe('making a code', () => {
     expect(body).toBeNull()
     expect(errors).toEqual({
       referralCode:
-        '6 to 32 letters, numbers or single hyphens, starting and ending with a letter or number.',
+        '10 to 32 letters, numbers or single hyphens, starting and ending with a letter or number.',
       label: '120 characters at most.',
       expires: 'Choose a time after now.',
       maxUses: 'From 1 to 1,000,000.',

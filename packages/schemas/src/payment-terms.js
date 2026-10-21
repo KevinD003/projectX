@@ -61,7 +61,7 @@ export const VENUE_CANCEL_LIMITS = Object.freeze({ maxTickets: 100 })
 
 /** A referral code's bounds: its length, its scope, its total limit and its label. */
 export const REFERRAL_LIMITS = Object.freeze({
-  minLength: 6,
+  minLength: 10,
   maxLength: 32,
   maxEvents: 50,
   maxUses: 1000000,
@@ -90,10 +90,14 @@ export const REFERRAL_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 export const GENERATED_REFERRAL_CODE_PATTERN = /^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/u
 
 /**
- * A referral code as stored: 6 to 32 of A-Z, 0-9 and '-', beginning and ending
+ * A referral code as stored: 10 to 32 of A-Z, 0-9 and '-', beginning and ending
  * with a letter or digit (`referral_code_shape`). No '--' is checked apart.
+ *
+ * The floor was raised from 6 to 10 (finding F8): a custom code of six
+ * characters is dictionary-guessable, and each hit waives the whole booking fee.
+ * Generated codes (`XXXXX-XXXXX`, eleven characters) stay valid.
  */
-export const REFERRAL_CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{4,30}[A-Z0-9]$/u
+export const REFERRAL_CODE_PATTERN = /^[A-Z0-9][A-Z0-9-]{8,30}[A-Z0-9]$/u
 
 /** Where a referral code stands, as the administrators' list filters it. */
 export const REFERRAL_STATUSES = Object.freeze(['ON', 'OFF', 'EXPIRED', 'USED_UP'])
@@ -184,7 +188,7 @@ export const PAYMENT_TERMS_MESSAGES = Object.freeze({
   limit: 'Enter a whole number from 1 to 100,000.',
   limitRequired: 'Set the most tickets that can be waiting to be paid at the door.',
   referralCode:
-    '6 to 32 letters, numbers or single hyphens, starting and ending with a letter or number.',
+    '10 to 32 letters, numbers or single hyphens, starting and ending with a letter or number.',
   label: '120 characters at most.',
   maxUses: 'From 1 to 1,000,000.',
   eventsRequired: 'Choose at least one event.',
@@ -210,7 +214,7 @@ export const reasonSchema = withoutControlCharacters(
 export const paymentMethodSchema = z.enum([PAYMENT_METHODS.CARD, PAYMENT_METHODS.AT_VENUE])
 
 /**
- * A referral code as an administrator types it: trimmed and upper-cased, then 6
+ * A referral code as an administrator types it: trimmed and upper-cased, then 10
  * to 32 of A-Z, 0-9 and single hyphens, beginning and ending with a letter or
  * digit. A value with any character outside printable ASCII is left as it is,
  * so it fails rather than being folded into one that passes (`ı` and `ß` both

@@ -77,7 +77,7 @@ describe('the limits SPEC3 §4.6 names', () => {
     // No per-account limit (open question 1): only the event's own.
     expect(VENUE_PAYMENT_LIMITS).toEqual({ maxEventLimit: 100000, suggestedEventLimit: 50 })
     expect(REFERRAL_LIMITS).toEqual({
-      minLength: 6,
+      minLength: 10,
       maxLength: 32,
       maxEvents: 50,
       maxUses: 1000000,
@@ -366,16 +366,31 @@ describe('setVenuePaymentRequestSchema', () => {
 describe('referralCodeStringSchema', () => {
   it('trims and upper-cases what an administrator types', () => {
     expect(referralCodeStringSchema.parse('  garba-2026  ')).toBe('GARBA-2026')
-    expect(referralCodeStringSchema.parse('abcdef')).toBe('ABCDEF')
+    expect(referralCodeStringSchema.parse('abcdefghij')).toBe('ABCDEFGHIJ')
   })
 
-  it('takes 6 to 32 characters, beginning and ending with a letter or digit', () => {
-    expect(referralCodeStringSchema.safeParse('ABCDE').success).toBe(false)
-    expect(referralCodeStringSchema.safeParse('ABCDEF').success).toBe(true)
+  it('takes 10 to 32 characters, beginning and ending with a letter or digit', () => {
+    expect(referralCodeStringSchema.safeParse('A'.repeat(9)).success).toBe(false)
+    expect(referralCodeStringSchema.safeParse('A'.repeat(10)).success).toBe(true)
     expect(referralCodeStringSchema.safeParse('A'.repeat(32)).success).toBe(true)
     expect(referralCodeStringSchema.safeParse('A'.repeat(33)).success).toBe(false)
-    expect(referralCodeStringSchema.safeParse('-ABCDEF').success).toBe(false)
-    expect(referralCodeStringSchema.safeParse('ABCDEF-').success).toBe(false)
+    expect(referralCodeStringSchema.safeParse('-ABCDEFGHI').success).toBe(false)
+    expect(referralCodeStringSchema.safeParse('ABCDEFGHI-').success).toBe(false)
+  })
+
+  it('refuses a short custom code that used to be allowed (finding F8)', () => {
+    // Six characters was the old floor; a vanity code that short is
+    // dictionary-guessable, and each hit waives the whole booking fee.
+    for (const value of ['ABCDEF', 'DIWALI', 'SAVE10', 'GARBA1']) {
+      const result = referralCodeStringSchema.safeParse(value)
+
+      expect(result.success, value).toBe(false)
+      expect(messages(result)).toContain(PAYMENT_TERMS_MESSAGES.referralCode)
+    }
+
+    // The new floor is exactly ten, and the message says so.
+    expect(PAYMENT_TERMS_MESSAGES.referralCode).toMatch(/^10 to 32/u)
+    expect(referralCodeStringSchema.safeParse('DIWALI-FST').success).toBe(true)
   })
 
   it('refuses a double hyphen, a space and punctuation, with the form sentence', () => {

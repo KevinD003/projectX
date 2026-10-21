@@ -50,13 +50,13 @@ import { recordAudit } from '../lib/audit.js'
 import { conflict, notFound, tooManyRequests, unauthorized, unprocessable } from '../lib/errors.js'
 import { defineRoute } from '../lib/register.js'
 import { KEY_PURPOSES } from '../plugins/auth.js'
-import { authRateLimit } from '../plugins/rate-limit.js'
+import { authRateLimit, registrationRateLimit } from '../plugins/rate-limit.js'
 import {
   applyRevocationRule,
-  callerAddress,
   deviceFingerprint,
   listDevices,
   listSessions,
+  loginRateAddress,
   recogniseDevice,
   recordLoginAttempt,
   revokeAllSessions,
@@ -122,11 +122,16 @@ function accepted(message) {
  * @param {object} deps.prisma The Prisma client.
  * @param {object} deps.env The parsed API environment.
  * @param {{max?: number, timeWindow?: string|number}} [deps.authLimit] Overrides for the credential-endpoint rate limit.
+ * @param {{addressMax?: number, emailMax?: number, timeWindow?: string|number}} [deps.registerLimit] Overrides for the registration budget (finding F5).
  * @param {function(object): Promise<void>} [deps.deliver] Where an issued link is sent: only a hook injected into `buildApp`, never the SMTP mailer. Defaults to logging it, which is what a deployment that does not email links can honestly do.
  * @returns {void} Nothing.
  */
-export function registerAuthRoutes(app, { prisma, env, authLimit, deliver }) {
+export function registerAuthRoutes(app, { prisma, env, authLimit, registerLimit, deliver }) {
   const limit = { rateLimit: authRateLimit(authLimit) }
+  // Finding F5: a per-address and per-email budget on registration, so the
+  // 409/201 existence oracle cannot be read in bulk. One instance, so its
+  // windows persist across requests.
+  const registerBudget = registrationRateLimit(registerLimit ?? {})
   const sealing = { secret: app.authKeys.sealingSecret, purpose: KEY_PURPOSES.mfa }
 
   /**
@@ -395,13 +400,20 @@ export function registerAuthRoutes(app, { prisma, env, authLimit, deliver }) {
 
   defineRoute(app, 'auth.register', {
     config: limit,
+    preHandler: [registerBudget],
     handler: async (request, reply) => {
       const { email, password, displayName, phone, locale, role } = request.body
 
       const existing = await prisma.user.findUnique({ where: { email } })
-      if (existing) throw conflict('An account with this email address already exists.')
 
+      // Finding F5: hash on both paths, so a taken address (409) and a free one
+      // (201) pay the same ~100ms. The response time must not answer the
+      // question the 409/201 body already does — and cannot be fully removed
+      // without an email-verification flow (out of scope). The rate limit above
+      // bounds how fast the remaining oracle can be read in bulk.
       const passwordHash = await hashPassword(password)
+
+      if (existing) throw conflict('An account with this email address already exists.')
 
       let user
 
@@ -444,7 +456,9 @@ export function registerAuthRoutes(app, { prisma, env, authLimit, deliver }) {
     config: limit,
     handler: async (request, reply) => {
       const { email, password, code, deviceLabel } = request.body
-      const address = callerAddress(request)
+      // Finding F2: ration by the client's own address, not the proxy socket
+      // that every browser user shares.
+      const address = loginRateAddress(request)
       const key = app.authKeys.pseudonymize
 
       const throttle = await throttleLogin(prisma, { email, address, key })
@@ -768,6 +782,29 @@ export function registerAuthRoutes(app, { prisma, env, authLimit, deliver }) {
       const factors = await confirmedFactors(request.actor.id)
       const policy = sessionPolicyFor(request.actor)
 
+      // Finding F10: a wrong step-up accrues a per-account lockout, as a wrong
+      // sign-in does. Before this, `stepUp` recorded no attempt and consulted no
+      // throttle, so TOTP/password guessing at the step-up gate was bounded only
+      // by the shared IP auth limit and never by the account. Keyed on the
+      // account's own email and its client address, so the lockout is
+      // independent of the proxy socket (the per-account half of F2).
+      const email = request.currentUser.email
+      const address = loginRateAddress(request)
+      const key = app.authKeys.pseudonymize
+
+      const throttle = await throttleLogin(prisma, { email, address, key })
+
+      if (!throttle.allowed) {
+        await recordLoginAttempt(prisma, {
+          email,
+          address,
+          outcome: LOGIN_OUTCOMES.THROTTLED,
+          key,
+        })
+
+        throw tooManyRequests(THROTTLED_MESSAGE, throttle.retryAfterSeconds)
+      }
+
       let satisfied = false
 
       if (code) {
@@ -795,7 +832,29 @@ export function registerAuthRoutes(app, { prisma, env, authLimit, deliver }) {
         satisfied = await app.verifyUserPassword(request.currentUser, password)
       }
 
-      if (!satisfied) throw unauthorized('That did not confirm your identity. Try again.')
+      if (!satisfied) {
+        // A wrong code or password: recorded as a per-account failure, the same
+        // row a wrong sign-in writes, so the throttle above locks the account
+        // after enough of them. The address is pseudonymised and the row carries
+        // no credential (finding F10).
+        await recordLoginAttempt(prisma, {
+          email,
+          address,
+          outcome: LOGIN_OUTCOMES.MFA_FAILED,
+          key,
+        })
+
+        throw unauthorized('That did not confirm your identity. Try again.')
+      }
+
+      // A proven identity clears the failure count, exactly as a successful
+      // sign-in does, so a legitimate confirmation is not held against the next.
+      await recordLoginAttempt(prisma, {
+        email,
+        address,
+        outcome: LOGIN_OUTCOMES.SUCCESS,
+        key,
+      })
 
       await prisma.session.update({
         where: { id: request.session.id },

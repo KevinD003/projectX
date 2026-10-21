@@ -34,6 +34,7 @@ import { PageHero } from '../../../components/page-hero.jsx'
 import { SampleDataNotice } from '../../../components/sample-data-notice.jsx'
 import { loadOrganizerBySlug } from '../../../lib/api.js'
 import { calendarLeaf } from '../../../lib/home-sections.js'
+import { isSafeHref } from '../../../lib/rich-text.js'
 import { organiserJsonLd } from '../../../lib/site-seo.js'
 import {
   formatEventDate,
@@ -226,7 +227,7 @@ export default async function OrganizerPage({ params }) {
                   Verified organiser
                 </span>
               ) : null}
-              {organizer.websiteUrl ? (
+              {organizer.websiteUrl && isSafeHref(organizer.websiteUrl) ? (
                 <a
                   href={organizer.websiteUrl}
                   rel="nofollow noopener noreferrer external"
